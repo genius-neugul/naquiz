@@ -1,0 +1,55 @@
+pattern,artist,artist_sub,note
+\(여자\)\s*아이들,(여자)아이들,(G)I-DLE,괄호가 든 이름
+f\(x\),에프엑스,f(x),괄호가 든 이름
+\(\(\( O \)\)\),((( O ))),((( O ))),괄호가 든 이름
+TOMORROW X TOGETHER,투모로우바이투게더,TOMORROW X TOGETHER,X가 든 이름
+MONSTA X,몬스타엑스,MONSTA X,X가 든 이름
+PRODUCE X 101,PRODUCE X 101,PRODUCE X 101,X가 든 이름
+Chloe X Halle,Chloe X Halle,Chloe X Halle,X가 든 듀오 이름
+ELVIS VS JXL,Elvis vs JXL,Elvis vs JXL,vs가 든 이름
+SUPER JUNIOR-D&E,슈퍼주니어-D&E,SUPER JUNIOR-D&E,&가 든 유닛 이름
+15&,15&,15&,&가 든 이름
+&TEAM,앤팀,&TEAM,&가 든 이름
+세훈&찬열,세훈&찬열,SEHUN&CHANYEOL,&가 든 유닛 이름
+레드벨벳-아이린&슬기,레드벨벳-아이린&슬기,Red Velvet - IRENE & SEULGI,&가 든 유닛 이름
+김희철&김정모,김희철&김정모,김희철&김정모,&가 든 유닛 이름
+스컬&하하,스컬&하하,SKULL&HAHA,&가 든 유닛 이름
+W\s*&\s*Whale,W&Whale,W&Whale,&가 든 이름
+Simon (&|and) Garfunkel,Simon & Garfunkel,Simon & Garfunkel,&가 든 팀 이름
+"Earth,? Wind (&|and) Fire","Earth, Wind & Fire","Earth, Wind & Fire",쉼표·&가 든 팀 이름
+"Blood,? Sweat (&|and) Tears","Blood, Sweat & Tears","Blood, Sweat & Tears",쉼표·&가 든 팀 이름
+"Peter,? Paul (&|and) Mary","Peter, Paul & Mary","Peter, Paul & Mary",쉼표·&가 든 팀 이름
+"Crosby,? Stills,? Nash (&|and) Young","Crosby, Stills, Nash & Young","Crosby, Stills, Nash & Young",쉼표·&가 든 팀 이름
+"Crosby,? Stills (&|and) Nash","Crosby, Stills & Nash","Crosby, Stills & Nash",쉼표·&가 든 팀 이름
+"Emerson,? Lake (&|and) Palmer","Emerson, Lake & Palmer","Emerson, Lake & Palmer",쉼표·&가 든 팀 이름
+"Tyler, The Creator","Tyler, The Creator","Tyler, The Creator",쉼표가 든 이름
+"Car, the garden",카더가든,"Car, the garden",쉼표가 든 이름
+(Daryl )?Hall (&|and) (John )?Oates,Hall & Oates,Hall & Oates,&가 든 팀 이름
+Mumford (&|and) Sons,Mumford & Sons,Mumford & Sons,&가 든 팀 이름
+Years (&|and) Years,Years & Years,Years & Years,&가 든 팀 이름
+Florence \+ The Machine,Florence + The Machine,Florence + The Machine,+가 든 팀 이름
+Dan \+ Shay,Dan + Shay,Dan + Shay,+가 든 팀 이름
+Angus (&|and) Julia Stone,Angus & Julia Stone,Angus & Julia Stone,&가 든 팀 이름
+Sonny (&|and) Cher,Sonny & Cher,Sonny & Cher,&가 든 팀 이름
+Of Monsters (&|and) Men,Of Monsters and Men,Of Monsters and Men,and가 든 팀 이름
+The Bird (&|and) The Bee,The Bird and the Bee,The Bird and the Bee,and가 든 팀 이름
+Iron (&|and) Wine,Iron & Wine,Iron & Wine,&가 든 팀 이름
+She (&|and) Him,She & Him,She & Him,&가 든 팀 이름
+Captain (&|and) Tennille,Captain & Tennille,Captain & Tennille,&가 든 팀 이름
+Tony Orlando (&|and) Dawn,Tony Orlando & Dawn,Tony Orlando & Dawn,&가 든 팀 이름
+Belle (&|and) Sebastian,Belle & Sebastian,Belle & Sebastian,&가 든 팀 이름
+K-Ci (&|and) JoJo,K-Ci & JoJo,K-Ci & JoJo,&가 든 팀 이름
+Sergio Mendes (&|and) Brasil '66,Sergio Mendes & Brasil '66,Sergio Mendes & Brasil '66,&가 든 팀 이름
+Neil Young (&|and) Crazy Horse,Neil Young & Crazy Horse,Neil Young & Crazy Horse,&가 든 팀 이름
+Ike (&|and) Tina Turner,Ike & Tina Turner,Ike & Tina Turner,&가 든 팀 이름
+Jon (&|and) Vangelis,Jon & Vangelis,Jon & Vangelis,&가 든 팀 이름
+Tegan (&|and) Sara,Tegan and Sara,Tegan and Sara,and가 든 팀 이름
+Sam (&|and) Dave,Sam & Dave,Sam & Dave,&가 든 팀 이름
+Macklemore (&|and) Ryan Lewis,Macklemore & Ryan Lewis,Macklemore & Ryan Lewis,&가 든 팀 이름
+Paul McCartney (&|and) Wings,Paul McCartney & Wings,Paul McCartney & Wings,&가 든 팀 이름
+Tones (&|and) I,Tones And I,Tones And I,and가 든 이름
+You\+Me,You+Me,You+Me,+가 든 듀오 이름
+MARIO&,마리오 앤드,MARIO&,&가 든 이름
+H7\s*美人(\s*\(미인\))?,H7 미인,H7 美人,괄호·한자가 든 이름
+Gym (&|and) Swim,Gym and Swim,Gym and Swim,and가 든 팀 이름
+Al Bano (&|and) Romina Power,Al Bano & Romina Power,Al Bano & Romina Power,&가 든 듀오 이름
