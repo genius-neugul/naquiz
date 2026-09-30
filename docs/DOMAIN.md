@@ -29,7 +29,7 @@
 | 게임 진행 | 게임 종류 | GameType | 노래 맞추기, 영화 스무고개, 스틸컷 영화 맞추기 중 하나입니다. |  |
 | 게임 진행 | 게임 | Game | 방에서 시작되어 누군가 목표 점수에 도달할 때까지의 플레이 한 판입니다. | "퀴즈"는 서비스명으로만 사용합니다. |
 | 게임 진행 | 목표 점수 | TargetScore | 게임 시작 전에 방장이 설정하는 점수입니다(최대 50점). 먼저 도달한 참가자가 승리합니다. |  |
-| 게임 진행 | 승자 | Winner | 목표 점수에 가장 먼저 도달한 참가자입니다. | 라운드의 정답자(Solver)와 구분합니다. |
+| 게임 진행 | 승자 | Winner | 목표 점수에 가장 먼저 도달한 참가자입니다. 방장이 나가 게임이 도중에 끝나면 승자는 없습니다. | 라운드의 정답자(Solver)와 구분합니다. |
 | 게임 진행 | 라운드 | Round | 문제 하나를 두고 정답자가 나오거나 스킵될 때까지의 진행 단위입니다. | 문제는 데이터, 라운드는 진행입니다. |
 | 게임 진행 | 정답자 | Solver | 라운드에서 가장 먼저 정답을 제출한 참가자입니다. | 서버 수신 시각 기준입니다. |
 | 게임 진행 | 점수 | Score | 게임 내 참가자별 누적 점수입니다. 정답 1회당 1점입니다. |  |
@@ -93,8 +93,8 @@
 | --- | --- | --- | --- | --- |
 | 방 ID | roomId | Long | O | 내부 식별자입니다. |
 | 초대 코드 | inviteCode | String | O | 숫자·영문 알파벳 무작위 6자리입니다. 활성 방 사이에서 유일합니다. |
-| 방장 ID | hostId | Long | O | 방장은 위임하지 않습니다. 방장이 나가거나 연결이 끊기면 방을 CLOSED로 바꾸고 진행 중인 게임도 끝냅니다. |
-| 방 상태 | status | Enum | O | WAITING(대기), PLAYING(게임 중), CLOSED(종료) |
+| 방장 ID | hostId | Long | O | 방장은 위임하지 않습니다. 방장이 나가거나 연결이 끊기면 방을 CLOSED로 바꾸고, 진행 중인 게임은 승자 없이 FINISHED로 끝냅니다. |
+| 방 상태 | status | Enum | O | WAITING(대기), PLAYING(게임 중), CLOSED(종료). 게임이 정상적으로 끝나면 WAITING으로 돌아갑니다. |
 | 최대 인원 | maxParticipants | Integer | O | 10명입니다. |
 | 생성 시각 | createdAt | DateTime | O |  |
 
@@ -105,7 +105,7 @@
 | 참가자 ID | participantId | Long | O |  |
 | 닉네임 | nickname | String | O | 같은 방 안에서 중복될 수 없습니다. |
 | 역할 | role | Enum | O | HOST, GUEST |
-| 게임 승리 횟수 | gameWins | Integer | X |  |
+| 게임 승리 횟수 | gameWins | Integer | X | 승자가 된 게임 수입니다. 승자 없이 끝난 게임은 세지 않습니다. |
 | 라운드 점수 | roundScore | Integer | X | 현재 게임의 누적 점수(Score)입니다. 정답 1회당 1점이고, 게임 시작 시 0으로 초기화합니다. |
 | 입장 시각 | joinedAt | DateTime | O |  |
 
@@ -122,7 +122,7 @@
 | 게임 종류 | gameType | Enum | O | SONG, MOVIE_TWENTY_QUESTIONS, MOVIE_STILL_CUT |
 | 게임 상태 | status | Enum | O | IN_PROGRESS, FINISHED |
 | 목표 점수 | targetScore | Integer | O | 게임 시작 전에 방장이 설정합니다. 1~50점입니다. 참가자 누적 점수가 목표 점수에 도달하면 게임이 종료됩니다. |
-| 승자 ID | winnerId | Long | X | FINISHED일 때만 존재합니다. |
+| 승자 ID | winnerId | Long | X | 목표 점수에 도달해 FINISHED가 됐을 때만 존재합니다. 방장이 나가 끝난 게임은 비어 있습니다. |
 | 현재 라운드 번호 | currentRoundNo | Integer | O |  |
 | 시작·종료 시각 | startedAt, endedAt | DateTime | O / X |  |
 
@@ -132,11 +132,11 @@
 | --- | --- | --- | --- | --- |
 | 라운드 ID | roundId | Long | O |  |
 | 라운드 번호 | roundNo | Integer | O | 1부터 순서대로 증가합니다. |
-| 문제 ID | questionId | Long | O | 출제할 문제는 완전 무작위로 고릅니다. 같은 게임 안에서 모든 문제를 한 번씩 출제하기 전에는 중복 출제하지 않습니다. 문제를 다 출제하면 이미 출제한 문제에서 다시 골라, 누군가 목표 점수에 도달할 때까지 게임을 계속합니다. |
+| 문제 ID | questionId | Long | O | 출제할 문제는 완전 무작위로 고릅니다. 같은 게임 안에서 모든 문제를 한 번씩 출제하기 전에는 중복 출제하지 않습니다. 문제를 다 출제한 뒤에는 이미 출제한 문제를 포함해 매번 무작위로 골라, 누군가 목표 점수에 도달할 때까지 게임을 계속합니다. |
 | 라운드 상태 | status | Enum | O | IN_PROGRESS, SOLVED(정답), SKIPPED(스킵). 라운드 제한 시간은 없습니다. |
 | 정답자 ID | solverParticipantId | Long | X | SOLVED일 때만 존재합니다. |
-| 차례 순서 | turnOrder | List<Long> | X | 영화 스무고개에서만 사용합니다. 라운드마다 무작위로 정한 참가자 순서입니다. |
-| 현재 차례 순서 인덱스 | currentTurnOrderIndex | Long | X | 영화 스무고개에서만 사용합니다. |
+| 차례 순서 | turnOrder | List<Long> | X | 영화 스무고개에서만 사용합니다. 라운드마다 무작위로 정한 참가자 순서입니다. 라운드 중에 나간 참가자의 차례는 건너뜁니다. |
+| 현재 차례 순서 인덱스 | currentTurnOrderIndex | Integer | X | 영화 스무고개에서만 사용합니다. |
 | 차례 마감 시각 | turnDeadline | DateTime | X | 차례 시작 후 10초입니다. 지나면 다음 차례로 넘어갑니다(패스). |
 | 시작·종료 시각 | startedAt, endedAt | DateTime | O / X | 시작 시각은 시간 경과 힌트의 기준입니다. 종료 시각은 라운드가 끝날 때(SOLVED, SKIPPED) 기록합니다. |
 
@@ -259,12 +259,12 @@
 | 게임 ID / 라운드 번호 | gameId, roundNo | Long, Integer | O | 노래 힌트 투표는 힌트 종류별로 동시에 진행될 수 있습니다. 같은 대상의 투표는 하나만 열립니다. |
 | 투표 종류 | voteType | Enum | O | HINT, SKIP |
 | 대상 힌트 종류 | targetHintType | Enum | X | HINT일 때만 존재합니다. ALBUM, ARTIST, RELEASE_DATE, 또는 다음 단계 정답 힌트(ANSWER_MASK → ANSWER_SYMBOL → ANSWER_PARTIAL)입니다. |
-| 발의자 ID | initiatorId | Long | O |  |
+| 발의자 ID | initiatorId | Long | O | 발의자는 자동으로 찬성합니다. 투표를 열 때 발의자의 투표 찬성을 함께 만듭니다. |
 | 투표 상태 | status | Enum | O | OPEN(진행 중), PASSED(통과 기준 충족), EXPIRED(통과하기 전에 라운드가 끝남). 반대 표시가 없으므로 부결 상태는 없습니다. 투표 시간 제한은 없습니다. |
 
 **통과 기준**
 
-투표 종류(스킵, 힌트)와 관계없이 판정 시점에 방에 접속 중인 참가자 수로 정합니다. 투표에 저장하지 않습니다.
+투표 종류(스킵, 힌트)와 관계없이 판정 시점에 방에 접속 중인 참가자 수로 정합니다. 투표에 저장하지 않습니다. 참가자가 나가면 줄어든 인원으로 진행 중인 투표를 다시 판정하고, 나간 참가자의 투표 찬성은 세지 않습니다.
 
 | 참가자 수 | 통과 조건 |
 | --- | --- |
