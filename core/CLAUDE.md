@@ -40,6 +40,8 @@
 
 ## 디렉터리 구조
 
+지금은 단일 모듈이다. 멀티모듈(core-domain, game-api, admin-api, crawler-batch)로 나누는 목표 구조는 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#모듈-구조)에 있다.
+
 ```
 core/
 ├── docs/              서버 코드 컨벤션 (아키텍처, 스타일, 예외, 로그, 테스트)
