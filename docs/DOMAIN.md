@@ -353,7 +353,7 @@
 | 신고 ID | reportId | Long | O |  |
 | 문제 ID | questionId | Long | O |  |
 | 신고자 닉네임 | reporterNickname | String | O | 비회원이므로 참가자 ID 대신 닉네임을 스냅샷으로 저장합니다. |
-| 오류 유형 | reportType | Enum | O | WRONG_ANSWER(정답 오류), MISSING_ANSWER(정답 누락), MEDIA_ERROR(음원·이미지 오류), OTHER |
+| 오류 유형 | reportType | Enum | O | WRONG_ANSWER(정답 오류), WRONG_HINT(힌트 오류), OTHER(그 외) |
 | 상세 내용 | description | String | X |  |
 | 처리 상태 | status | Enum | O | RECEIVED, RESOLVED, REJECTED |
 | 신고 시각 | createdAt | DateTime | O |  |
