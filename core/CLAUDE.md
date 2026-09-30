@@ -4,7 +4,7 @@
 
 ## 참고 문서
 
-- `docs/ARCHITECTURE.md`: 도메인 중심 레이어드 아키텍처. 패키지 구조, 의존성 방향, 레이어별 작성 규칙, 트랜잭션 경계, 이벤트 발행 규약
+- `docs/ARCHITECTURE.md`: 도메인 중심 레이어드 아키텍처. 모듈 구조(목표), 패키지 구조, 의존성 방향, 레이어별 작성 규칙, 트랜잭션 경계, 이벤트 발행 규약
 - `docs/CODE_STYLE.md`: 네이밍, Spring Bean 접미사, Lombok, 주석·상수 규칙
 - `docs/EXCEPTION.md`: 에러 응답 형식, ErrorCode, BusinessException, 예외를 던지는 위치
 - `docs/LOG.md`: 로그 prefix, 레벨, 로그를 남기는 위치, 민감 정보, Trace ID

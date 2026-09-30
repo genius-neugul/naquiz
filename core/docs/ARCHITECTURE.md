@@ -14,8 +14,8 @@
 core/
 ├── core-domain    라이브러리. 모든 앱이 의존한다
 │   ├── common        ErrorCode, BusinessException, DomainEvent, EventPublisher
-│   ├── song, question, report, admin, crawl …   domain / service/implement / infra
-│   └── external      Spotify·YouTube 클라이언트, 곡 정제 규칙
+│   └── song, question, report, admin, crawl …   domain / implement / infra
+│         (Spotify·YouTube 클라이언트는 song/infra, 곡 정제 규칙은 song/domain)
 ├── game-api       실행 앱. 방·게임·투표 presentation·service, WebSocket(STOMP), 웹 공통
 ├── admin-api      실행 앱. 관리자 로그인, 검수, 오류 신고 처리, 통계, 크롤링 현황
 └── crawler-batch  실행 앱. 웹 없음. 데일리 크롤링(정제 → 중복 제외 → Spotify → YouTube → 검수 대기로 저장)
@@ -23,7 +23,7 @@ core/
 
 | 모듈 | 종류 | 의존 | 담는 것 |
 | --- | --- | --- | --- |
-| core-domain | 라이브러리 | — | 엔티티, 저장소, implement, 외부 API 클라이언트, 공통 예외·이벤트 |
+| core-domain | 라이브러리 | — | 도메인별 domain·implement·infra(엔티티, 저장소, 외부 API 클라이언트), 공통 예외·이벤트 |
 | game-api | 실행 앱 | core-domain | 게임 유스케이스(service), Controller·STOMP 핸들러, 에러 응답·예외 핸들러·요청 로그 필터 |
 | admin-api | 실행 앱 | core-domain | 관리자 유스케이스(service), Controller, 자체 에러 응답·예외 핸들러 |
 | crawler-batch | 실행 앱 | core-domain | 데일리 크롤링 스케줄과 유스케이스 |
@@ -32,12 +32,14 @@ core/
 - **공통 코드는 core-domain에 둔다.** 게임 서버도 초기 데이터 곡을 출제할 때 Spotify·YouTube를 호출하므로 외부 API 클라이언트를 core-domain에서 함께 쓴다.
 - **global 모듈은 두지 않는다.** 모든 앱이 core-domain에 의존하므로 공통 예외·이벤트는 core-domain `common`으로 충분하다.
 - **웹 공통은 game-api에 둔다.** 별도 웹 모듈로 분리하지 않는다. admin-api는 같은 [에러 응답 형식](EXCEPTION.md#에러-응답-형식)을 따르는 에러 응답·예외 핸들러를 따로 둔다.
-- **service는 앱 모듈에, implement 이하는 core-domain에 둔다.** 앱끼리는 서로 의존하지 않는다. 두 앱이 같은 흐름을 쓰면 implement로 내려 core-domain에서 공유한다.
+- **presentation·service는 앱 모듈에, implement·infra·domain은 core-domain에 둔다.** 앱끼리는 서로 의존하지 않는다. 두 앱이 같은 흐름을 쓰면 implement로 내려 core-domain에서 공유한다.
+- **멀티모듈에서는 implement 패키지를 `<도메인>.implement`로 둔다.** 단일 모듈의 `<도메인>.service.implement`를 그대로 두면 같은 패키지가 두 모듈에 걸친다(split package). 의존성 방향(presentation → service → implement → infra)은 그대로다.
+- **외부 API 클라이언트는 해당 도메인의 infra에 둔다.** 별도 `external` 패키지를 만들지 않는다.
 - `ErrorCode`가 `HttpStatus`를 가지므로 core-domain은 `spring-web`에 의존한다. 웹 서버(`spring-boot-starter-web`)는 앱 모듈만 넣는다.
 
 ## 기본 패키지 구조
 
-도메인을 최상위 기준으로 나누고, 도메인 내부에서 레이어를 나눈다.
+도메인을 최상위 기준으로 나누고, 도메인 내부에서 레이어를 나눈다. 아래는 지금의 단일 모듈 기준이다. 멀티모듈로 옮기면 `ErrorResponse`·`GlobalExceptionHandler`는 앱 모듈(game-api, admin-api)의 `common/exception`으로, implement는 `<도메인>.implement`로 간다([모듈 구조](#모듈-구조)).
 
 ```java
 geniusneugul.project.core
