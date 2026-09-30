@@ -391,7 +391,6 @@
 | 비밀번호 해시 | passwordHash | String | O | 비밀번호 원문은 저장하지 않습니다. |
 | 이름 | name | String | O | 검수·오류 처리 기록에 보여줍니다. |
 | 생성 시각 | createdAt | DateTime | O |  |
-| 마지막 로그인 시각 | lastLoginAt | DateTime | X |  |
 
 관리자 계정은 여러 개이고 권한 구분은 없습니다.
 
