@@ -179,7 +179,6 @@
 | 감독 | DIRECTOR | 감독 이름 |
 | 출연자 | CAST | 주요 출연 배우 |
 | 시놉시스 | SYNOPSIS | 줄거리 |
-| 스틸컷 | STILL_CUT | 스틸컷 이미지 |
 | OST | OST | OST (데이터가 있을 때만) |
 | 장르 | GENRE | 장르 |
 | 제작 나라 | NATION | 제작 국가 |
