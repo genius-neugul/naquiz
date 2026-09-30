@@ -27,7 +27,7 @@
 ```
 .claude/               Claude Code 설정 (팀 공유, 커밋한다)
 ├── README.md          스킬·에이전트·훅 사용 설명
-├── settings.json      훅 등록 (세션 시작 브리핑, PR 게이트)
+├── settings.json      훅 등록 (세션 시작 브리핑, PR 게이트, 테스트 context 가드)
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
 ├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
 └── skills/            /pre-pr, /sync-docs, /devlog

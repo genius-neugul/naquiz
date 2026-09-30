@@ -28,7 +28,7 @@ gh auth login
 ```
 
 - 저장소를 처음 열면 Claude Code가 프로젝트 훅을 믿을지 묻는다. 허용해야 훅이 동작한다.
-- 훅 스크립트에는 실행 권한이 필요하다. 권한이 빠졌으면 `chmod +x .claude/hooks/*.sh`로 준다.
+- 훅 스크립트에는 실행 권한이 필요하다. 권한이 빠졌으면 `chmod +x .claude/hooks/*`로 준다.
 - `jq`가 없으면 PR 게이트가 에러로 끝나면서 PR 생성을 **막지 못한다**. 꼭 설치한다.
 
 ## 하루 작업 흐름
@@ -74,7 +74,7 @@ gh auth login
 |---|---|---|---|
 | `test-runner` | Haiku (effort low) | 없음 | `core/` Spring 서버 테스트(Gradle)를 실행하고 **실패만** 요약한다. `core/` 코드 변경이 없으면 실행하지 않는다. 메인 대화 토큰을 아끼기 위해 테스트는 항상 이 에이전트로 돌린다. |
 | `code-reviewer` | Sonnet | 코드 수정 안 함 | `core/` Spring 게임 서버 변경분만 리뷰한다(크롤러는 대상 아님). 게임 규칙 준수, 서버 단일 진실 원천, 서버 타이머, 동시 정답 race condition, 유비쿼터스 언어, `core/docs/` 컨벤션(레이어·예외·로그)을 보고, 신뢰도 70 이상만 🔴/🟡/💡/❓로 보고한다. 반복되는 패턴은 프로젝트 메모리에 쌓는다. |
-| `docs-syncer` | Sonnet | 문서만 | 변경분이 영향을 주는 문서를 찾는다. 규칙 문서(기획, DOMAIN, MUSIC_PARSING_RULE, MUSIC_SELECTION_RULE)는 **보고만** 하고, 사실 기록 문서(CLAUDE.md, `core/CLAUDE.md`, `initial_crawler/README.md`, `initial_crawler/CLAUDE.md`)는 코드에 맞춰 고친다. |
+| `docs-syncer` | Sonnet | 문서만 | 변경분이 영향을 주는 문서를 찾는다. 규칙 문서(기획, DOMAIN, MUSIC_PARSING_RULE, MUSIC_SELECTION_RULE, `core/docs/`)는 **보고만** 하고, 사실 기록 문서(CLAUDE.md, `core/CLAUDE.md`, `initial_crawler/README.md`, `initial_crawler/CLAUDE.md`)는 코드에 맞춰 고친다. |
 
 ## 훅
 
