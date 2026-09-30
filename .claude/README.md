@@ -46,7 +46,7 @@ gh auth login
 
 | 단계 | 내용 |
 |---|---|
-| 1. 준비 | 이번 작업(대화 context)과 무관한 변경은 묻지 않고 `git stash`로 치워둔다(`pre-pr: 작업 외 변경 임시 보관`). 작업한 변경은 커밋할지 묻는다. `origin`과 충돌하는지 확인한다. |
+| 1. 준비 | 이번 작업(대화 context)과 무관한 변경은 묻지 않고 `git stash`로 치워둔다(`pre-pr: 작업 외 변경 임시 보관`). stash 전에 `git restore --staged .`로 staging 영역을 비운다(stash가 staging 전체를 저장해 pop 때 충돌하는 것을 막는다). 작업한 변경은 커밋할지 묻는다. `origin`과 충돌하는지 확인한다. |
 | 2. 병렬 점검 | `test-runner`, `code-reviewer`, `docs-syncer`를 동시에 실행한다. `core/` 코드(`src/`, Gradle 설정) 변경이 없으면 `test-runner`를, `core/` 변경이 없으면 `code-reviewer`를 건너뛴다. |
 | 3. 결과 처리 | 🔴 Critical이나 테스트 실패가 있으면 고친 뒤 2단계를 다시 한다. 🟡 Warning은 PR 본문 "리뷰어에게"에 적는다. 문서를 고쳤으면 `docs: sync with <기능>`으로 커밋한다. |
 | 4. 통과 기록 | HEAD 커밋 해시를 `.git/claude-pr-ready`에 적는다. |

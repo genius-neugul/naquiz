@@ -9,10 +9,13 @@ description: PR을 올리기 전에 테스트·코드리뷰·문서 동기화를
 
 ## 1. 준비
 1. `git status --porcelain` 으로 변경 파일을 보고, 이번 대화(작업 context)에서 만들거나 고친 파일과 그 외 파일로 나눈다.
-2. 그 외 파일이 있으면 사용자에게 묻지 않고 stash 한다.
+2. 그 외 파일이 있으면 사용자에게 묻지 않고 stash 한다. **stash 전에 staging 영역을 먼저 비운다.**
    ```bash
+   git restore --staged .
    git stash push --include-untracked -m "pre-pr: 작업 외 변경 임시 보관" -- <작업 외 파일들>
    ```
+   - 경로를 지정해도 stash 는 staging 영역 전체를 함께 저장한다. staging 에 옛 버전이 올라간 작업 파일이 있으면 pop 할 때 커밋된 새 버전과 충돌한다. 그래서 먼저 비운다(내용은 워킹트리에 그대로 남는다).
+   - 이 때문에 작업 외 파일의 staged 상태는 pop 뒤 unstaged 로 돌아온다. 내용은 바뀌지 않는다.
    - `-a` 는 쓰지 않는다(무시 파일까지 stash 되지 않게).
    - stash 한 파일 목록을 한 줄로 알린다(허락은 구하지 않는다).
 3. 작업 context 변경은 사용자에게 커밋할지 물어본다(메시지는 Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`). `main` 이면 규칙대로 브랜치를 먼저 만든다.
