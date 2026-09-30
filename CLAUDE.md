@@ -79,7 +79,8 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 
 - 브랜치: `feat/<기능>`, `fix/<내용>`, `docs/<내용>` → PR → 팀원 1명 승인 후 머지. `main`에 직접 커밋하지 않는다(개발일지 제외).
 - 커밋 메시지: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:` 접두어 + 한국어 설명.
-- PR은 `/pre-pr` 로 만든다. 테스트(test-runner) · 코드 리뷰(code-reviewer) · 문서 동기화(docs-syncer)를 한 번에 돌리고, 통과해야 `gh pr create` 가 허용된다(PR 게이트 훅). 점검 후 새 커밋이 생기면 다시 돌려야 한다.
+- PR은 `/pre-pr` 로 만든다. 테스트(test-runner, `core/` 코드 변경 시) · 코드 리뷰(code-reviewer) · 문서 동기화(docs-syncer)를 한 번에 돌리고, 통과해야 `gh pr create` 가 허용된다(PR 게이트 훅). 점검 후 새 커밋이 생기면 다시 돌려야 한다.
+- `/pre-pr` 은 이번 작업과 무관한 워킹트리 변경을 묻지 않고 `git stash` 해두고, PR을 만든 뒤 `git stash pop` 으로 되돌린다.
 - 테스트는 메인 대화에서 직접 돌리지 않고 `test-runner` 에이전트에 맡긴다(Haiku, 실패만 요약).
 - Claude는 코드·명령·설정을 바꾸는 작업을 할 때마다 끝내기 전에 문서 동기화를 한다. 이 파일, 하위 디렉터리의 `CLAUDE.md`, `initial_crawler/README.md`, `.claude/README.md`, `docs/`에서 바뀐 내용과 어긋나는 곳을 찾는다. 사실을 기록한 부분은 바로 고치고, `docs/` 규칙과 어긋나면 아래 규칙대로 먼저 알린다.
 - 코드를 바꿨는데 `docs/` 규칙과 달라지면 문서를 고치지 말고 먼저 알린다. 실행 방법·구조·명령처럼 사실을 기록한 부분(이 파일, `initial_crawler/CLAUDE.md`, `initial_crawler/README.md`)만 코드에 맞춰 고친다. `/sync-docs` 로 따로 점검할 수 있다.
