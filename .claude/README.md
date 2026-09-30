@@ -7,14 +7,15 @@
 ├── settings.json          훅 등록
 ├── hooks/
 │   ├── session-brief.sh   세션 시작 브리핑
-│   └── pr-gate.sh         PR 생성 게이트
+│   ├── pr-gate.sh         PR 생성 게이트
+│   └── test-context-guard.py  테스트 context 가드
 ├── skills/
 │   ├── pre-pr/            /pre-pr     PR 전 점검 → PR 생성
 │   ├── sync-docs/         /sync-docs  코드와 문서 동기화
 │   └── devlog/            /devlog     개발일지·인수인계
 └── agents/
     ├── test-runner.md     테스트 실행 (Haiku)
-    ├── code-reviewer.md   변경분 리뷰 (Sonnet)
+    ├── code-reviewer.md   core/ 서버 변경분 리뷰 (Sonnet)
     └── docs-syncer.md     문서 동기화 (Sonnet)
 ```
 
@@ -22,6 +23,7 @@
 
 ```bash
 brew install jq gh   # jq: 훅이 사용, gh: PR 생성·열린 PR 조회
+python3 --version    # 테스트 context 가드 훅이 사용 (macOS 기본 포함)
 gh auth login
 ```
 
@@ -44,11 +46,12 @@ gh auth login
 
 | 단계 | 내용 |
 |---|---|
-| 1. 준비 | 커밋 안 된 변경이 있으면 커밋할지 묻는다. `origin`과 충돌하는지 확인한다. |
-| 2. 병렬 점검 | `test-runner`, `code-reviewer`, `docs-syncer`를 동시에 실행한다. |
+| 1. 준비 | 이번 작업(대화 context)과 무관한 변경은 묻지 않고 `git stash`로 치워둔다(`pre-pr: 작업 외 변경 임시 보관`). 작업한 변경은 커밋할지 묻는다. `origin`과 충돌하는지 확인한다. |
+| 2. 병렬 점검 | `test-runner`, `code-reviewer`, `docs-syncer`를 동시에 실행한다. `core/` 코드(`src/`, Gradle 설정) 변경이 없으면 `test-runner`를, `core/` 변경이 없으면 `code-reviewer`를 건너뛴다. |
 | 3. 결과 처리 | 🔴 Critical이나 테스트 실패가 있으면 고친 뒤 2단계를 다시 한다. 🟡 Warning은 PR 본문 "리뷰어에게"에 적는다. 문서를 고쳤으면 `docs: sync with <기능>`으로 커밋한다. |
 | 4. 통과 기록 | HEAD 커밋 해시를 `.git/claude-pr-ready`에 적는다. |
 | 5. PR 생성 | push한 뒤 템플릿(무엇을 / 왜 / 확인한 것 / 리뷰어에게)으로 `gh pr create`를 실행하고 팀원을 리뷰어로 지정한다. |
+| 6. stash 복원 | 1단계에서 stash 했으면 `git stash pop`으로 되돌린다. 중간에 멈추거나 PR 생성이 실패해도 끝내기 전에 복원한다. |
 
 ### `/sync-docs [범위]`: 코드와 문서 동기화
 
@@ -69,9 +72,9 @@ gh auth login
 
 | 에이전트 | 모델 | 수정 권한 | 하는 일 |
 |---|---|---|---|
-| `test-runner` | Haiku (effort low) | 없음 | 변경된 모듈의 테스트를 빌드 도구(Gradle, Maven, npm, pytest)를 감지해 실행하고 **실패만** 요약한다. 메인 대화 토큰을 아끼기 위해 테스트는 항상 이 에이전트로 돌린다. |
-| `code-reviewer` | Sonnet | 코드 수정 안 함 | 변경분을 리뷰한다. 게임 규칙 준수, 서버 단일 진실 원천, 서버 타이머, 동시 정답 race condition, 유비쿼터스 언어, 크롤러 결정성을 보고, 신뢰도 70 이상만 🔴/🟡/💡/❓로 보고한다. 반복되는 패턴은 프로젝트 메모리에 쌓는다. |
-| `docs-syncer` | Sonnet | 문서만 | 변경분이 영향을 주는 문서를 찾는다. 규칙 문서(기획, DOMAIN, MUSIC_PARSING_RULE, MUSIC_SELECTION_RULE)는 **보고만** 하고, 사실 기록 문서(CLAUDE.md, `initial_crawler/README.md`, `initial_crawler/CLAUDE.md`)는 코드에 맞춰 고친다. |
+| `test-runner` | Haiku (effort low) | 없음 | `core/` Spring 서버 테스트(Gradle)를 실행하고 **실패만** 요약한다. `core/` 코드 변경이 없으면 실행하지 않는다. 메인 대화 토큰을 아끼기 위해 테스트는 항상 이 에이전트로 돌린다. |
+| `code-reviewer` | Sonnet | 코드 수정 안 함 | `core/` Spring 게임 서버 변경분만 리뷰한다(크롤러는 대상 아님). 게임 규칙 준수, 서버 단일 진실 원천, 서버 타이머, 동시 정답 race condition, 유비쿼터스 언어, `core/docs/` 컨벤션(레이어·예외·로그)을 보고, 신뢰도 70 이상만 🔴/🟡/💡/❓로 보고한다. 반복되는 패턴은 프로젝트 메모리에 쌓는다. |
+| `docs-syncer` | Sonnet | 문서만 | 변경분이 영향을 주는 문서를 찾는다. 규칙 문서(기획, DOMAIN, MUSIC_PARSING_RULE, MUSIC_SELECTION_RULE)는 **보고만** 하고, 사실 기록 문서(CLAUDE.md, `core/CLAUDE.md`, `initial_crawler/README.md`, `initial_crawler/CLAUDE.md`)는 코드에 맞춰 고친다. |
 
 ## 훅
 
@@ -95,6 +98,17 @@ gh auth login
 - 통과 기록은 `.git/` 안에 있어서 커밋되지 않는다. 각자의 로컬에서만 유효하다.
 - 이 게이트는 Claude Code 안에서만 동작한다. 터미널에서 직접 `gh pr create`를 치면 막지 않는다.
 
+### PreToolUse → `test-context-guard.py`
+
+- Claude가 `Write`·`Edit`로 `core/src/test/**/*.java`를 쓰기 전에 검사한다. 공통 상위 클래스를 두는 `core/src/test/java/geniusneugul/project/core/support/` 아래 파일과 `core/src/test` 밖의 파일은 통과시킨다.
+- Bash(heredoc, sed 등)로 쓴 파일은 검사하지 못한다. 그래서 `core/CLAUDE.md`에 테스트 파일은 Write/Edit로만 쓴다는 규칙을 두었다.
+- 이번 쓰기로 다음 패턴이 **새로 생기면** 막고 이유를 Claude에게 돌려준다. 기존 파일에 이미 있던 것은 막지 않는다.
+  - `@DirtiesContext`
+  - 테스트 클래스에 직접 붙인 `@SpringBootTest`
+  - 통합 테스트 클래스(`@SpringBootTest`, `IntegrationTestSupport`·`WebSocketTestSupport` 상속) 안의 `@MockitoBean`·`@MockitoSpyBean`·`@MockBean`
+- 클래스별 `@TestPropertySource`·`@ActiveProfiles`는 필요할 수 있어 검사하지 않고 리뷰에서 본다.
+- 규칙 근거는 `core/docs/TEST.md` 「Spring Context 재사용」이다. 사람이 IDE에서 직접 고치는 것은 막지 않는다.
+
 ## 문제 해결
 
 | 증상 | 원인 / 해결 |
@@ -102,6 +116,8 @@ gh auth login
 | "PR 전 점검이 아직 안 됐습니다" | `/pre-pr`을 실행한다. |
 | "마지막 /pre-pr 점검 이후 새 커밋이 생겼습니다" | 점검 뒤에 커밋했다. `/pre-pr`을 다시 실행한다(고친 부분만 다시 봐도 된다). |
 | 세션 시작 브리핑이 안 나옴 | 프로젝트 훅을 허용했는지, 스크립트에 실행 권한이 있는지 확인한다. `/hooks`로 등록 상태를 볼 수 있다. |
+| "테스트 context 가드: ..." | 통합 테스트가 context를 새로 띄우는 패턴을 쓰려 했다. `IntegrationTestSupport`를 상속하고 mock은 그 클래스에 선언한다. |
+| `/pre-pr` 뒤 작업 외 변경이 사라짐 / stash pop 충돌 | `git stash list`에서 `pre-pr: 작업 외 변경 임시 보관`을 찾아 `git stash pop stash@{n}`으로 복원한다. 충돌이면 충돌 파일을 직접 정리한 뒤 `git stash drop`한다. |
 | 열린 PR이 브리핑에 안 나옴 | `gh auth status`로 로그인 상태를 확인한다. |
 
 ## 수정할 때
