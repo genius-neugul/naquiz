@@ -7,8 +7,8 @@
 | 하위 도메인 | 구분 | 책임 | 대응 애그리거트 |
 | --- | --- | --- | --- |
 | 게임 진행 | 핵심 | 라운드 진행, 선착순 정답자 확정, 점수 부여, 목표 점수 도달 시 승자 확정, 스무고개 차례 진행 | 게임 |
-| 정답 판정 | 핵심 | 정답 별칭 생성, 입력값 정규화, 정답 여부 판정 | 문제, 정답 제출 |
-| 힌트 | 핵심 | 힌트 공개 내용 생성, 공개 조건(시간 경과·투표·차례) 관리 | 게임 (공개된 힌트) |
+| 정답 판정 | 핵심 | 정답 생성, 입력값 정규화, 정답 여부 판정 | 문제 |
+| 힌트 | 핵심 | 힌트·단서 공개 내용 생성, 공개 조건(시간 경과·투표·차례) 관리 | 게임 (공개된 힌트, 공개된 단서) |
 | 방 | 지원 | 방 생성, 초대 코드 발급, 참가자 입장·퇴장 | 방 |
 | 투표 | 지원 | 힌트·스킵 투표 집계, 통과 결정 | 투표 |
 | 콘텐츠 | 지원 | 노래·영화 데이터 수집(오프라인 배치), 제목·가수 정제, 메타데이터 보강 | 노래, 영화, 스틸컷 |
@@ -32,31 +32,32 @@
 | 게임 진행 | 정답자 | Solver | 라운드에서 가장 먼저 정답을 제출한 참가자입니다. | 서버 수신 시각 기준입니다. |
 | 게임 진행 | 점수 | Score | 게임 내 참가자별 누적 점수입니다. 정답 1회당 1점입니다. |  |
 | 게임 진행 | 차례 | Turn | 영화 스무고개에서 단서 하나를 열 수 있는 참가자의 순번입니다. 10초 내 선택하지 않으면 다음 차례로 넘어갑니다. |  |
-| 정답 판정 | 문제 | Question | 라운드에 출제되는 콘텐츠와 정답 별칭의 묶음입니다. |  |
-| 정답 판정 | 정답 별칭 | AnswerAlias | 정답으로 인정되는 문자열 각각입니다. | "동의어"라 부르지 않습니다. |
-| 정답 판정 | 정규화 | Normalize | 비교 전 공백 제거, 영문 소문자 변환을 수행하는 처리입니다. |  |
-| 정답 판정 | 정답 제출 | Submission | 라운드 진행 중 참가자가 보낸 채팅 메시지입니다. 모두 판정 대상입니다. |  |
+| 정답 판정 | 문제 | Question | 라운드에 출제되는 콘텐츠와 정답의 묶음입니다. |  |
+| 정답 판정 | 정규화 | Normalize | 비교 전 공백 제거, 영문 소문자 변환을 수행하는 처리입니다. 특수문자는 제거하지 않습니다. |  |
+| 정답 판정 | 정답 제출 | Submission | 라운드 진행 중 참가자가 보낸 채팅 메시지입니다. 모두 판정 대상입니다. 판정만 하고 저장하지 않습니다. |  |
 | 투표 | 투표 | Vote | 힌트 공개 또는 스킵을 결정하기 위한 의사 집계입니다. |  |
-| 투표 | 투표권 | Ballot | 참가자 한 명의 찬반 의사입니다. |  |
-| 투표 | 통과 기준 | PassThreshold | 투표가 통과되기 위한 찬성 조건입니다. 투표 종류와 참가자 수에 따라 정해집니다. |  |
-| 힌트 | 힌트 | Hint | 라운드 중 시간 경과, 투표 통과, 차례 선택 등에 따라 공개되는 추가 정보입니다. |  |
+| 투표 | 투표 찬성 | VoteApproval | 참가자 한 명이 투표에 찬성한 기록입니다. 반대는 없으므로 투표 찬성이 있으면 찬성, 없으면 미참여입니다. | "투표권"이라 부르지 않습니다. |
+| 투표 | 통과 기준 | PassThreshold | 투표가 통과되기 위한 찬성 조건입니다. 투표 종류와 관계없이 참가자 수에 따라 정해집니다. |  |
+| 힌트 | 힌트 | Hint | 라운드 중 시간 경과, 투표 통과 등에 따라 공개되는 추가 정보입니다. | 단서와 구분합니다. |
 | 힌트 | 공개된 힌트 | RevealedHint | 라운드에서 실제로 공개되어 내용이 확정된 힌트입니다. | "힌트 종류"와 구분합니다. |
-| 힌트 | 정답 힌트 | AnswerHint | 정답 문자열의 형태를 단계적으로 공개하는 힌트입니다. 게임 종류마다 단계 구성이 다릅니다. |  |
+| 힌트 | 정답 힌트 | AnswerHint | 정답 문자열의 형태를 단계적으로 공개하는 힌트입니다. 문제의 answer를 기준으로 만듭니다. 게임 종류마다 단계 구성이 다릅니다. |  |
 | 힌트 | 마스킹 | Mask | 정답의 각 글자를 ⚫️로 가리는 표현입니다. 공백은 유지합니다. |  |
 | 힌트 | 초성 공개 | InitialReveal | 한글 글자를 초성으로 보여주는 방식입니다. |  |
 | 힌트 | 부분 문자 공개 | PartialReveal | 영문 글자 중 일부(글자 수 ÷ 3, 반올림)를 무작위로 보여주는 방식입니다. |  |
 | 힌트 | 앨범 힌트 | AlbumHint | 노래가 수록된 앨범 이미지를 보여주는 힌트입니다. |  |
 | 힌트 | 가수 힌트 | ArtistHint | 가수 이름을 보여주는 힌트입니다. 가수가 여러 명이면 한글 이름을 `,` 로 이어 보여줍니다. |  |
 | 힌트 | 발매일 힌트 | ReleaseDateHint | 노래의 발매일을 보여주는 힌트입니다. |  |
-| 힌트 | 단서 | Clue | 영화 스무고개에서 차례대로 하나씩 여는 영화 정보입니다 (관객 수, 감독 등). | 정답 힌트와 구분합니다. |
+| 힌트 | 단서 | Clue | 영화 스무고개에서 차례 참가자가 하나씩 여는 영화 정보입니다 (관객 수, 감독 등). 힌트와 별개의 개념입니다. | 정답 힌트와 구분합니다. 정답 힌트는 모든 단서가 열린 뒤 공개됩니다. |
+| 힌트 | 공개된 단서 | RevealedClue | 라운드에서 차례 참가자가 실제로 열어 내용이 확정된 단서입니다. | "단서 종류"와 구분합니다. |
 | 콘텐츠 | 노래 | Song | 노래 맞추기의 출제 대상입니다. |  |
 | 콘텐츠 | 영화 | Movie | 영화 스무고개, 스틸컷 게임의 출제 대상입니다. |  |
 | 콘텐츠 | 스틸컷 | StillCut | 영화의 한 장면 이미지입니다. |  |
 | 콘텐츠 | 수집 출처 | CollectionSource | 노래 목록을 크롤링한 MBC 라디오 프로그램입니다. 곡의 대표 표기가 나온 가장 최근 방송 기준입니다. |  |
 | 콘텐츠 | 선곡표 | Playlist | 라디오 방송 회차별 곡 목록입니다. 게임 중에는 조회하지 않고 미리 모아 최종 노래 목록을 만듭니다. |  |
-| 콘텐츠 | 부가정보 | AdditionalInfo | 제목·가수에 괄호, 대괄호, `*` 뒤, `-` 뒤로 붙는 피처링·버전·리마스터 연도 등의 정보입니다. 정답 별칭에서 제외합니다. | 곡의 다른 이름(별칭)과 구분합니다. |
+| 콘텐츠 | 부가정보 | AdditionalInfo | 제목·가수에 괄호, 대괄호, `*` 뒤, `-` 뒤로 붙는 피처링·버전·리마스터 연도 등의 정보입니다. 정답에서 제외합니다. | 곡의 다른 이름(별칭)과 구분합니다. |
 | 콘텐츠 | 부제 | Subtitle | 정제한 제목과 함께 적힌 곡의 다른 이름입니다 (예: 작은 것들을 위한 시 ↔ Boy With Luv). |  |
 | 콘텐츠 | 병기 이름 | ArtistSub | 가수의 한글 이름과 함께 적힌 다른 언어 이름입니다 (예: 블락비 ↔ BLOCK B). 병기가 없으면 한글 이름과 같습니다. |  |
+| 콘텐츠 | 방송 수 | PlayCount | 모든 라디오에서 그 곡이 나온 방송 수입니다. |  |
 | 콘텐츠 | 메타데이터 보강 | Enrichment | Spotify, iTunes에서 앨범 이미지·발매일 등을 채우는 처리입니다. |  |
 | 문제 신고 | 오류 신고 | ErrorReport | 참가자가 문제의 오류를 제보한 기록입니다. |  |
 
@@ -67,10 +68,9 @@
 | 애그리거트 | 루트 | 내부 엔티티 |
 | --- | --- | --- |
 | 방 | 방 | 참가자 |
-| 게임 | 게임 | 라운드, 점수, 공개된 힌트 |
-| 문제 | 문제 | 정답 별칭 |
-| 정답 제출 | 정답 제출 | — |
-| 투표 | 투표 | 투표권 |
+| 게임 | 게임 | 라운드, 공개된 힌트, 공개된 단서 |
+| 문제 | 문제 | — |
+| 투표 | 투표 | 투표 찬성 |
 | 노래 | 노래 | — |
 | 영화 | 영화 | — |
 | 스틸컷 | 스틸컷 | — |
@@ -84,9 +84,9 @@
 | --- | --- | --- | --- | --- |
 | 방 ID | roomId | Long | O | 내부 식별자입니다. |
 | 초대 코드 | inviteCode | String | O | 활성 방 사이에서 유일합니다. 길이·문자 구성은 확정이 필요합니다 (예: 영대문자+숫자 6자리). |
-| 방장 ID | hostParticipantId | Long | O | 방장 퇴장 시 위임 규칙이 필요합니다. |
+| 방장 ID | hostId | Long | O | 방장 퇴장 시 위임 규칙이 필요합니다. |
 | 방 상태 | status | Enum | O | WAITING(대기), PLAYING(게임 중), CLOSED(종료) |
-| 최대 인원 | maxParticipants | Integer | O | 미정입니다. |
+| 최대 인원 | maxParticipants | Integer | O | 최대 10명 |
 | 생성 시각 | createdAt | DateTime | O |  |
 
 **참가자 (내부 엔티티)**
@@ -96,8 +96,8 @@
 | 참가자 ID | participantId | Long | O |  |
 | 닉네임 | nickname | String | O | 같은 방 안에서 중복될 수 없습니다. |
 | 역할 | role | Enum | O | HOST, GUEST |
-| 참가자 토큰 | participantToken | String | O | 비회원 식별 및 재접속용입니다. |
-| 접속 상태 | connectionStatus | Enum | O | CONNECTED, DISCONNECTED |
+| 게임 승리 횟수 | gameWins | Integer | X |  |
+| 라운드 점수 | roundScore | Integer | X | 현재 게임의 누적 점수(Score)입니다. 정답 1회당 1점이고, 게임 시작 시 0으로 초기화합니다. |
 | 입장 시각 | joinedAt | DateTime | O |  |
 
 ### 3-2. 게임 애그리거트
@@ -109,11 +109,10 @@
 | 게임 ID | gameId | Long | O |  |
 | 방 ID | roomId | Long | O | 한 방에서 동시에 진행되는 게임은 하나입니다. |
 | 게임 종류 | gameType | Enum | O | SONG, MOVIE_TWENTY_QUESTIONS, MOVIE_STILL_CUT |
-| 게임 상태 | status | Enum | O | READY, IN_PROGRESS, FINISHED |
+| 게임 상태 | status | Enum | O | IN_PROGRESS, FINISHED |
 | 목표 점수 | targetScore | Integer | O | 게임 시작 전에 설정합니다. 참가자 누적 점수가 목표 점수에 도달하면 게임이 종료됩니다. |
-| 승자 ID | winnerParticipantId | Long | X | FINISHED일 때만 존재합니다. |
+| 승자 ID | winnerId | Long | X | FINISHED일 때만 존재합니다. |
 | 현재 라운드 번호 | currentRoundNo | Integer | O |  |
-| 차례 순서 | turnOrder | List<Long> | X | 영화 스무고개에서만 사용합니다. 무작위로 정한 참가자 순서입니다. |
 | 시작·종료 시각 | startedAt, endedAt | DateTime | O / X |  |
 
 **라운드 (내부 엔티티)**
@@ -125,16 +124,9 @@
 | 문제 ID | questionId | Long | O | 같은 게임 안에서 중복 출제하지 않습니다. |
 | 라운드 상태 | status | Enum | O | IN_PROGRESS, SOLVED(정답), SKIPPED(스킵), TIMED_OUT(시간 초과, 도입 시) |
 | 정답자 ID | solverParticipantId | Long | X | SOLVED일 때만 존재합니다. |
-| 현재 차례 참가자 ID | currentTurnParticipantId | Long | X | 영화 스무고개에서만 사용합니다. |
+| 차례 순서 | turnOrder | List<Long> | X | 영화 스무고개에서만 사용합니다. 무작위로 정한 참가자 순서입니다. |
+| 현재 차례 순서 인덱스 | currentTurnOrderIndex | Long | X | 영화 스무고개에서만 사용합니다. |
 | 차례 마감 시각 | turnDeadline | DateTime | X | 차례 시작 후 10초입니다. 지나면 다음 차례로 넘어갑니다(패스). |
-| 시작·종료 시각 | startedAt, endedAt | DateTime | O / X |  |
-
-**점수 (내부 엔티티)**
-
-| 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
-| --- | --- | --- | --- | --- |
-| 참가자 ID | participantId | Long | O |  |
-| 누적 점수 | totalScore | Integer | O | 라운드 정답 시 1점씩 증가합니다. 모든 게임 종류에 동일하게 적용합니다. |
 
 **공개된 힌트 (내부 엔티티)**
 
@@ -144,7 +136,19 @@
 | 힌트 종류 | hintType | Enum | O | 아래 힌트 종류 표의 코드입니다. |
 | 공개 내용 | revealedContent | String | O | 공개 시점에 확정해 저장합니다. 무작위 공개가 재요청마다 바뀌지 않게 하기 위함입니다. |
 | 공개 순번 | revealOrder | Integer | O | 라운드 내 공개 순서입니다. |
-| 공개한 참가자 ID | revealedByParticipantId | Long | X | 스무고개에서 단서를 연 차례 참가자입니다. |
+| 공개 시각 | revealedAt | DateTime | O |  |
+
+**공개된 단서 (내부 엔티티)**
+
+영화 스무고개에서만 사용합니다.
+
+| 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
+| --- | --- | --- | --- | --- |
+| 라운드 번호 | roundNo | Integer | O | 어느 라운드에서 공개됐는지 나타냅니다. |
+| 단서 종류 | clueType | Enum | O | 아래 단서 종류 표의 코드입니다. 같은 라운드에서 같은 단서 종류는 한 번만 열 수 있습니다. |
+| 공개 내용 | revealedContent | String | O | 공개 시점에 확정해 저장합니다. 시놉시스는 제목을 가린 뒤 저장합니다. |
+| 공개 순번 | revealOrder | Integer | O | 라운드 내 공개 순서입니다. |
+| 공개한 참가자 ID | revealedByParticipantId | Long | O | 단서를 연 차례 참가자입니다. |
 | 공개 시각 | revealedAt | DateTime | O |  |
 
 **힌트 종류 — 노래 맞추기**
@@ -163,20 +167,27 @@
 - 공개 글자 수 = 영문 단어 글자 수 ÷ 3, 반올림 (5 → 2, 7 → 2)
 - 두 글자 이하인 단어는 한 번에 공개합니다.
 
+**단서 종류 — 영화 스무고개**
+
+차례 참가자가 아직 열리지 않은 단서 중 하나를 선택해 엽니다. 같은 라운드에서 이미 열린 단서는 다시 열 수 없습니다.
+
+| 단서 종류 | 코드 | 공개 내용 |
+| --- | --- | --- |
+| 관객 수 | AUDIENCE | 누적 관객 수 |
+| 개봉일 | RELEASE_DATE | 개봉일 |
+| 감독 | DIRECTOR | 감독 이름 |
+| 출연자 | CAST | 주요 출연 배우 |
+| 시놉시스 | SYNOPSIS | 줄거리 |
+| 스틸컷 | STILL_CUT | 스틸컷 이미지 |
+| OST | OST | OST (데이터가 있을 때만) |
+| 장르 | GENRE | 장르 |
+| 제작 나라 | NATION | 제작 국가 |
+| 등급 | RATING | 관람 등급 |
+
 **힌트 종류 — 영화 스무고개**
 
 | 힌트 종류 | 코드 | 공개 방식 | 공개 내용 |
 | --- | --- | --- | --- |
-| 관객 수 | CLUE_AUDIENCE | 차례 참가자가 선택 | 누적 관객 수 |
-| 개봉일 | CLUE_RELEASE_DATE | 〃 | 개봉일 |
-| 감독 | CLUE_DIRECTOR | 〃 | 감독 이름 |
-| 출연자 | CLUE_CAST | 〃 | 주요 출연 배우 |
-| 시놉시스 | CLUE_SYNOPSIS | 〃 | 줄거리 |
-| 스틸컷 | CLUE_STILL_CUT | 〃 | 스틸컷 이미지 |
-| OST | CLUE_OST | 〃 | OST (데이터가 있을 때만) |
-| 장르 | CLUE_GENRE | 〃 | 장르 |
-| 제작 나라 | CLUE_NATION | 〃 | 제작 국가 |
-| 등급 | CLUE_RATING | 〃 | 관람 등급 |
 | 정답 힌트 1단계 | ANSWER_LENGTH | 모든 단서 공개 후 | 글자 수 |
 | 정답 힌트 2단계 | ANSWER_INITIAL | 〃 | 초성 |
 | 정답 힌트 3단계~ | ANSWER_RANDOM_CHAR | 〃 (반복) | 무작위로 글자 하나씩 추가 공개 |
@@ -197,51 +208,32 @@
 | 문제 ID | questionId | Long | O |  |
 | 게임 종류 | gameType | Enum | O |  |
 | 콘텐츠 ID | contentId | Long | O | 노래 게임은 songId, 영화 게임(스무고개·스틸컷)은 movieId입니다. |
-| 원본 정답 | rawAnswer | String | O | 노래는 선곡표 원문 제목(rawTitle)입니다. 예: 작은 것들을 위한 시 (Boy With Luv) feat. Halsey |
+| 정답 | answer | String | O | 노래는 `title`, 영화는 한글 제목(`title`)입니다. 정답 힌트의 기준 문자열입니다. 예: 작은 것들을 위한 시 |
+| 보조 정답 | subAnswer | String | X | 노래는 `subtitle`, 영화는 영문 제목(`titleEn`)입니다. 없으면 빈 값입니다. 예: Boy With Luv |
 | 활성 여부 | active | Boolean | O | 오류 신고 확정 시 비활성화합니다. |
 
-**정답 별칭 (내부 엔티티)**
+판정은 입력값과 answer, subAnswer를 각각 정규화해 비교하고, 둘 중 하나와 같으면 정답입니다. 예: 입력 `boy with luv`는 subAnswer `Boy With Luv`와 정규화 값(boywithluv)이 같아 정답입니다. 특수문자는 그대로 비교합니다 (예: `행복하니?`는 `행복하니`와 다릅니다).
 
-| 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
+**정답 정책**
+
+- **노래**: 제목 정제와 부가정보 제거는 콘텐츠 수집 단계(노래 크롤링 문서 1-6, 1-7)에서 끝납니다. 문제 생성 시에는 노래의 `title`을 answer, `subtitle`을 subAnswer로 등록합니다.
+- **영화**: 한글 제목을 answer, 영문 제목을 subAnswer로 등록합니다.
+
+| 원본 제목 (rawTitle) | title | subtitle | answer | subAnswer |
 | --- | --- | --- | --- | --- |
-| 별칭 ID | aliasId | Long | O |  |
-| 별칭 값 | value | String | O | 예: Boy With Luv |
-| 정규화 값 | normalizedValue | String | O | 공백 제거 + 소문자 변환 결과입니다. 예: boywithluv. 판정은 이 값과 비교합니다. |
-| 언어 | language | Enum | O | KO, EN, MIXED |
-
-**정답 별칭 생성 정책**
-
-- **노래**: 제목 정제와 부가정보 제거는 콘텐츠 수집 단계(노래 크롤링 문서 1-6, 1-7)에서 끝납니다. 문제 생성 시에는 노래의 `title`과 `subtitle`(빈 값이 아니면)을 각각 별칭으로 등록합니다.
-- **영화**: 한글 제목과 영문 제목을 각각 별칭으로 등록합니다.
-
-| 원본 제목 (rawTitle) | title | subtitle | 생성되는 별칭 |
-| --- | --- | --- | --- |
-| 작은 것들을 위한 시 (Boy With Luv) feat. Halsey | 작은 것들을 위한 시 | Boy With Luv | 작은 것들을 위한 시, Boy With Luv |
-| Breath (넌 날 숨 쉬게 해) | 넌 날 숨 쉬게 해 | Breath | 넌 날 숨 쉬게 해, Breath |
-| 행복하니? (Part 2) (원제: Feel So Good) | 행복하니? | Feel So Good | 행복하니?, Feel So Good |
-| (I Can't Get No) Satisfaction (Mono Version) | Satisfaction | I Can't Get No Satisfaction | Satisfaction, I Can't Get No Satisfaction |
-| 비상 [2021 Remaster] | 비상 | (빈 값) | 비상 |
+| 작은 것들을 위한 시 (Boy With Luv) feat. Halsey | 작은 것들을 위한 시 | Boy With Luv | 작은 것들을 위한 시 | Boy With Luv |
+| Breath (넌 날 숨 쉬게 해) | 넌 날 숨 쉬게 해 | Breath | 넌 날 숨 쉬게 해 | Breath |
+| 행복하니? (Part 2) (원제: Feel So Good) | 행복하니? | Feel So Good | 행복하니? | Feel So Good |
+| (I Can't Get No) Satisfaction (Mono Version) | Satisfaction | I Can't Get No Satisfaction | Satisfaction | I Can't Get No Satisfaction |
+| 비상 [2021 Remaster] | 비상 | (빈 값) | 비상 | (빈 값) |
 
 부가정보 판단 기준(요약, 상세는 크롤링 문서 1-7)
 
 - 영어 키워드(feat, ver, version, remaster, live, ost 등)가 **단어로** 들어 있으면 부가정보입니다.
-- 흔한 단어(with, from, part, pt, for, by)는 **맨 앞에 올 때만** 부가정보입니다. 그래서 `(with 아이유)`는 부가정보, `(Boy With Luv)`는 별칭입니다.
+- 흔한 단어(with, from, part, pt, for, by)는 **맨 앞에 올 때만** 부가정보입니다. 그래서 `(with 아이유)`는 부가정보, `(Boy With Luv)`는 곡의 다른 이름입니다.
 - 연도(19xx, 20xx), 한국어 키워드(영화, 드라마, 원곡, 버전, 라이브 등)가 들어 있어도 부가정보입니다.
 
-### 3-4. 정답 제출 애그리거트
-
-**정답 제출 (루트)**
-
-| 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
-| --- | --- | --- | --- | --- |
-| 제출 ID | submissionId | Long | O |  |
-| 게임 ID / 라운드 번호 | gameId, roundNo | Long, Integer | O |  |
-| 참가자 ID | participantId | Long | O |  |
-| 입력값 | content | String | O | 채팅 원문입니다. |
-| 정답 여부 | correct | Boolean | O |  |
-| 서버 수신 시각 | receivedAt | DateTime | O | 선착순 판정 기준입니다. |
-
-### 3-5. 투표 애그리거트
+### 3-4. 투표 애그리거트
 
 **투표 (루트)**
 
@@ -252,40 +244,40 @@
 | 투표 종류 | voteType | Enum | O | HINT, SKIP |
 | 대상 힌트 종류 | targetHintType | Enum | X | HINT일 때만 존재합니다. ALBUM, ARTIST, RELEASE_DATE, 또는 다음 단계 정답 힌트(ANSWER_MASK → ANSWER_SYMBOL → ANSWER_PARTIAL)입니다. |
 | 발의자 ID | initiatorId | Long | O |  |
-| 투표 상태 | status | Enum | O | OPEN, PASSED, REJECTED, EXPIRED |
-| 통과 기준 | passThreshold | Enum | O | 아래 통과 기준 표를 따릅니다. |
+| 투표 상태 | status | Enum | O | OPEN(진행 중), PASSED(통과 기준 충족), EXPIRED(마감 시각까지 통과 기준 미충족). 반대 표시가 없으므로 부결 상태는 없습니다. |
 | 마감 시각 | deadline | DateTime | O |  |
 
 **통과 기준**
 
-| 투표 종류 | 참가자 수 | 통과 조건 |
-| --- | --- | --- |
-| 스킵 | 2명 이하 | 전원 찬성 |
-| 스킵 | 3명 이상 | 절반 이상 찬성 |
-| 힌트 (노래, 정답 힌트 포함) | 무관 | 절반 이상 '공개' |
+투표 종류(스킵, 힌트)와 관계없이 판정 시점의 참가자 수로 정합니다. 투표에 저장하지 않습니다.
+
+| 참가자 수 | 통과 조건 |
+| --- | --- |
+| 2명 이하 | 전원 찬성 |
+| 3명 이상 | 절반 이상 찬성 |
 
 "과반수 이상"은 **절반 이상**(찬성 수 × 2 ≥ 참가자 수)으로 판정합니다. 예: 3명 → 2명, 4명 → 2명, 5명 → 3명.
 
-**투표권 (내부 엔티티)**
+**투표 찬성 (내부 엔티티)**
 
 | 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
 | --- | --- | --- | --- | --- |
-| 참가자 ID | participantId | Long | O | 1인 1표입니다. |
-| 찬성 여부 | agree | Boolean | O |  |
-| 투표 시각 | votedAt | DateTime | O |  |
+| 참가자 ID | participantId | Long | O | 한 투표에 참가자당 한 번만 찬성할 수 있습니다. |
+| 찬성 시각 | approvedAt | DateTime | O |  |
 
-### 3-6. 콘텐츠 애그리거트
+### 3-5. 콘텐츠 애그리거트
 
 **노래 (루트)**
 
 | 속성 | 영문명 | 타입 | 필수 | 설명·규칙 |
 | --- | --- | --- | --- | --- |
 | 노래 ID | songId | Long | O | 최종 노래 목록(`radio_songs_final.json`)을 적재할 때 부여합니다. |
-| 제목 | title | String | O | 정제한 제목입니다. 한글이 있는 쪽을 씁니다. 정답 별칭입니다. |
-| 부제 | subtitle | String | X | 곡의 다른 이름입니다. 없으면 빈 값입니다. 정답 별칭입니다. |
+| 제목 | title | String | O | 정제한 제목입니다. 한글이 있는 쪽을 씁니다. 문제의 answer로 씁니다. |
+| 부제 | subtitle | String | X | 곡의 다른 이름입니다. 없으면 빈 값입니다. 문제의 subAnswer로 씁니다. |
 | 가수 | artists | List<ArtistName> | O | 원본에 적힌 순서대로 담습니다. 아래 값 객체를 따릅니다. |
-| 원본 제목 | rawTitle | String | O | 선곡표 원문입니다. 문제의 원본 정답으로 씁니다. |
+| 원본 제목 | rawTitle | String | O | 선곡표 원문입니다. |
 | 원본 가수 | rawArtist | String | O | 선곡표 원문입니다. |
+| 방송 수 | playCount | Integer | O | 모든 라디오에서 이 곡이 나온 방송 수입니다. 출제 빈도 조절에 참고합니다. |
 | 앨범명 | albumName | String | X | 정답 노출 위험이 있어 힌트로 사용하지 않습니다. |
 | 앨범 이미지 URL | albumImageUrl | String | X |  |
 | 발매일 | releaseDate | Date | X |  |
@@ -305,6 +297,7 @@
 
 - 선곡표는 게임 중에 조회하지 않습니다. 오프라인 배치로 최종 노래 목록을 만들고, 게임은 그 목록에서 출제합니다.
 - 가사 없는 곡(반주·MR, 연주 시그널·BGM)과 아티스트가 없는 곡(Various Artists, OST 등)은 목록에서 제외합니다.
+- 배철수의 음악캠프 곡은 크롤링 후 제외하므로 수집 출처에 포함하지 않습니다.
 - 제목·가수 키가 같은 곡은 하나로 합치고, 가장 많이 나온 표기를 대표 표기로 씁니다.
 - 규칙으로 정제하지 못한 곡(메들리, 클래식 작품명, 한글·영문 없는 제목 등)은 최종 목록에서 빼고 사람이 검토합니다.
 
@@ -316,8 +309,8 @@
 | --- | --- | --- | --- | --- |
 | 영화 ID | movieId | Long | O |  |
 | KOBIS 영화 코드 | kobisMovieCode | String | O | 수집·보강용 외부 ID입니다. |
-| 제목 | title | String | O | 한글 제목입니다. 정답 별칭 후보입니다. |
-| 영문 제목 | titleEn | String | X | 정답 별칭 후보입니다. |
+| 제목 | title | String | O | 한글 제목입니다. 문제의 answer로 씁니다. |
+| 영문 제목 | titleEn | String | X | 문제의 subAnswer로 씁니다. |
 | 관객 수 | audienceCount | Long | O |  |
 | 개봉일 | releaseDate | Date | O |  |
 | 감독 | directors | List<String> | O |  |
@@ -337,7 +330,7 @@
 | 이미지 URL | imageUrl | String | O |  |
 | 노출 순서 | displayOrder | Integer | O | 스틸컷 게임에서 10초마다 이 순서로 넘어갑니다. |
 
-### 3-7. 오류 신고 애그리거트
+### 3-6. 오류 신고 애그리거트
 
 **오류 신고 (루트)**
 
@@ -346,12 +339,12 @@
 | 신고 ID | reportId | Long | O |  |
 | 문제 ID | questionId | Long | O |  |
 | 신고자 닉네임 | reporterNickname | String | O | 비회원이므로 참가자 ID 대신 닉네임을 스냅샷으로 저장합니다. |
-| 오류 유형 | reportType | Enum | O | WRONG_ANSWER(정답 오류), MISSING_ALIAS(정답 누락), MEDIA_ERROR(음원·이미지 오류), OTHER |
+| 오류 유형 | reportType | Enum | O | WRONG_ANSWER(정답 오류), MISSING_ANSWER(정답 누락), MEDIA_ERROR(음원·이미지 오류), OTHER |
 | 상세 내용 | description | String | X |  |
 | 처리 상태 | status | Enum | O | RECEIVED, RESOLVED, REJECTED |
 | 신고 시각 | createdAt | DateTime | O |  |
 
-### 3-8. 문제 통계 (백오피스 조회 모델)
+### 3-7. 문제 통계 (백오피스 조회 모델)
 
 애그리거트가 아니라 라운드 결과에서 집계하는 조회 모델입니다. 라운드의 문제 ID와 상태를 반드시 보존해야 합니다.
 
@@ -370,8 +363,6 @@
 | --- | --- |
 | 방 | 최대 인원, 초대 코드 형식, 방장 위임 규칙, 비회원 재접속 정책 |
 | 게임 | 목표 점수 설정 주체·범위, 문제 소진 시 종료 처리, 라운드 제한 시간 |
-| 정답 판정 | 특수문자 제거 여부, 정답 힌트의 기준 문자열 (title vs subtitle), 정답 제출 기록 저장 여부 |
 | 투표 | 투표 시간, 투표 인원 기준 (접속 중인 참가자만인지) |
-| 콘텐츠 | 재생 음원 출처, OST 수집 출처, 오프닝·시그널일 가능성이 높은 곡([크롤링 결과](../initial_crawler/records/2026-09-29-music.md#오프닝일-가능성이-높은-곡))의 출제 빈도 처리 |
+| 콘텐츠 | 재생 음원 출처, OST 수집 출처, 방송 수(playCount)를 출제 확률에 반영하는 방식, 오프닝·시그널일 가능성이 높은 곡(크롤링 문서 1-12)의 출제 빈도 처리 |
 | 영화 게임 | 스무고개 차례 순서를 게임 단위로 정할지 라운드 단위로 정할지, 시놉시스 내 제목 가림 방식 |
-
