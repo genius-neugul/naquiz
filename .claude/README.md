@@ -14,7 +14,7 @@
 │   ├── sync-docs/         /sync-docs  코드와 문서 동기화
 │   └── devlog/            /devlog     개발일지·인수인계
 └── agents/
-    ├── test-runner.md     테스트 실행 (Haiku)
+    ├── test-runner.md     core/ Gradle 테스트 실행 (Haiku)
     ├── code-reviewer.md   core/ 서버 변경분 리뷰 (Sonnet)
     └── docs-syncer.md     문서 동기화 (Sonnet)
 ```
