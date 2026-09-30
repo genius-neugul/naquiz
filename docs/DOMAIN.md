@@ -219,14 +219,14 @@
 | 콘텐츠 ID | contentId | Long | O | 노래 게임은 songId, 영화 게임(스무고개·스틸컷)은 movieId입니다. |
 | 정답 | answer | String | O | 노래는 `title`, 영화는 한글 제목(`title`)입니다. 정답 힌트의 기준 문자열입니다. 예: 작은 것들을 위한 시 |
 | 보조 정답 | subAnswer | String | X | 노래는 `subtitle`, 영화는 영문 제목(`titleEn`)입니다. 없으면 빈 값입니다. 예: Boy With Luv |
-| 활성 여부 | active | Boolean | O | 오류 신고 확정 시 비활성화합니다. |
+| 활성 여부 | active | Boolean | O | 오류 신고를 처리하면서 정답을 고쳐도 쓸 수 없는 문제면 비활성화합니다. |
 | 검수 상태 | reviewStatus | Enum | O | PENDING(검수 대기), APPROVED(승인), REJECTED(반려). APPROVED이고 활성인 문제만 출제합니다. 데일리 크롤링으로 생긴 문제는 PENDING, 초기 데이터(`initial_crawler/data/`)로 적재한 문제는 APPROVED로 시작합니다. |
 | 검수한 관리자 ID | reviewedByAdminId | Long | X | PENDING이 아닐 때 존재합니다. |
 | 검수 시각 | reviewedAt | DateTime | X |  |
 
 판정은 입력값과 answer, subAnswer를 각각 정규화해 비교하고, 둘 중 하나와 같으면 정답입니다. 예: 입력 `boy with luv`는 subAnswer `Boy With Luv`와 정규화 값(boywithluv)이 같아 정답입니다. 특수문자는 그대로 비교합니다 (예: `행복하니?`는 `행복하니`와 다릅니다).
 
-PENDING인 문제는 관리자가 answer·subAnswer를 고칠 수 있습니다.
+관리자는 검수 상태와 관계없이 answer·subAnswer를 고칠 수 있습니다. 검수할 때와 오류 신고를 처리할 때 고칩니다.
 
 **정답 정책**
 
@@ -367,6 +367,7 @@ PENDING인 문제는 관리자가 answer·subAnswer를 고칠 수 있습니다.
 | 문제 ID | questionId | Long | O |  |
 | 신고자 닉네임 | reporterNickname | String | O | 비회원이므로 참가자 ID 대신 닉네임을 스냅샷으로 저장합니다. |
 | 오류 유형 | reportType | Enum | O | WRONG_ANSWER(정답 오류), WRONG_HINT(힌트 오류), OTHER(그 외) |
+| 제안 정답 | suggestedAnswer | String | X | 오류 유형이 WRONG_ANSWER일 때 신고자가 입력하는 올바른 정답입니다. 관리자 페이지에서 보고 정답을 고칠 때 참고합니다. |
 | 상세 내용 | description | String | X |  |
 | 처리 상태 | status | Enum | O | RECEIVED(접수), RESOLVED(문제를 수정하거나 비활성화함), REJECTED(오류가 아님) |
 | 신고 시각 | createdAt | DateTime | O |  |
@@ -417,7 +418,7 @@ PENDING인 문제는 관리자가 answer·subAnswer를 고칠 수 있습니다.
 | 정답 수 | solvedCount | 상태가 SOLVED인 라운드 수 |
 | 스킵 수 | skippedCount | 상태가 SKIPPED인 라운드 수 |
 | 정답률 | solveRate | 정답 수 ÷ 출제 수 |
-| 힌트 공개 수 | revealedHintCount | 해당 문제 라운드들의 공개된 힌트·공개된 단서 수 합계 |
+| 힌트 공개 수 | revealedHintCount | 해당 문제 라운드들의 공개된 힌트(정답 힌트 포함)·공개된 단서 수 합계. 자동으로 공개되는 힌트는 뺍니다. |
 | 라운드당 힌트 공개 수 | avgRevealedHintCount | 힌트 공개 수 ÷ 출제 수 |
 
 이후 단계에서 정답률이 높은 문제의 출제 확률을 높이는 데 사용합니다 (1차 MVP 범위 밖).
@@ -433,7 +434,7 @@ PENDING인 문제는 관리자가 answer·subAnswer를 고칠 수 있습니다.
 | 공개 수 | revealCount | 그 종류가 공개된 횟수 |
 | 공개 라운드 비율 | revealRate | 그 종류가 공개된 라운드 수 ÷ 그 게임 종류의 전체 라운드 수 |
 
-스틸컷 게임의 STILL_CUT처럼 시간이 지나 자동으로 공개되는 힌트는 참가자가 고른 게 아니므로 따로 표시합니다.
+정답 힌트와 단서를 포함합니다. 스틸컷 게임의 STILL_CUT처럼 시간이 지나 자동으로 공개되는 힌트는 참가자가 고른 게 아니므로 뺍니다.
 
 ## 4. 미정 사항
 
