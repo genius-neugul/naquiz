@@ -1,0 +1,177 @@
+# 아키텍처 컨벤션
+
+## 목표
+
+프로젝트는 **도메인 중심의 레이어드 아키텍처를 사용**한다. **핵심 목표는 service가 상세 구현을 알지 않고도 비즈니스 흐름을 설명할 수 있게 만드는 것**이다. 신규 입사자, 기획자, 운영 담당자가 service 메서드를 읽었을 때 대략적인 업무 흐름을 이해할 수 있어야 한다.
+
+이 문서는 Gemini Kim의 글 **지속 성장 가능한 소프트웨어를 만들어가는 방법**의 방향성을 프로젝트 컨벤션으로 구체화한 것이다.
+
+## 기본 패키지 구조
+
+도메인을 최상위 기준으로 나누고, 도메인 내부에서 레이어를 나눈다.
+
+```java
+geniusneugul.project.core
+├── common
+│   ├── exception        // ErrorCode, BusinessException, ErrorResponse, GlobalExceptionHandler
+│   ├── domain/event     // DomainEvent
+│   └── infra/event      // EventPublisher
+└── room
+    ├── presentation
+    ├── service
+    │   └── implement
+    ├── infra
+    └── domain
+```
+
+| 패키지 | 역할 |
+| --- | --- |
+| common | 도메인 공통 요소. 에러 코드·예외(`exception`), 이벤트(`domain/event`, `infra/event`) |
+| presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별 |
+| service | 비즈니스 흐름 조립, 유스케이스 단위 트랜잭션 경계 |
+| service/implement | 비즈니스 흐름을 구성하는 상세 구현 도구. service의 하위 패키지로 둔다 |
+| infra | 저장소 접근(Repository), 외부 API·캐시·메시징 기술 격리 |
+| domain | 도메인 모델(JPA 엔티티 겸용), 값 객체, 정책, 상태 전이 규칙 |
+
+## 의존성 방향
+
+```java
+presentation -> service -> implement -> infra
+
+domain: presentation을 제외한 모든 레이어가 참조하는 핵심 모델
+```
+
+1. 상위 레이어는 하위 레이어만 참조한다.
+2. 하위 레이어는 상위 레이어를 참조하지 않는다.
+3. 레이어를 건너뛰지 않는다. 예를 들어 service가 infra를 직접 참조하지 않는다.
+4. 동일 레이어 간 참조는 피한다. 단, implement는 협력 도구 성격이 강하므로 다른 implement를 참조할 수 있다.
+5. 다른 도메인이 필요하면 그 도메인의 implement(Reader 등)를 직접 주입받는다. 다른 도메인의 service·infra는 참조하지 않으며, 도메인 간 순환 참조는 금지한다.
+6. domain은 레이어 사이의 단계가 아니라 핵심 모델이다. service·implement·infra가 참조할 수 있고, **presentation은 참조하지 않는다**(service의 result 모델만 받는다). domain은 다른 레이어를 참조하지 않으며(domain -> infra 금지), 공통 매핑 상위 클래스도 domain에 둔다.
+
+## Service 작성 규칙
+
+service는 비즈니스 로직을 "직접 구현"하는 곳이 아니라 비즈니스 흐름을 "표현"하는 곳이다.
+
+**허용한다.**
+
+- 유스케이스를 나타내는 public 메서드
+- 트랜잭션 경계
+- 입력 커맨드 검증 중 비즈니스 흐름에 가까운 검증
+- implement 객체를 조합한 업무 흐름
+- 도메인 객체의 정책 호출
+
+예시
+
+```java
+@Transactional
+public JoinResult join(JoinCommand command) {
+    Room room = roomReader.readByInviteCode(command.inviteCode());
+    roomEntryValidator.validate(room);
+    Participant participant = participantAppender.append(room, command.nickname());
+
+    return JoinResult.from(participant);
+}
+```
+
+**금지한다.**
+
+- Repository 직접 주입
+- JPA, QueryDSL, Redis, 메시징 클라이언트, HTTP Client 같은 기술 객체 직접 사용
+- 요청 DTO를 그대로 서비스 인자로 받기, 응답 DTO를 서비스에서 직접 조립하기
+- 복잡한 if, for, switch가 누적되어 구현 상세가 드러나는 코드
+- 외부 API 응답 모델이나 DB Entity에 강하게 결합된 코드
+
+## Implement 작성 규칙
+
+implement는 서비스가 사용하는 협력 도구다. 하나의 클래스는 하나의 명확한 역할을 가지며, 이름만 봐도 서비스 흐름에서 맡는 역할이 드러나야 한다.
+
+네이밍은 역할 중심으로 한다 — 조회 `RoomReader`, 생성 `ParticipantAppender`·`InviteCodeIssuer`, 수정 `ScoreUpdater`, 검증 `RoomEntryValidator`, 계산 `PassThresholdCalculator`, 외부 연동 조율 `SongInfoRequester`·`MessageSender`.
+
+- implement는 상세 구현 로직을 가지며, infra가 제공하는 인터페이스나 저장소 접근 객체를 사용할 수 있다.
+- 다른 implement와 협력할 수 있지만 순환 참조는 금지하고, 재사용 가능한 단위로 작게 유지한다.
+
+## Infra 작성 규칙
+
+infra는 기술 의존성을 격리한다.
+
+- Spring Data Repository, QueryDSL, Redis, 외부 API Client 구현체는 이 레이어에 둔다.
+- **JPA 엔티티는 domain에 둔다.** 도메인 모델 클래스에 JPA 애노테이션을 붙여 쓰므로 별도 엔티티 클래스와 변환 코드를 만들지 않는다. Repository는 도메인 모델을 그대로 다룬다.
+- 상위 레이어에는 기술 세부사항을 노출하지 않는다. 외부 API 응답 DTO를 그대로 올리지 않고, 필요하면 순수 인터페이스와 조회 결과 모델을 제공한다.
+- 쿼리 방식 변경(Spring Data ↔ QueryDSL, 페이징·정렬 전략)은 service나 implement로 번지지 않아야 한다.
+
+> 도메인 모델이 JPA 엔티티를 겸하므로 **JPA 자체를 벗어나는 전환은 domain 수정을 수반한다.** 변환 코드와 클래스 중복을 없애는 대신 이 비용을 받아들인 선택이다.
+
+> **미정:** 진행 중인 게임 상태(방·게임·라운드·투표)를 DB·메모리·Redis 중 어디에 둘지 정해지지 않았다. 이 문서의 "도메인 모델 = JPA 엔티티" 전제는 저장소가 정해지면 다시 본다.
+
+## 이벤트 발행 규약
+
+외부 메시지 큐가 생기기 전까지는 **인프로세스 발행기 하나만** 둔다.
+
+### 배치
+
+```java
+common
+├── domain
+│   └── event
+│       └── DomainEvent          // 마커 인터페이스, 프레임워크 의존 없음
+└── infra
+    └── event
+        └── EventPublisher       // 인프로세스 발행기. 내부적으로 ApplicationEventPublisher를 쓴다
+```
+
+- implement는 `EventPublisher`만 참조한다. `ApplicationEventPublisher` 같은 기술 객체를 직접 주입받지 않는다.
+
+### 이벤트 페이로드
+
+이벤트는 **직렬화 가능한 불변 record**로 정의한다. 식별자·원시값·값 객체·시각 타입만 담는다. 지금은 인프로세스로만 전달되지만, 외부 큐로 옮길 때 페이로드를 다시 만들지 않기 위한 규칙이다.
+
+금지한다.
+
+- JPA Entity, 지연 로딩 프록시, 연관 컬렉션
+- 영속성 컨텍스트나 트랜잭션이 살아 있어야 읽을 수 있는 값
+- **도메인 모델.** 상태가 필요한 리스너는 식별자로 다시 조회한다.
+
+```java
+// 금지 — 도메인 모델을 담는다
+public record RoundStartedEvent(Round round) implements DomainEvent {}
+
+// 허용
+public record RoundStartedEvent(Long roomId, Long roundId, OffsetDateTime occurredAt)
+        implements DomainEvent {}
+```
+
+**이 규약은 인프로세스에서는 어겨도 동작하므로 리뷰에서 확인한다.**
+
+### 실패 처리
+
+`@TransactionalEventListener(AFTER_COMMIT)`에서 발생한 예외는 호출자에게 전파되지 않고 사라지며, `@Async`가 붙으면 더 확실히 묻힌다. 비동기 수신 실패는 `AsyncUncaughtExceptionHandler`로 ERROR 로그를 남긴다. **리스너에서 예외를 삼키지 않는다.**
+
+### 외부 큐 도입 시
+
+외부 메시지 큐를 도입하면 이 절을 구체화한다. 그때 정할 것: `EventPublisher`를 포트로 두고 기술별 어댑터를 둘지, 어댑터 선택 방식(프로퍼티), 핸들러 멱등성(at-least-once 대비), 이벤트 순서 비의존, 같은 프로세스 안에서만 이어져야 하는 신호의 분리.
+
+## Domain 작성 규칙
+
+domain은 프로젝트의 핵심 개념과 정책을 담는다.
+
+- 값 객체는 불변으로 설계하고, 상태 전이 규칙은 도메인 객체 내부에 둔다. 단순 데이터 컨테이너가 아니라 의미 있는 행위를 제공한다.
+- **JPA 매핑 애노테이션은 허용한다.** `@Entity`, `@Table`, `@Id`, `@Column`, `@Embedded`, `@Embeddable`, `@Enumerated`, `@MappedSuperclass`, 연관 매핑, 그리고 Lombok `@Getter`·`@NoArgsConstructor(access = PROTECTED)`까지다.
+- **Spring과 Web 의존은 두지 않는다.** `@Component`, `@Transactional`, `ResponseEntity`, `HttpStatus`는 domain에 들어오지 않는다. 비즈니스 규칙 위반은 `common/exception`의 `BusinessException`과 `ErrorCode`로 던진다(`EXCEPTION.md`). **`ErrorCode`가 `HttpStatus`를 가지므로 domain이 `ErrorCode`를 통해 간접적으로 Web에 의존하는 것은 허용한다.** domain 코드에서 `HttpStatus`를 직접 쓰지는 않는다.
+- `@Entity` 클래스는 record로 만들 수 없다. 기본 생성자와 가변 필드가 필요하므로 `@NoArgsConstructor(access = PROTECTED)` 일반 클래스로 둔다. **setter는 두지 않는다.** 상태 변경은 의미 있는 도메인 메서드로만 한다.
+
+## 트랜잭션 경계
+
+- 기본 트랜잭션 경계는 service public 메서드에 둔다.
+- 조회 전용 유스케이스는 `@Transactional(readOnly = true)`를 사용한다.
+- implement에는 원칙적으로 트랜잭션을 선언하지 않는다.
+- 하위 도구 클래스에서 독립 트랜잭션이 필요하면 이유를 PR에 명시한다.
+
+## 리뷰 체크리스트
+
+- service 메서드가 비즈니스 흐름으로 읽히며, Repository나 외부 기술 객체를 직접 참조하지 않는가?
+- implement 클래스가 하나의 명확한 역할을 갖는가?
+- infra가 Repository·외부 클라이언트 기술을 상위 레이어에 전파하지 않는가? (엔티티는 domain이므로 여기 해당하지 않는다)
+- presentation이 domain을 참조하지 않고, 응답이 result → 응답 DTO로만 나가는가?
+- domain에 Spring·Web 의존이 들어오지 않았는가? (`ErrorCode`를 통한 간접 의존만 허용)
+- 레이어를 건너뛰는 참조가 없고, 다른 도메인은 implement로만 참조하며 순환 참조가 없는가?
+- 이벤트 페이로드가 직렬화 가능한 불변 record이며, 리스너가 예외를 삼키지 않는가?

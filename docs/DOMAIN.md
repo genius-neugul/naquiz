@@ -105,6 +105,7 @@
 | 참가자 ID | participantId | Long | O |  |
 | 닉네임 | nickname | String | O | 같은 방 안에서 중복될 수 없습니다. |
 | 역할 | role | Enum | O | HOST, GUEST |
+| 참가자 토큰 | participantToken | String | O | 비회원 식별용입니다. 재접속에는 쓰지 않습니다(연결이 끊기면 즉시 퇴장). |
 | 게임 승리 횟수 | gameWins | Integer | X | 승자가 된 게임 수입니다. 승자 없이 끝난 게임은 세지 않습니다. |
 | 라운드 점수 | roundScore | Integer | X | 현재 게임의 누적 점수(Score)입니다. 정답 1회당 1점이고, 게임 시작 시 0으로 초기화합니다. |
 | 입장 시각 | joinedAt | DateTime | O |  |
@@ -444,4 +445,6 @@
 
 ## 4. 미정 사항
 
-현재 정해지지 않은 사항은 없습니다.
+| 구분 | 항목 |
+| --- | --- |
+| 방 | 참가자 식별 방식(참가자 토큰 발급·검증) |

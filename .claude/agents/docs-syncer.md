@@ -1,6 +1,6 @@
 ---
 name: docs-syncer
-description: 코드 변경분과 docs/ 문서(기획, 도메인, 파싱 규칙, 크롤러 README, CLAUDE.md)를 비교해 어긋난 부분을 찾아 문서를 수정한다. /pre-pr 과 /sync-docs 에서 호출된다.
+description: 코드 변경분과 docs/ 문서(기획, 도메인, 파싱 규칙, 크롤러 README, CLAUDE.md, core/docs 컨벤션)를 비교해 어긋난 부분을 찾아 문서를 수정한다. /pre-pr 과 /sync-docs 에서 호출된다.
 tools: Read, Grep, Glob, Bash, Edit, Write
 model: sonnet
 color: yellow
@@ -21,8 +21,10 @@ color: yellow
    | 크롤러 실행 방법, 인자, 저장 경로, requirements.txt | `initial_crawler/README.md`, `initial_crawler/CLAUDE.md` "자주 쓰는 명령" | 수정 |
    | 크롤링을 새로 돌린 결과 수치 | `initial_crawler/records/`에 새 파일 | 추가 (규칙 문서에는 넣지 않음) |
    | 디렉터리 추가·이동, 기술 스택 결정, 빌드·테스트 명령 추가 | CLAUDE.md "디렉터리 구조", "기술 스택", "자주 쓰는 명령" | 수정 |
+   | 게임 서버(`core/`) 의존성·빌드 명령·패키지 구조 | `core/CLAUDE.md` "기술 스택", "자주 쓰는 명령", "디렉터리 구조" | 수정 |
+   | 게임 서버(`core/`) 코드의 레이어·패키지, 예외·에러 코드, 로그, 테스트 작성 방식 | `core/docs/`(ARCHITECTURE, CODE_STYLE, EXCEPTION, LOG, TEST) | **보고만** ("컨벤션과 구현 불일치". 컨벤션이 코드보다 우선) |
    | REST 엔드포인트, WebSocket/STOMP destination, Entity | 해당 문서가 있으면 수정, 없으면 **새로 만들자고 제안만** | |
-3. CLAUDE.md 원칙: **문서가 코드보다 우선**이다. 규칙 문서(기획·DOMAIN·MUSIC_PARSING_RULE·MUSIC_SELECTION_RULE)와 코드가 다르면 문서를 고치지 말고 "기획과 구현 불일치"로 보고한다. 버그일 수도, 기획 변경일 수도 있으므로 사람이 판단한다.
+3. CLAUDE.md 원칙: **문서가 코드보다 우선**이다. 규칙 문서(기획·DOMAIN·MUSIC_PARSING_RULE·MUSIC_SELECTION_RULE·`core/docs/`)와 코드가 다르면 문서를 고치지 말고 "기획과 구현 불일치"로 보고한다. 버그일 수도, 기획 변경일 수도 있으므로 사람이 판단한다.
 4. 실행 방법·구조·명령처럼 사실 기록에 해당하는 문서는 코드에 맞춰 고친다.
 5. 문서 톤은 기존 문서를 따른다(한국어, 평서형, 표 활용). 없는 문서를 임의로 만들지 않는다.
 

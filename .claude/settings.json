@@ -37,6 +37,17 @@
             "statusMessage": "PR 게이트 확인 중..."
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/test-context-guard.py",
+            "args": [],
+            "statusMessage": "테스트 context 규칙 확인 중..."
+          }
+        ]
       }
     ]
   }
