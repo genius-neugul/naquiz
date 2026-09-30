@@ -84,6 +84,7 @@ radio_songs_final.json에서 곡 선택
 
 - `contents.sectionListRenderer`의 **첫 번째 섹션**만 본다.
 - 각 항목의 `compactVideoRenderer`에서 `videoId`, 제목(`title.runs`의 첫 번째), 길이(`lengthText.runs`의 첫 번째, `m:ss` 또는 `h:mm:ss`)를 꺼낸다.
+- 고른 영상은 [음원](DOMAIN.md#3-5-콘텐츠-애그리거트)으로 저장하므로 다음도 함께 꺼낸다. 채널명(`longBylineText.runs`의 첫 번째), 조회수(`viewCountText.runs`의 첫 번째, 숫자만), 업로드 시기(`publishedTimeText.runs`의 첫 번째, `4 years ago` 같은 원문). 이 세 값은 응답에 없을 수 있다.
 - 검색 순서대로 **상위 5개**만 후보로 쓴다.
 
 ### 2-3. 영상 우선순위
