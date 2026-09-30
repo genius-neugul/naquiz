@@ -128,6 +128,7 @@
 | 차례 순서 | turnOrder | List<Long> | X | 영화 스무고개에서만 사용합니다. 무작위로 정한 참가자 순서입니다. |
 | 현재 차례 순서 인덱스 | currentTurnOrderIndex | Long | X | 영화 스무고개에서만 사용합니다. |
 | 차례 마감 시각 | turnDeadline | DateTime | X | 차례 시작 후 10초입니다. 지나면 다음 차례로 넘어갑니다(패스). |
+| 시작·종료 시각 | startedAt, endedAt | DateTime | O / X | 시작 시각은 시간 경과 힌트의 기준입니다. 종료 시각은 라운드가 끝날 때(SOLVED, SKIPPED, TIMED_OUT) 기록합니다. |
 
 **공개된 힌트 (내부 엔티티)**
 
