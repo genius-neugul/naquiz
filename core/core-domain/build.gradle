@@ -1,0 +1,11 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // ErrorCode가 HttpStatus를 가진다. 웹 서버는 앱 모듈만 넣는다.
+    api 'org.springframework:spring-web'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}

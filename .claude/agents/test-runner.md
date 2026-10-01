@@ -11,13 +11,13 @@ color: green
 
 ## 실행 순서
 1. `core/` 코드 변경이 있는지 확인한다.
-   - `git diff --name-only origin/HEAD...HEAD -- core/src core/build.gradle core/settings.gradle core/gradle` (비어 있으면 `git diff --name-only HEAD -- <같은 경로>`)
+   - `git diff --name-only origin/HEAD...HEAD -- core/*/src core/build.gradle core/*/build.gradle core/settings.gradle core/gradle` (비어 있으면 `git diff --name-only HEAD -- <같은 경로>`)
    - 둘 다 비어 있으면 실행하지 않고 `결과: 해당 없음 (core/ 코드 변경 없음)` 만 보고한다. 단, 전달받은 범위가 있으면 이 확인 없이 그 범위를 실행한다.
 2. `core/` 에서 Gradle 테스트를 실행한다.
    - 전체: `cd core && ./gradlew test --console=plain -q`
    - 특정 클래스만: `--tests '패키지.클래스'`
    - 테스트가 아직 없으면 "테스트 없음"이라고 보고한다(실패로 치지 않음)
-3. 로그 전체를 읽지 말고 `core/build/test-results/test/*.xml` 에서 `<failure` 만 grep 한다.
+3. 로그 전체를 읽지 말고 `core/*/build/test-results/test/*.xml` 에서 `<failure` 만 grep 한다.
 
 ## 보고 형식 (이 형식 외의 말은 하지 않는다)
 ```
