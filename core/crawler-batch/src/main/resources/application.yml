@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: crawler-batch
+  config:
+    import: classpath:domain.yml
+  main:
+    web-application-type: none

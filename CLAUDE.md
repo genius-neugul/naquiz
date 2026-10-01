@@ -33,10 +33,13 @@
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
 ├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
 └── skills/            /pre-pr, /sync-docs, /devlog
-core/                  게임 서버 (Spring Boot, Gradle)
+core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션
-└── src/               소스·테스트
+├── core-domain/       라이브러리. 엔티티·저장소·implement, 공통 예외·이벤트
+├── game-api/          실행 앱. 게임·방·투표 API
+├── admin-api/         실행 앱. 백오피스 API
+└── crawler-batch/     실행 앱. 데일리 크롤링
 front/                 프론트엔드 (npm workspaces, Vite + React + TypeScript)
 ├── CLAUDE.md          프론트 기술 스택, 명령, 작업 규칙
 ├── apps/game/         게임 앱
@@ -62,7 +65,7 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 - 백엔드: Java 25, Spring Boot (`core/`). 상세는 `core/CLAUDE.md`
 - 프론트엔드: React 19, TypeScript, Vite, CSS Modules, npm workspaces (`front/`). 상세는 `front/CLAUDE.md`
 - 실시간 통신:
-- DB / 캐시:
+- DB / 캐시: H2(로컬·테스트), MySQL(`local-dev` 프로필, docker-compose). 진행 중인 방·참가자는 서버 메모리. 상세는 `core/CLAUDE.md`
 - 데이터 수집: Python 3 (`initial_crawler/`)
 
 ## 자주 쓰는 명령

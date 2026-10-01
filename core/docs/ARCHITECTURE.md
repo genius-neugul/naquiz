@@ -8,7 +8,7 @@
 
 ## 모듈 구조
 
-`core/`는 Gradle 멀티모듈로 나눈다. 지금은 단일 모듈이고, 아래는 옮겨 갈 목표 구조다.
+`core/`는 Gradle 멀티모듈로 나눈다.
 
 ```
 core/
@@ -35,32 +35,43 @@ core/
 - **presentation·service는 앱 모듈에, implement·infra·domain은 core-domain에 둔다.** 앱끼리는 서로 의존하지 않는다. 두 앱이 같은 흐름을 쓰면 implement로 내려 core-domain에서 공유한다.
 - **멀티모듈에서는 implement 패키지를 `<도메인>.implement`로 둔다.** implement는 여러 앱의 service가 함께 쓰는 core-domain의 레이어이고, core-domain에는 service가 없으므로 `service` 아래에 두지 않는다. 의존성 방향(presentation → service → implement → infra)은 그대로다.
 - **외부 API 클라이언트는 해당 도메인의 infra에 둔다.** 별도 `external` 패키지를 만들지 않는다.
-- `ErrorCode`가 `HttpStatus`를 가지므로 core-domain은 `spring-web`에 의존한다. 웹 서버(`spring-boot-starter-web`)는 앱 모듈만 넣는다.
+- `ErrorCode`가 `HttpStatus`를 가지므로 core-domain은 `spring-web`에 의존한다. 웹 서버(`spring-boot-starter-webmvc`)는 game-api·admin-api만 넣는다.
+- **모든 모듈의 기본 패키지는 `geniusneugul.project.core`로 같다.** 앱 클래스가 이 패키지에 있어 core-domain의 엔티티·Repository·빈을 별도 스캔 설정 없이 찾는다.
+- **DB·JPA 설정은 core-domain의 `domain.yml`(프로필별 `domain-<프로필>.yml`) 한 벌이다.** 각 앱은 `spring.config.import: classpath:domain.yml`로 가져오고, 앱 설정에는 앱 이름·포트 같은 앱 고유 값만 둔다.
 
 ## 기본 패키지 구조
 
-도메인을 최상위 기준으로 나누고, 도메인 내부에서 레이어를 나눈다. 아래는 지금의 단일 모듈 기준이다. 멀티모듈로 옮기면 `ErrorResponse`·`GlobalExceptionHandler`는 앱 모듈(game-api, admin-api)의 `common/exception`으로, implement는 `<도메인>.implement`로 간다([모듈 구조](#모듈-구조)).
+도메인을 최상위 기준으로 나누고, 도메인 내부에서 레이어를 나눈다. 같은 도메인 패키지가 여러 모듈에 걸쳐 있고, 레이어마다 놓이는 모듈이 정해져 있다([모듈 구조](#모듈-구조)).
 
 ```java
+// core-domain
 geniusneugul.project.core
 ├── common
-│   ├── exception        // ErrorCode, BusinessException, ErrorResponse, GlobalExceptionHandler
+│   ├── exception        // ErrorCode, BusinessException
+│   ├── domain           // 여러 도메인이 함께 쓰는 값(GameType)
 │   ├── domain/event     // DomainEvent
 │   └── infra/event      // EventPublisher
 └── room
-    ├── presentation
-    ├── service
-    │   └── implement
+    ├── implement
     ├── infra
     └── domain
+
+// game-api (admin-api도 같은 형태)
+geniusneugul.project.core
+├── GameApiApplication
+├── common
+│   └── exception        // ErrorResponse, GlobalExceptionHandler
+└── room
+    ├── presentation
+    └── service
 ```
 
 | 패키지 | 역할 |
 | --- | --- |
-| common | 도메인 공통 요소. 에러 코드·예외(`exception`), 이벤트(`domain/event`, `infra/event`) |
+| common | 도메인 공통 요소. core-domain: 에러 코드·예외(`exception`), 여러 도메인이 함께 쓰는 값(`domain`), 이벤트(`domain/event`, `infra/event`). 앱 모듈: 에러 응답·예외 핸들러(`exception`) |
 | presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별 |
 | service | 비즈니스 흐름 조립, 유스케이스 단위 트랜잭션 경계 |
-| service/implement | 비즈니스 흐름을 구성하는 상세 구현 도구. service의 하위 패키지로 둔다(멀티모듈에서는 `<도메인>.implement`, [모듈 구조](#모듈-구조)) |
+| implement | 비즈니스 흐름을 구성하는 상세 구현 도구. core-domain의 `<도메인>.implement`에 둔다([모듈 구조](#모듈-구조)) |
 | infra | 저장소 접근(Repository), 외부 API·캐시·메시징 기술 격리 |
 | domain | 도메인 모델(JPA 엔티티 겸용), 값 객체, 정책, 상태 전이 규칙 |
 
@@ -132,7 +143,10 @@ infra는 기술 의존성을 격리한다.
 
 > 도메인 모델이 JPA 엔티티를 겸하므로 **JPA 자체를 벗어나는 전환은 domain 수정을 수반한다.** 변환 코드와 클래스 중복을 없애는 대신 이 비용을 받아들인 선택이다.
 
-> **미정:** 진행 중인 게임 상태(방·게임·라운드·투표)를 DB·메모리·Redis 중 어디에 둘지 정해지지 않았다. 이 문서의 "도메인 모델 = JPA 엔티티" 전제는 저장소가 정해지면 다시 본다.
+> **저장 위치는 통계 필요 여부로 나눈다.** 백오피스 통계(문제·힌트·투표)에 쓰이거나 원래 영속 데이터인 모델은 JPA 엔티티를 겸한다. 통계에 쓰이지 않는 **방·참가자는 JPA 애노테이션 없는 순수 도메인 객체로 서버 메모리에 둔다.** 방 Repository는 infra의 인터페이스로 두고 메모리 구현체를 쓴다.
+>
+> - 참가자를 저장하지 않으므로 다른 엔티티의 참가자 ID(승자, 정답자, 단서를 연 참가자, 투표 찬성)는 FK 없는 값으로만 남긴다.
+> - 라운드의 차례 필드(차례 순서, 현재 차례 인덱스, 차례 마감 시각)는 진행 중에만 쓰므로 `@Transient`로 둔다.
 
 ## 이벤트 발행 규약
 

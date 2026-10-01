@@ -1,1 +1,3 @@
 rootProject.name = 'core'
+
+include 'core-domain', 'game-api', 'admin-api', 'crawler-batch'

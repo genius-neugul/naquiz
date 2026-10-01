@@ -114,7 +114,7 @@ gh auth login
 
 ### PreToolUse → `test-context-guard.py`
 
-- Claude가 `Write`·`Edit`로 `core/src/test/**/*.java`를 쓰기 전에 검사한다. 공통 상위 클래스를 두는 `core/src/test/java/geniusneugul/project/core/support/` 아래 파일과 `core/src/test` 밖의 파일은 통과시킨다.
+- Claude가 `Write`·`Edit`로 `core/<모듈>/src/test/**/*.java`를 쓰기 전에 검사한다. 모듈마다 공통 상위 클래스를 두는 `core/<모듈>/src/test/java/geniusneugul/project/core/support/` 아래 파일과 테스트 밖의 파일은 통과시킨다.
 - Bash(heredoc, sed 등)로 쓴 파일은 검사하지 못한다. 그래서 `core/CLAUDE.md`에 테스트 파일은 Write/Edit로만 쓴다는 규칙을 두었다.
 - 이번 쓰기로 다음 패턴이 **새로 생기면** 막고 이유를 Claude에게 돌려준다. 기존 파일에 이미 있던 것은 막지 않는다.
   - `@DirtiesContext`

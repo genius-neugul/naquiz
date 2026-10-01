@@ -8,8 +8,10 @@ import sys
 from pathlib import Path
 
 DOC = "core/docs/TEST.md 「Spring Context 재사용」"
-# 검사하지 않는 공통 상위 클래스·설정 경로. 이 경로 하나만 예외다.
-SUPPORT_DIR = "/core/src/test/java/geniusneugul/project/core/support/"
+# 검사 대상: core/ 각 모듈(game-api, admin-api, crawler-batch, core-domain)의 테스트 코드.
+TEST_PATH = re.compile(r"/core/[^/]+/src/test/")
+# 검사하지 않는 공통 상위 클래스·설정 경로. 모듈마다 이 경로만 예외다.
+SUPPORT_DIR = "/src/test/java/geniusneugul/project/core/support/"
 
 MOCK_BEAN = re.compile(r"@(MockitoBean|MockitoSpyBean|MockBean|SpyBean)\b")
 INTEGRATION = re.compile(r"@SpringBootTest\b|\bextends\s+(IntegrationTestSupport|WebSocketTestSupport)\b")
@@ -44,7 +46,7 @@ def main() -> None:
     path = inp.get("file_path", "")
 
     norm = path.replace("\\", "/")
-    if "/core/src/test/" not in norm or not norm.endswith(".java") or SUPPORT_DIR in norm:
+    if not TEST_PATH.search(norm) or not norm.endswith(".java") or SUPPORT_DIR in norm:
         return
 
     p = Path(path)
