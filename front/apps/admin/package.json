@@ -1,0 +1,17 @@
+{
+  "name": "@naquiz/admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p . && vite build",
+    "typecheck": "tsc --noEmit -p .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@naquiz/shared": "*",
+    "@naquiz/ui": "*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}

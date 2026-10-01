@@ -1,0 +1,111 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: color-mix(in oklch, var(--ink) 40%, transparent);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 20px 60px color-mix(in oklch, var(--ink) 25%, transparent);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sub b {
+  color: var(--ink);
+}
+
+.close {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px 0 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r);
+  color: var(--muted);
+}
+
+.close:hover {
+  color: var(--ink);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.code {
+  height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: var(--r);
+  font-family: var(--mono);
+  font-size: 24px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.code:focus {
+  border-color: var(--ink);
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px;
+}
