@@ -1,0 +1,21 @@
+# local-dev 프로필용 MySQL. 계정은 core/.env 에 둔다(.env.example 참고).
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: naquiz-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: naquiz
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - naquiz-mysql-data:/var/lib/mysql
+
+volumes:
+  naquiz-mysql-data:
