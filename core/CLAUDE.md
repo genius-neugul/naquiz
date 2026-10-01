@@ -4,7 +4,7 @@
 
 ## 참고 문서
 
-- `docs/ARCHITECTURE.md`: 도메인 중심 레이어드 아키텍처. 모듈 구조(목표), 패키지 구조, 의존성 방향, 레이어별 작성 규칙, 트랜잭션 경계, 이벤트 발행 규약
+- `docs/ARCHITECTURE.md`: 도메인 중심 레이어드 아키텍처. 모듈 구조, 패키지 구조, 의존성 방향, 레이어별 작성 규칙, 트랜잭션 경계, 이벤트 발행 규약
 - `docs/CODE_STYLE.md`: 네이밍, Spring Bean 접미사, Lombok, 주석·상수 규칙
 - `docs/EXCEPTION.md`: 에러 응답 형식, ErrorCode, BusinessException, 예외를 던지는 위치
 - `docs/LOG.md`: 로그 prefix, 레벨, 로그를 남기는 위치, 민감 정보, Trace ID
@@ -19,7 +19,8 @@
 - Java 25, Spring Boot 4.1.1, Gradle (wrapper 포함)
 - 테스트: JUnit 5 (`spring-boot-starter-test`)
 - 실시간 통신:
-- 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`)
+- Gradle 멀티모듈: `core-domain`(라이브러리), `game-api`, `admin-api`, `crawler-batch`(실행 앱). 역할은 `docs/ARCHITECTURE.md` 「모듈 구조」
+- 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`). 설정은 `core-domain`의 `domain.yml` 한 벌
 - 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
 - 캐시: 없음
 - Lombok
@@ -36,34 +37,37 @@
 `core/` 에서 실행한다. 테스트는 메인 대화에서 직접 돌리지 않고 `test-runner` 에이전트에 맡긴다.
 
 ```bash
-./gradlew build      # 컴파일 + 테스트
-./gradlew test       # 테스트만
-./gradlew bootRun    # 로컬 실행 (H2 인메모리)
+./gradlew build                      # 전 모듈 컴파일 + 테스트
+./gradlew test                       # 전 모듈 테스트
+./gradlew :game-api:test             # 한 모듈만
+./gradlew :game-api:bootRun          # 게임 서버 로컬 실행 (H2 인메모리, 8080)
+./gradlew :admin-api:bootRun         # 관리자 API (8081)
+./gradlew :crawler-batch:bootRun     # 데일리 크롤링 (웹 없음)
 
 # MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정을 채운다
 docker compose up -d
 set -a; source .env; set +a
-./gradlew bootRun --args='--spring.profiles.active=local-dev'
+./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
 ```
 
 ## 디렉터리 구조
 
-지금은 단일 모듈이다. 멀티모듈(core-domain, game-api, admin-api, crawler-batch)로 나누는 목표 구조는 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#모듈-구조)에 있다.
-
 ```
 core/
 ├── docs/              서버 코드 컨벤션 (아키텍처, 스타일, 예외, 로그, 테스트)
-├── build.gradle
+├── settings.gradle    모듈 목록
+├── build.gradle       모듈 공통 설정 (Java 25, Boot BOM, Lombok, 테스트)
 ├── docker-compose.yml local-dev 프로필용 MySQL
 ├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
-└── src/
-    ├── main/java/geniusneugul/project/core/   도메인별 패키지 (docs/ARCHITECTURE.md)
-    │   ├── common/    에러 코드·예외, GameType, 이벤트
-    │   └── room, game, question, vote, song, movie, report, admin, crawl, statistics
-    ├── main/resources/   application.properties(H2), application-local-dev.properties(MySQL)
-    └── test/java/geniusneugul/project/core/
-        └── support/   통합 테스트 공통 상위 클래스·설정 (목록은 docs/TEST.md 「Spring Context 재사용」)
+├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
+│   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL)
+├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러
+├── admin-api/         실행 앱. admin·question·report·song·movie·statistics·crawl presentation·service
+└── crawler-batch/     실행 앱. crawl service
 ```
+
+- 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, game, question, vote, song, movie, report, admin, crawl, statistics)이다.
+- 앱 모듈의 `src/test/java/geniusneugul/project/core/support/`에 통합 테스트 공통 상위 클래스·설정을 둔다(목록은 docs/TEST.md 「Spring Context 재사용」).
 
 ## 작업 규칙
 
@@ -74,7 +78,8 @@ core/
 - **테스트를 쓰기 전에 검증할 행위 목록과 각각을 테스트하는 이유를 사용자에게 먼저 제시하고 확인받는다.**
 - 통합 테스트는 `support/`의 공통 상위 클래스를 상속해 Spring context를 재사용한다(`docs/TEST.md` 「Spring Context 재사용」). `@DirtiesContext`, 직접 붙인 `@SpringBootTest`, 테스트 클래스의 `@MockitoBean`은 훅이 쓰기 전에 막는다.
 - `support/`에는 `docs/TEST.md`에 나열된 상위 클래스만 둔다. 목록 밖의 상위 클래스가 필요하면 만들기 전에 먼저 묻는다.
-- `core/src/test`의 Java 파일은 Write/Edit 도구로만 쓴다. Bash(heredoc, sed, python 등)로 쓰면 테스트 context 가드 훅을 거치지 않는다.
+- `core/<모듈>/src/test`의 Java 파일은 Write/Edit 도구로만 쓴다. Bash(heredoc, sed, python 등)로 쓰면 테스트 context 가드 훅을 거치지 않는다.
+- Spring 설정 파일은 `.properties`가 아니라 `.yml`로 쓴다.
 - 클래스·메서드 이름은 `../docs/DOMAIN.md`의 유비쿼터스 언어를 따른다.
 - 초기 데이터는 `../initial_crawler/data/`의 JSON만 읽는다. 크롤러 중간 산출물에 의존하지 않는다.
 - 코드를 바꿔 기술 스택·명령·구조가 달라지면 이 파일을 함께 고친다. `docs/` 컨벤션과 달라지면 문서를 고치지 말고 먼저 알린다.

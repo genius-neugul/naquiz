@@ -150,7 +150,7 @@ Mock은 외부 협력 객체의 결과를 통제해야 할 때만 쓴다 — 외
 
 ## DB 테스트 독립 환경 설정
 
-각 테스트의 독립적인 환경은 **매 테스트 전에 테이블을 비우는 방식**으로 만든다. **개별 테스트에 `@Transactional`을 붙이지 않는다.** 공통 상위 클래스 `support/IntegrationTestSupport`가 매 테스트 전에 모든 테이블을 비운다(H2 참조 무결성을 잠시 끄고 `TRUNCATE ... RESTART IDENTITY`).
+각 테스트의 독립적인 환경은 **매 테스트 전에 테이블을 비우는 방식**으로 만든다. **개별 테스트에 `@Transactional`을 붙이지 않는다.** 각 앱 모듈의 공통 상위 클래스 `support/IntegrationTestSupport`가 매 테스트 전에 모든 테이블을 비운다(H2 참조 무결성을 잠시 끄고 `TRUNCATE ... RESTART IDENTITY`).
 
 **`@Transactional` 롤백에 기대지 않는 이유가 셋이다.**
 
@@ -170,6 +170,8 @@ Spring은 설정이 같은 테스트끼리 context를 캐시해 재사용한다.
 - 클래스별 `@TestPropertySource`·`@ActiveProfiles`·`@Import`도 context를 새로 만든다. 꼭 필요할 때만 쓰고 이유를 주석으로 남긴다.
 - `@WebMvcTest` 같은 슬라이스 테스트는 이 절의 대상이 아니다.
 
+**통합 테스트(`@SpringBootTest`)는 앱 모듈(game-api, admin-api, crawler-batch)에만 둔다.** core-domain은 `@SpringBootApplication`이 없는 라이브러리라 단위 테스트(domain, implement)만 둔다. Repository·매핑 테스트는 그 Repository를 쓰는 앱 모듈에서 한다. `support/`는 앱 모듈마다 `src/test/java/geniusneugul/project/core/support/`에 따로 두고, 세 앱의 `IntegrationTestSupport`는 같은 내용을 유지한다.
+
 `support/`에 두는 공통 상위 클래스는 아래 목록뿐이다. **목록 밖의 상위 클래스가 필요하면 만들기 전에 먼저 묻는다.**
 
 | 클래스 | 설정 | 용도 |
@@ -177,7 +179,7 @@ Spring은 설정이 같은 테스트끼리 context를 캐시해 재사용한다.
 | `IntegrationTestSupport` | `@SpringBootTest` (MOCK 환경) | Service·Repository·Integration 테스트 |
 | `WebSocketTestSupport` | `@SpringBootTest(webEnvironment = RANDOM_PORT)` | WebSocket 테스트. 첫 소켓 테스트를 만들 때 추가한다 |
 
-> 앞의 세 규칙(`@SpringBootTest` 직접 선언, `@DirtiesContext`, 테스트 클래스의 `@MockitoBean`)은 Claude가 Write/Edit로 테스트 코드를 쓸 때 `.claude/hooks/test-context-guard.py`가 쓰기 전에 막는다. `core/src/test/java/geniusneugul/project/core/support/` 아래 파일만 검사하지 않는다. Bash로 파일을 쓰면 훅을 거치지 않으므로 테스트 파일은 Write/Edit로만 쓴다.
+> 앞의 세 규칙(`@SpringBootTest` 직접 선언, `@DirtiesContext`, 테스트 클래스의 `@MockitoBean`)은 Claude가 Write/Edit로 테스트 코드를 쓸 때 `.claude/hooks/test-context-guard.py`가 쓰기 전에 막는다. 각 모듈의 `src/test/java/geniusneugul/project/core/support/` 아래 파일만 검사하지 않는다. Bash로 파일을 쓰면 훅을 거치지 않으므로 테스트 파일은 Write/Edit로만 쓴다.
 
 ## 계층별 테스트
 

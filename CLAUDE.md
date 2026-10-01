@@ -31,10 +31,13 @@
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
 ├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
 └── skills/            /pre-pr, /sync-docs, /devlog
-core/                  게임 서버 (Spring Boot, Gradle)
+core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션
-└── src/               소스·테스트
+├── core-domain/       라이브러리. 엔티티·저장소·implement, 공통 예외·이벤트
+├── game-api/          실행 앱. 게임·방·투표 API
+├── admin-api/         실행 앱. 백오피스 API
+└── crawler-batch/     실행 앱. 데일리 크롤링
 docs/                  기획·도메인·파싱 규칙·API 문서
 ├── CLAUDE_CODE.md     .claude/README.md 심볼릭 링크
 ├── devlog/            개발일지
