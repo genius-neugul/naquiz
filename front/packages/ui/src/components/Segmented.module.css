@@ -1,0 +1,30 @@
+.group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.option {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: calc(var(--r) - 2px);
+  background: transparent;
+  color: var(--muted);
+}
+
+.option[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.md .option {
+  padding: 6px 14px;
+  font-size: 13px;
+}

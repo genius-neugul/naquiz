@@ -1,0 +1,67 @@
+.grid {
+  height: calc(100dvh - var(--header-h));
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 380px;
+  grid-template-areas: "side stage chat";
+  gap: var(--gap);
+  padding: var(--pad);
+  background: var(--bg);
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: var(--r);
+  min-height: 0;
+}
+
+.side {
+  grid-area: side;
+  overflow-y: auto;
+}
+
+.stage {
+  grid-area: stage;
+  overflow-y: auto;
+}
+
+.chat {
+  grid-area: chat;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 1180px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "stage chat"
+      "side chat";
+  }
+
+  .side {
+    max-height: 260px;
+  }
+}
+
+@media (max-width: 760px) {
+  .grid {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      "stage"
+      "chat"
+      "side";
+  }
+
+  .side {
+    max-height: none;
+  }
+
+  .chat {
+    height: 70dvh;
+  }
+}

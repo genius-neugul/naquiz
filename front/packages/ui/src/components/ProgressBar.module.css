@@ -1,0 +1,30 @@
+.track {
+  position: relative;
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.thick {
+  height: 6px;
+  border-radius: 3px;
+}
+
+.bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.ink .bar {
+  background: var(--ink);
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--ink);
+}

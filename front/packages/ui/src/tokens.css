@@ -1,0 +1,94 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+:root {
+  --font: "IBM Plex Sans KR", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --r: 14px;
+  --pad: 12px;
+  --gap: 12px;
+  --header-h: 56px;
+
+  --bg: oklch(0.962 0.006 255);
+  --surface: oklch(0.995 0.002 255);
+  --ink: oklch(0.23 0.02 260);
+  --muted: oklch(0.5 0.02 260);
+  --line: oklch(0.89 0.01 255);
+  --accent: oklch(0.58 0.16 262);
+  --good: oklch(0.62 0.15 150);
+  --onaccent: oklch(0.99 0 0);
+
+  /* 패널 배경, 패널 사이 바탕, 패널 안 타일 배경 */
+  --panel: var(--surface);
+  --tile: var(--bg);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(0.16 0.012 260);
+    --surface: oklch(0.215 0.014 260);
+    --ink: oklch(0.95 0.006 260);
+    --muted: oklch(0.7 0.015 260);
+    --line: oklch(0.31 0.014 260);
+    --accent: oklch(0.72 0.13 262);
+    --good: oklch(0.72 0.14 150);
+    --onaccent: oklch(0.16 0.012 260);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: oklch(0.16 0.012 260);
+  --surface: oklch(0.215 0.014 260);
+  --ink: oklch(0.95 0.006 260);
+  --muted: oklch(0.7 0.015 260);
+  --line: oklch(0.31 0.014 260);
+  --accent: oklch(0.72 0.13 262);
+  --good: oklch(0.72 0.14 150);
+  --onaccent: oklch(0.16 0.012 260);
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes qpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
