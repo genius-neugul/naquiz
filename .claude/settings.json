@@ -7,8 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-brief.sh",
-            "args": [],
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-brief.sh\"",
             "timeout": 15
           }
         ]
@@ -21,8 +20,7 @@
           {
             "type": "command",
             "if": "Bash(gh pr create *)",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pr-gate.sh",
-            "args": [],
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-gate.sh\"",
             "statusMessage": "PR 게이트 확인 중..."
           }
         ]
@@ -32,8 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pr-gate.sh",
-            "args": [],
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-gate.sh\"",
             "statusMessage": "PR 게이트 확인 중..."
           }
         ]
@@ -43,8 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/test-context-guard.py",
-            "args": [],
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/test-context-guard.py\"",
             "statusMessage": "테스트 context 규칙 확인 중..."
           }
         ]

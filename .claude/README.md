@@ -27,9 +27,20 @@ python3 --version    # 테스트 context 가드 훅이 사용 (macOS 기본 포�
 gh auth login
 ```
 
-- 저장소를 처음 열면 Claude Code가 프로젝트 훅을 믿을지 묻는다. 허용해야 훅이 동작한다.
-- 훅 스크립트에는 실행 권한이 필요하다. 권한이 빠졌으면 `chmod +x .claude/hooks/*`로 준다.
+- 저장소 폴더에서 Claude Code를 처음 열면 이 폴더를 신뢰할지 묻는다. 허용해야 훅이 동작한다. 훅만 따로 묻지는 않는다.
+- 훅은 `bash`·`python3`로 실행하므로 스크립트에 실행 권한이 없어도 동작한다.
 - `jq`가 없으면 PR 게이트가 에러로 끝나면서 PR 생성을 **막지 못한다**. 꼭 설치한다.
+
+### Windows
+
+```bash
+winget install jqlang.jq GitHub.cli
+python3 --version    # Python 3 버전이 나와야 한다
+gh auth login
+```
+
+- 훅은 Git Bash(Git for Windows)로 실행된다.
+- python.org 설치판은 `python3` 명령을 만들지 않는다. `python3`가 exit 49로 끝나거나 Microsoft Store 설치를 안내하면 Store 판 Python을 설치한다. Store 판은 `python3`를 제공한다.
 
 ## 하루 작업 흐름
 
@@ -118,14 +129,17 @@ gh auth login
 |---|---|
 | "PR 전 점검이 아직 안 됐습니다" | `/pre-pr`을 실행한다. |
 | "마지막 /pre-pr 점검 이후 새 커밋이 생겼습니다" | 점검 뒤에 커밋했다. `/pre-pr`을 다시 실행한다(고친 부분만 다시 봐도 된다). |
-| 세션 시작 브리핑이 안 나옴 | 프로젝트 훅을 허용했는지, 스크립트에 실행 권한이 있는지 확인한다. `/hooks`로 등록 상태를 볼 수 있다. |
+| 세션 시작 브리핑이 안 나옴 | 저장소 폴더를 신뢰했는지 확인한다. 훅은 `bash`로 실행하므로 실행 권한은 상관없다. `/hooks`로 등록 상태를 볼 수 있다. |
 | "테스트 context 가드: ..." | 통합 테스트가 context를 새로 띄우는 패턴을 쓰려 했다. `IntegrationTestSupport`를 상속하고 mock은 그 클래스에 선언한다. |
 | `/pre-pr` 뒤 작업 외 변경이 사라짐 / stash pop 충돌 | `git stash list`에서 `pre-pr: 작업 외 변경 임시 보관`을 찾아 `git stash pop stash@{n}`으로 복원한다. 충돌이면 충돌 파일을 직접 정리한 뒤 `git stash drop`한다. |
 | 열린 PR이 브리핑에 안 나옴 | `gh auth status`로 로그인 상태를 확인한다. |
+| 훅이 `EFTYPE: inappropriate file type or format, uv_spawn`으로 실패 | 훅에 `args`가 있어 스크립트 파일을 직접 실행하려 했다. Windows는 shebang을 읽지 못한다. `args`를 빼고 `bash "..."`·`python3 "..."`로 등록한다. ([트러블슈팅](../docs/troubleshooting/2026-10-01-windows-훅-실행-실패.md)) |
+| 테스트 context 가드가 동작하지 않음 (Windows) | `python3`가 Microsoft Store 리다이렉터다. 위 "처음 설정 > Windows"대로 Store 판 Python을 설치한다. |
 
 ## 수정할 때
 
 - 스킬: `skills/<이름>/SKILL.md`. frontmatter의 `description`이 자동 호출 조건이므로 트리거 문구를 함께 적는다.
 - 에이전트: `agents/<이름>.md`. `model`, `tools`, `effort`를 frontmatter에서 정한다.
 - 훅: `settings.json`에 등록하고 스크립트는 `hooks/`에 둔다. 스크립트는 stdin으로 JSON을 받으므로 쓰지 않더라도 읽어서 비워야 한다.
+- 훅 명령은 `args` 없이 `bash "$CLAUDE_PROJECT_DIR/.claude/hooks/x.sh"`, `python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/x.py"`처럼 인터프리터를 앞에 적는다. `args`를 쓰면 셸 없이 파일을 직접 실행해서(exec form) Windows에서 `.sh`·`.py`를 실행하지 못한다. `args`가 없으면 macOS는 `sh -c`, Windows는 Git Bash로 실행된다.
 - 바꾼 뒤에는 이 문서와 CLAUDE.md의 "협업 흐름"도 함께 고친다.
