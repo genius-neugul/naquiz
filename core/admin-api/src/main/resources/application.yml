@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: admin-api
+  config:
+    import: classpath:domain.yml
+
+server:
+  port: 8081
