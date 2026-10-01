@@ -38,7 +38,7 @@ description: 오늘 한 작업을 개발일지로 정리해 docs/devlog/ 에 남
 "한 일", "결정한 것"의 각 항목과 "막힌 것" 중 문서·코드에 걸린 항목에는 그 내용이 반영된 곳의 링크를 건다. 읽는 사람이 바로 해당 부분을 열어볼 수 있어야 한다.
 - 경로는 일지 파일 기준 상대 경로로 쓴다. 예: `[DOMAIN.md 3-2 게임 애그리거트](../DOMAIN.md#3-2-게임-애그리거트)`, `[pr-gate.sh](../../.claude/hooks/pr-gate.sh)`
 - 문서는 해당 절의 제목 앵커(`#제목`, GitHub 규칙: 영문 소문자, 공백은 `-`, 한글은 그대로, 마침표·괄호 등 특수문자 제거)까지 건다. 앵커는 실제 제목을 읽고 만든다. 추측하지 않는다. `.md`는 렌더 화면에서 `#L` 줄 링크가 동작하지 않으므로 줄 링크를 쓰지 않는다.
-- 코드는 파일 링크에 줄 번호를 붙인다. 예: `[AnswerJudge.java#L12](../../core/src/main/java/.../AnswerJudge.java#L12)`. 커밋된 코드는 줄이 밀리지 않도록 커밋 해시 기준 링크(`https://github.com/<owner>/<repo>/blob/<hash>/<경로>#L12`)를 쓴다.
+- 코드는 파일 링크에 줄 번호를 붙인다. 예: `[AnswerJudge.java#L12](../../core/core-domain/src/main/java/.../AnswerJudge.java#L12)`. 커밋된 코드는 줄이 밀리지 않도록 커밋 해시 기준 링크(`https://github.com/<owner>/<repo>/blob/<hash>/<경로>#L12`)를 쓴다.
 - 커밋·PR이 있으면 함께 건다. 커밋은 짧은 해시, PR은 `gh pr view --json url`로 얻은 URL.
 - 미커밋 변경은 파일·절 링크만 건다(줄 번호 없이, 푸시 후 열린다).
 - 링크할 곳이 없는 항목(순수 논의, 아직 반영 안 된 결정)은 링크 없이 "(미반영)"이라고 적는다.

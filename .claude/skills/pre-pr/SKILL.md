@@ -22,7 +22,7 @@ description: PR을 올리기 전에 테스트·코드리뷰·문서 동기화를
 4. `git fetch origin` 후 base 브랜치(`origin/HEAD`, 보통 main/develop)와 충돌 여부만 확인한다.
 
 ## 2. 병렬 점검 — 해당하는 에이전트를 한 번에 띄운다
-- `test-runner` (Haiku, 낮은 effort): `core/` Spring 서버 테스트. `git diff --name-only origin/HEAD...HEAD -- core/src core/build.gradle core/settings.gradle core/gradle` 가 비어 있으면 띄우지 않는다(문서·크롤러·`.claude/`만 바뀐 PR은 테스트 없음).
+- `test-runner` (Haiku, 낮은 effort): `core/` Spring 서버 테스트. `git diff --name-only origin/HEAD...HEAD -- core/*/src core/build.gradle core/*/build.gradle core/settings.gradle core/gradle` 가 비어 있으면 띄우지 않는다(문서·크롤러·`.claude/`만 바뀐 PR은 테스트 없음).
 - `code-reviewer` (Sonnet): `core/` Spring 서버 변경분 리뷰. `git diff --name-only origin/HEAD...HEAD -- core/` 가 비어 있으면 띄우지 않는다(크롤러·문서만 바뀐 PR은 자동 리뷰 없음).
 - `docs-syncer` (Sonnet): 문서 동기화
 
