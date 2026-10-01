@@ -45,6 +45,7 @@ core/
 geniusneugul.project.core
 ├── common
 │   ├── exception        // ErrorCode, BusinessException, ErrorResponse, GlobalExceptionHandler
+│   ├── domain           // 여러 도메인이 함께 쓰는 값(GameType)
 │   ├── domain/event     // DomainEvent
 │   └── infra/event      // EventPublisher
 └── room
@@ -57,7 +58,7 @@ geniusneugul.project.core
 
 | 패키지 | 역할 |
 | --- | --- |
-| common | 도메인 공통 요소. 에러 코드·예외(`exception`), 이벤트(`domain/event`, `infra/event`) |
+| common | 도메인 공통 요소. 에러 코드·예외(`exception`), 여러 도메인이 함께 쓰는 값(`domain`), 이벤트(`domain/event`, `infra/event`) |
 | presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별 |
 | service | 비즈니스 흐름 조립, 유스케이스 단위 트랜잭션 경계 |
 | service/implement | 비즈니스 흐름을 구성하는 상세 구현 도구. service의 하위 패키지로 둔다(멀티모듈에서는 `<도메인>.implement`, [모듈 구조](#모듈-구조)) |
@@ -132,7 +133,10 @@ infra는 기술 의존성을 격리한다.
 
 > 도메인 모델이 JPA 엔티티를 겸하므로 **JPA 자체를 벗어나는 전환은 domain 수정을 수반한다.** 변환 코드와 클래스 중복을 없애는 대신 이 비용을 받아들인 선택이다.
 
-> **미정:** 진행 중인 게임 상태(방·게임·라운드·투표)를 DB·메모리·Redis 중 어디에 둘지 정해지지 않았다. 이 문서의 "도메인 모델 = JPA 엔티티" 전제는 저장소가 정해지면 다시 본다.
+> **저장 위치는 통계 필요 여부로 나눈다.** 백오피스 통계(문제·힌트·투표)에 쓰이거나 원래 영속 데이터인 모델은 JPA 엔티티를 겸한다. 통계에 쓰이지 않는 **방·참가자는 JPA 애노테이션 없는 순수 도메인 객체로 서버 메모리에 둔다.** 방 Repository는 infra의 인터페이스로 두고 메모리 구현체를 쓴다.
+>
+> - 참가자를 저장하지 않으므로 다른 엔티티의 참가자 ID(승자, 정답자, 단서를 연 참가자, 투표 찬성)는 FK 없는 값으로만 남긴다.
+> - 라운드의 차례 필드(차례 순서, 현재 차례 인덱스, 차례 마감 시각)는 진행 중에만 쓰므로 `@Transient`로 둔다.
 
 ## 이벤트 발행 규약
 

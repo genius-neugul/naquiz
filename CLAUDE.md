@@ -54,7 +54,7 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 - 백엔드: Java 25, Spring Boot (`core/`). 상세는 `core/CLAUDE.md`
 - 프론트엔드:
 - 실시간 통신:
-- DB / 캐시:
+- DB / 캐시: H2(로컬·테스트), MySQL(`local-dev` 프로필, docker-compose). 진행 중인 방·참가자는 서버 메모리. 상세는 `core/CLAUDE.md`
 - 데이터 수집: Python 3 (`initial_crawler/`)
 
 ## 자주 쓰는 명령

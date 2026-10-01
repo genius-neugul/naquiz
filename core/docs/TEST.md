@@ -150,7 +150,7 @@ Mock은 외부 협력 객체의 결과를 통제해야 할 때만 쓴다 — 외
 
 ## DB 테스트 독립 환경 설정
 
-각 테스트의 독립적인 환경은 **매 테스트 전에 테이블을 비우는 방식**으로 만든다. **개별 테스트에 `@Transactional`을 붙이지 않는다.** DB를 도입하면 공통 상위 클래스 `support/IntegrationTestSupport`에 매 테스트 전 정리 로직을 넣는다(지금은 DB가 없어 비어 있다).
+각 테스트의 독립적인 환경은 **매 테스트 전에 테이블을 비우는 방식**으로 만든다. **개별 테스트에 `@Transactional`을 붙이지 않는다.** 공통 상위 클래스 `support/IntegrationTestSupport`가 매 테스트 전에 모든 테이블을 비운다(H2 참조 무결성을 잠시 끄고 `TRUNCATE ... RESTART IDENTITY`).
 
 **`@Transactional` 롤백에 기대지 않는 이유가 셋이다.**
 

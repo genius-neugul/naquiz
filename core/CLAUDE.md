@@ -19,7 +19,10 @@
 - Java 25, Spring Boot 4.1.1, Gradle (wrapper 포함)
 - 테스트: JUnit 5 (`spring-boot-starter-test`)
 - 실시간 통신:
-- DB / 캐시: 미정 (진행 중인 게임 상태를 DB·메모리·Redis 중 어디에 둘지 포함)
+- 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`)
+- 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
+- 캐시: 없음
+- Lombok
 - 인증: 없음. 참가자는 비회원 게스트이고, 참가자 식별 방식(토큰 등)은 미정
 - 기본 패키지: `geniusneugul.project.core`
 
@@ -35,7 +38,12 @@
 ```bash
 ./gradlew build      # 컴파일 + 테스트
 ./gradlew test       # 테스트만
-./gradlew bootRun    # 로컬 실행
+./gradlew bootRun    # 로컬 실행 (H2 인메모리)
+
+# MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정을 채운다
+docker compose up -d
+set -a; source .env; set +a
+./gradlew bootRun --args='--spring.profiles.active=local-dev'
 ```
 
 ## 디렉터리 구조
@@ -46,8 +54,13 @@
 core/
 ├── docs/              서버 코드 컨벤션 (아키텍처, 스타일, 예외, 로그, 테스트)
 ├── build.gradle
+├── docker-compose.yml local-dev 프로필용 MySQL
+├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
 └── src/
     ├── main/java/geniusneugul/project/core/   도메인별 패키지 (docs/ARCHITECTURE.md)
+    │   ├── common/    에러 코드·예외, GameType, 이벤트
+    │   └── room, game, question, vote, song, movie, report, admin, crawl, statistics
+    ├── main/resources/   application.properties(H2), application-local-dev.properties(MySQL)
     └── test/java/geniusneugul/project/core/
         └── support/   통합 테스트 공통 상위 클래스·설정 (목록은 docs/TEST.md 「Spring Context 재사용」)
 ```
