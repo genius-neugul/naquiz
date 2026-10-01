@@ -15,6 +15,8 @@
 - `docs/API.md`: HTTP API 요청/응답 규격
 - `core/CLAUDE.md`: 게임 서버 기술 스택, 빌드·테스트 명령, 서버 작업 규칙
 - `core/docs/`: 게임 서버 코드 컨벤션(아키텍처, 코드 스타일, 예외, 로그, 테스트)
+- `front/CLAUDE.md`: 프론트엔드(게임 앱·백오피스 앱) 기술 스택, 명령, 작업 규칙
+- `front/README.md`: 프론트엔드 워크스페이스 구성과 실행 방법, Mock 클라이언트 설명
 - `initial_crawler/README.md`: 크롤러 실행 방법(가상환경 포함)과 저장 경로
 - `initial_crawler/CLAUDE.md`: 크롤러 자주 쓰는 명령, 크롤링 결과 기록 규칙
 - `initial_crawler/records/`: 크롤링 결과 기록(`YYYY-MM-DD-<music|movie>.md`). 단계별 곡 수, 실패 회차, 통계
@@ -35,6 +37,12 @@ core/                  게임 서버 (Spring Boot, Gradle)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션
 └── src/               소스·테스트
+front/                 프론트엔드 (npm workspaces, Vite + React + TypeScript)
+├── CLAUDE.md          프론트 기술 스택, 명령, 작업 규칙
+├── apps/game/         게임 앱
+├── apps/admin/        백오피스 앱
+├── packages/ui/       디자인 토큰·테마·공용 컴포넌트
+└── packages/shared/   도메인 타입·상수, 정답 판정·마스킹·투표 순수 함수
 docs/                  기획·도메인·파싱 규칙·API 문서
 ├── CLAUDE_CODE.md     .claude/README.md 심볼릭 링크
 ├── devlog/            개발일지
@@ -52,7 +60,7 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 ## 기술 스택
 
 - 백엔드: Java 25, Spring Boot (`core/`). 상세는 `core/CLAUDE.md`
-- 프론트엔드:
+- 프론트엔드: React 19, TypeScript, Vite, CSS Modules, npm workspaces (`front/`). 상세는 `front/CLAUDE.md`
 - 실시간 통신:
 - DB / 캐시:
 - 데이터 수집: Python 3 (`initial_crawler/`)
@@ -60,11 +68,13 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 ## 자주 쓰는 명령
 
 - 게임 서버 빌드·테스트·로컬 실행: `core/CLAUDE.md`
+- 프론트엔드 개발 서버·빌드·테스트: `front/CLAUDE.md`
 - 크롤러(노래·영화 목록): `initial_crawler/CLAUDE.md`
 
 ## 작업 규칙
 
 - 게임 서버 작업 규칙(게임 규칙 순수 함수·테스트, 서버 단일 진실 원천, 서버 타이머)은 `core/CLAUDE.md`에 있다.
+- 프론트엔드 작업 규칙(공용 패키지, 디자인 토큰, GameClient 경유 상태 접근)은 `front/CLAUDE.md`에 있다.
 - 크롤링 중간 산출물(`crawl_output/`, `movies.jsonl`, `logs/`, `images/`)과 API 키는 커밋하지 않는다(`.gitignore`). 키는 환경 변수로 받는다. 최종 결과 `initial_crawler/data/`는 커밋한다.
 - 파싱 코드를 고칠 때는 `docs/MUSIC_PARSING_RULE.md`의 "구현할 때 주의할 점"을 먼저 읽는다.
 - 문서에 없는 규칙을 새로 정해야 하면 임의로 정하지 말고 먼저 물어본다.
@@ -84,7 +94,7 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 - PR은 `/pre-pr` 로 만든다. 테스트(test-runner, `core/` 코드 변경 시) · 코드 리뷰(code-reviewer, `core/` 변경 시) · 문서 동기화(docs-syncer)를 한 번에 돌리고, 통과해야 `gh pr create` 가 허용된다(PR 게이트 훅). 점검 후 새 커밋이 생기면 다시 돌려야 한다.
 - `/pre-pr` 은 이번 작업과 무관한 워킹트리 변경을 묻지 않고 `git stash` 해두고, PR을 만든 뒤 `git stash pop` 으로 되돌린다.
 - 테스트는 메인 대화에서 직접 돌리지 않고 `test-runner` 에이전트에 맡긴다(Haiku, 실패만 요약).
-- Claude는 코드·명령·설정을 바꾸는 작업을 할 때마다 끝내기 전에 문서 동기화를 한다. 이 파일, 하위 디렉터리의 `CLAUDE.md`, `initial_crawler/README.md`, `.claude/README.md`, `docs/`, `core/docs/`에서 바뀐 내용과 어긋나는 곳을 찾는다. 사실을 기록한 부분은 바로 고치고, `docs/` 규칙과 어긋나면 아래 규칙대로 먼저 알린다.
-- 코드를 바꿨는데 `docs/` 규칙과 달라지면 문서를 고치지 말고 먼저 알린다. 실행 방법·구조·명령처럼 사실을 기록한 부분(이 파일, `core/CLAUDE.md`, `initial_crawler/CLAUDE.md`, `initial_crawler/README.md`)만 코드에 맞춰 고친다. `/sync-docs` 로 따로 점검할 수 있다.
+- Claude는 코드·명령·설정을 바꾸는 작업을 할 때마다 끝내기 전에 문서 동기화를 한다. 이 파일, 하위 디렉터리의 `CLAUDE.md`, `initial_crawler/README.md`, `front/README.md`, `.claude/README.md`, `docs/`, `core/docs/`에서 바뀐 내용과 어긋나는 곳을 찾는다. 사실을 기록한 부분은 바로 고치고, `docs/` 규칙과 어긋나면 아래 규칙대로 먼저 알린다.
+- 코드를 바꿨는데 `docs/` 규칙과 달라지면 문서를 고치지 말고 먼저 알린다. 실행 방법·구조·명령처럼 사실을 기록한 부분(이 파일, `core/CLAUDE.md`, `front/CLAUDE.md`, `front/README.md`, `initial_crawler/CLAUDE.md`, `initial_crawler/README.md`)만 코드에 맞춰 고친다. `/sync-docs` 로 따로 점검할 수 있다.
 - PR에는 항상 개발일지를 함께 올린다. `/pre-pr` 이 `/devlog` 절차로 `docs/devlog/`에 일지를 쓰고 같은 PR 브랜치에 커밋한다. 따로 `/devlog` 를 실행해도 현재 PR 브랜치에 커밋하고, 팀원에게 보낼 요약을 만든다. 세션 시작 시 훅이 최근 일지의 "다음 할 일"과 열린 PR을 알려준다.
-- 필요한 도구: `jq`(훅), `python3`(테스트 context 가드 훅), `gh`(PR·리뷰어 지정, `gh auth login`).
+- 필요한 도구: `jq`(훅), `python3`(테스트 context 가드 훅), `gh`(PR·리뷰어 지정, `gh auth login`), Node 22.12 이상(`front/`).
