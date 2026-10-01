@@ -8,6 +8,11 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Node (front/)
+node_modules/
+dist/
+*.tsbuildinfo
+
 # Python
 __pycache__/
 *.pyc
