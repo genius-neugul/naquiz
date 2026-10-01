@@ -33,7 +33,7 @@ core/
 - **global 모듈은 두지 않는다.** 모든 앱이 core-domain에 의존하므로 공통 예외·이벤트는 core-domain `common`으로 충분하다.
 - **웹 공통은 game-api에 둔다.** 별도 웹 모듈로 분리하지 않는다. admin-api는 같은 [에러 응답 형식](EXCEPTION.md#에러-응답-형식)을 따르는 에러 응답·예외 핸들러를 따로 둔다.
 - **presentation·service는 앱 모듈에, implement·infra·domain은 core-domain에 둔다.** 앱끼리는 서로 의존하지 않는다. 두 앱이 같은 흐름을 쓰면 implement로 내려 core-domain에서 공유한다.
-- **멀티모듈에서는 implement 패키지를 `<도메인>.implement`로 둔다.** 단일 모듈의 `<도메인>.service.implement`를 그대로 두면 같은 패키지가 두 모듈에 걸친다(split package). 의존성 방향(presentation → service → implement → infra)은 그대로다.
+- **멀티모듈에서는 implement 패키지를 `<도메인>.implement`로 둔다.** implement는 여러 앱의 service가 함께 쓰는 core-domain의 레이어이고, core-domain에는 service가 없으므로 `service` 아래에 두지 않는다. 의존성 방향(presentation → service → implement → infra)은 그대로다.
 - **외부 API 클라이언트는 해당 도메인의 infra에 둔다.** 별도 `external` 패키지를 만들지 않는다.
 - `ErrorCode`가 `HttpStatus`를 가지므로 core-domain은 `spring-web`에 의존한다. 웹 서버(`spring-boot-starter-web`)는 앱 모듈만 넣는다.
 
