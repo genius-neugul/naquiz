@@ -60,7 +60,7 @@ geniusneugul.project.core
 | common | 도메인 공통 요소. 에러 코드·예외(`exception`), 이벤트(`domain/event`, `infra/event`) |
 | presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별 |
 | service | 비즈니스 흐름 조립, 유스케이스 단위 트랜잭션 경계 |
-| service/implement | 비즈니스 흐름을 구성하는 상세 구현 도구. service의 하위 패키지로 둔다 |
+| service/implement | 비즈니스 흐름을 구성하는 상세 구현 도구. service의 하위 패키지로 둔다(멀티모듈에서는 `<도메인>.implement`, [모듈 구조](#모듈-구조)) |
 | infra | 저장소 접근(Repository), 외부 API·캐시·메시징 기술 격리 |
 | domain | 도메인 모델(JPA 엔티티 겸용), 값 객체, 정책, 상태 전이 규칙 |
 
