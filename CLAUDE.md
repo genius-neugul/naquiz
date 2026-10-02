@@ -39,7 +39,7 @@ core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── core-domain/       라이브러리. 엔티티·저장소·implement, 공통 예외·이벤트
 ├── game-api/          실행 앱. 게임·방·투표 API
 ├── admin-api/         실행 앱. 백오피스 API
-└── crawler-batch/     실행 앱. 데일리 크롤링
+└── crawler-batch/     실행 앱. 데일리 크롤링, 초기 데이터 적재
 front/                 프론트엔드 (npm workspaces, Vite + React + TypeScript)
 ├── CLAUDE.md          프론트 기술 스택, 명령, 작업 규칙
 ├── apps/game/         게임 앱

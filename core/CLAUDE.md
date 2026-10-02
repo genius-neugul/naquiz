@@ -48,6 +48,9 @@
 docker compose up -d
 set -a; source .env; set +a
 ./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
+
+# 초기 데이터(../initial_crawler/data/의 노래·영화·스틸컷) 적재. 적재 후 종료하고, 이미 있는 콘텐츠는 건너뛴다
+./gradlew :crawler-batch:bootRun --args='--spring.profiles.active=local-dev --naquiz.initial-load.enabled=true'
 ```
 
 ## 디렉터리 구조
@@ -63,7 +66,7 @@ core/
 │   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL)
 ├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러
 ├── admin-api/         실행 앱. admin·question·report·song·movie·statistics·crawl presentation·service
-└── crawler-batch/     실행 앱. crawl service
+└── crawler-batch/     실행 앱. crawl service, 초기 데이터 적재 실행 진입점(crawl presentation)
 ```
 
 - 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, game, question, vote, song, movie, report, admin, crawl, statistics)이다.

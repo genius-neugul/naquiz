@@ -186,7 +186,7 @@
 
 | 단서 종류 | 코드 | 공개 내용 |
 | --- | --- | --- |
-| 관객 수 | AUDIENCE | 누적 관객 수 |
+| 관객 수 | AUDIENCE | 누적 관객 수. 관객 수가 없는 영화는 `집계 X`로 보여줍니다. |
 | 개봉일 | RELEASE_DATE | 개봉일 |
 | 감독 | DIRECTOR | 감독 이름 |
 | 출연자 | CAST | 주요 출연 배우 |
@@ -341,7 +341,7 @@
 | KOBIS 영화 코드 | kobisMovieCode | String | O | 수집·보강용 외부 ID입니다. |
 | 제목 | title | String | O | 한글 제목입니다. 문제의 answer로 씁니다. |
 | 영문 제목 | titleEn | String | X | 문제의 subAnswer로 씁니다. |
-| 관객 수 | audienceCount | Long | O |  |
+| 관객 수 | audienceCount | Long | X | 누적 관객 수입니다. 역대 박스오피스 밖에서 추가한 영화(`initial_crawler/movie/titles.txt`)는 없고, 단서로 공개할 때 `집계 X`로 보여줍니다. |
 | 개봉일 | releaseDate | Date | O |  |
 | 감독 | directors | List<String> | O |  |
 | 출연자 | actors | List<String> | O |  |
@@ -356,8 +356,8 @@
 | --- | --- | --- | --- | --- |
 | 스틸컷 ID | stillCutId | Long | O |  |
 | 영화 ID | movieId | Long | O |  |
-| 이미지 URL | imageUrl | String | O |  |
-| 노출 순서 | displayOrder | Integer | O | 스틸컷 게임에서 10초마다 이 순서로 넘어갑니다. |
+| 이미지 URL | imageUrl | String | O | KOBIS 원본 이미지 URL입니다. |
+| 노출 순서 | displayOrder | Integer | O | 1부터 시작합니다. 스틸컷 게임에서 10초마다 이 순서로 넘어갑니다. |
 
 ### 3-6. 오류 신고 애그리거트
 
