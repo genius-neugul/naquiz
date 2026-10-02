@@ -84,7 +84,7 @@ MBC 라디오 선곡표 전체 회차를 크롤링하고, 가사 없는 곡을 �
 3. 제목 키가 같고 가수 키가 **하나라도 겹치면** 같은 곡이다. 예: `JAY-Z feat. ALICIA KEYS`와 `JAY-Z (Feat. Alicia Keys)`는 `jayz`가 겹친다.
 4. **대표 표기**: 같은 곡의 원문 (제목, 아티스트) 중 **가장 많이 나온 표기**를 남긴다. 횟수가 같으면 최근 방송의 표기를 쓰고, `퀴즈용` 등 표기가 붙은 원문보다 붙지 않은 원문을 먼저 고른다. 대표 표기가 나온 가장 최근 행의 방송 정보를 쓴다.
 
-컬럼: `radio, radio_name, seq, date, title, artist`
+컬럼: `radio, radio_name, seq, date, title, artist, play_count`. `play_count`는 같은 곡으로 합친 행 수다. 1-3에서 한 회차의 같은 (제목, 아티스트)를 하나만 남기므로 이 곡이 나온 방송 수로 쓴다.
 
 - 버전 표기는 제목 키에서 빠지므로 리믹스·리마스터·라이브 버전도 원곡과 한 곡으로 합쳐진다.
 
@@ -283,6 +283,7 @@ MBC 라디오 선곡표 전체 회차를 크롤링하고, 가사 없는 곡을 �
 | `title`, `subtitle` | 1-6 |
 | `artists` | 1-8. `[{"artist": 한글 이름, "artist_sub": 병기 이름}, …]`. 원본에 적힌 순서대로 담는다 |
 | `raw_title`, `raw_artist` | `radio_songs_unique.csv`의 원문 |
+| `play_count` | 같은 곡으로 합친 방송 수(1-5) |
 
 예:
 
@@ -294,7 +295,8 @@ MBC 라디오 선곡표 전체 회차를 크롤링하고, 가사 없는 곡을 �
     {"artist": "혁오 오혁", "artist_sub": "혁오 오혁"},
     {"artist": "이인우", "artist_sub": "이인우"}
   ],
-  "raw_title": "하루가 가고 또 하루가 오면 (feat. Jay Marie)", "raw_artist": "혁오 오혁 x 이인우"
+  "raw_title": "하루가 가고 또 하루가 오면 (feat. Jay Marie)", "raw_artist": "혁오 오혁 x 이인우",
+  "play_count": 1
 }
 ```
 
@@ -311,7 +313,7 @@ MBC 라디오 선곡표 전체 회차를 크롤링하고, 가사 없는 곡을 �
 
 **`radio_songs_unresolved.csv`** — 규칙으로 처리하지 못한 곡(final에서 뺀다).
 
-컬럼: `radio, radio_name, seq, date, title, subtitle, artist, artist_sub, raw_title, raw_artist, reason`. 정제 결과도 참고용으로 채워 둔다. 사람이 표로 검토하는 파일이라 CSV로 두고, 가수 여러 명은 `artist`, `artist_sub` 칸에 `, `로 이어 적는다. 한 곡이 여러 이유에 걸리면 `; `로 모두 적는다. 사람이 확인해 고치거나 특별 케이스 표에 추가한 뒤 다시 실행한다.
+컬럼: `radio, radio_name, seq, date, title, subtitle, artist, artist_sub, raw_title, raw_artist, play_count, reason`. 정제 결과도 참고용으로 채워 둔다. 사람이 표로 검토하는 파일이라 CSV로 두고, 가수 여러 명은 `artist`, `artist_sub` 칸에 `, `로 이어 적는다. 한 곡이 여러 이유에 걸리면 `; `로 모두 적는다. 사람이 확인해 고치거나 특별 케이스 표에 추가한 뒤 다시 실행한다.
 
 | reason | 판정 기준 | 예 |
 |---|---|---|
