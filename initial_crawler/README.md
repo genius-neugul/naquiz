@@ -72,8 +72,8 @@ python3 scripts/radio/opening_stats.py                              # 오프닝�
 | 단계 | 입력 | 출력 |
 |---|---|---|
 | `crawl.py` | MBC 선곡표 | `radio_songs.csv`, `state.json`(진행 기록) |
-| `make_unique.py` | `radio_songs.csv` | `radio_songs_unique.csv`, `radio_songs_removed.csv`(가사 없는 곡) |
-| `make_final.py` | `radio_songs_unique.csv` | `radio_songs_final.json`, `radio_songs_removed.csv`, `radio_songs_unresolved.csv`(규칙으로 처리 못 한 곡) |
+| `make_unique.py` | `radio_songs.csv` | `radio_songs_unique.csv`(같은 곡으로 합친 방송 수 `play_count` 포함), `radio_songs_removed.csv`(가사 없는 곡) |
+| `make_final.py` | `radio_songs_unique.csv` | `radio_songs_final.json`(`play_count` 포함), `radio_songs_removed.csv`, `radio_songs_unresolved.csv`(규칙으로 처리 못 한 곡) |
 | `diff_unique.py` | 이전·새 `radio_songs_unique.csv` | `radio_songs_added.csv`(새로 추가된 곡) |
 | `opening_stats.py` | `radio_songs.csv` | 화면 출력(오프닝일 가능성이 높은 곡) |
 
