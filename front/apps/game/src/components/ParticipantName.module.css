@@ -1,0 +1,7 @@
+.tag {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 1px;
+}
