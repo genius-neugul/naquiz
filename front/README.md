@@ -37,3 +37,26 @@ npm test
 - 백오피스 앱 `MockAdminClient`: 고정 시드로 만든 문제 통계와 샘플 신고를 보여준다. 게임 앱과 데이터를 공유하지 않는다.
 
 서버 API가 생기면 `apps/game/src/game/GameClient.ts`, `apps/admin/src/admin/AdminClient.ts` 인터페이스의 실제 구현을 만들어 `main.tsx`에서 바꿔 끼운다.
+
+## 게임 서버에 붙여 실행
+
+게임 앱은 `StompGameClient`로 게임 서버(`core/game-api`)에 STOMP로 붙을 수 있다. 지금은 방 만들기·참가하기·나가기만 서버로 처리하고, 게임 진행은 아직 동작하지 않는다.
+
+```bash
+# core/ 에서
+./gradlew :game-api:bootRun                 # http://localhost:8080
+# front/ 에서
+VITE_GAME_CLIENT=stomp npm run dev:game     # /ws 를 localhost:8080 으로 프록시
+```
+
+game-api를 IntelliJ나 `bootRun`으로 실행하면 게임 웹 컨테이너(`compose.game-web.yml`)가 자동으로 함께 뜬다(`../core/CLAUDE.md`). 이때는 위의 `npm run dev:game`을 따로 실행하지 않는다(5173 포트가 겹친다).
+
+Docker로 서버와 게임 웹을 함께 띄울 수도 있다. 저장소 루트의 `compose.yml`이 game-api 이미지와 게임 웹 개발 서버(`front/Dockerfile.dev`)를 띄운다. `front/` 소스는 컨테이너에 마운트돼 고치면 바로 반영되고, 의존성은 이미지 안에 따로 설치된다.
+
+```bash
+# 저장소 루트에서
+docker compose up --build                    # 웹 http://localhost:5173, 서버 http://localhost:8080
+GAME_API_PORT=18080 docker compose up --build  # 8080을 이미 쓰고 있을 때
+```
+
+`package.json`이나 `package-lock.json`을 바꾸면 이미지를 다시 빌드한다(`--build`). Vite 프록시 대상은 `GAME_API_URL` 환경 변수로 정하고, compose는 `ws://game-api:8080`을 넣는다.

@@ -12,7 +12,7 @@
 - `docs/DOMAIN.md`: 도메인 설계. 유비쿼터스 언어, 애그리거트, 정답 판정·마스킹·투표 규칙, 미정 사항
 - `docs/MUSIC_PARSING_RULE.md`: 노래 크롤링과 제목·가수 파싱 규칙
 - `docs/MUSIC_SELECTION_RULE.md`: 게임에서 Spotify 곡 정보 조회와 YouTube 영상 선택 규칙
-- `docs/API.md`: HTTP API 요청/응답 규격
+- `docs/API.md`: HTTP API와 실시간 메시지(STOMP) 요청/응답 규격
 - `core/CLAUDE.md`: 게임 서버 기술 스택, 빌드·테스트 명령, 서버 작업 규칙
 - `core/docs/`: 게임 서버 코드 컨벤션(아키텍처, 코드 스타일, 예외, 로그, 테스트)
 - `front/CLAUDE.md`: 프론트엔드(게임 앱·백오피스 앱) 기술 스택, 명령, 작업 규칙
@@ -33,6 +33,8 @@
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
 ├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
 └── skills/            /pre-pr, /sync-docs, /devlog
+compose.yml            로컬 개발용. 게임 서버(game-api)와 게임 웹(Vite 개발 서버)을 함께 컨테이너로 띄운다
+compose.game-web.yml   게임 웹만 띄운다. game-api를 IntelliJ·bootRun으로 실행하면 자동으로 함께 뜬다
 core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션
@@ -64,12 +66,14 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 
 - 백엔드: Java 25, Spring Boot (`core/`). 상세는 `core/CLAUDE.md`
 - 프론트엔드: React 19, TypeScript, Vite, CSS Modules, npm workspaces (`front/`). 상세는 `front/CLAUDE.md`
-- 실시간 통신:
+- 실시간 통신: Spring WebSocket + STOMP (`core/game-api`). 규격은 `docs/API.md`
 - DB / 캐시: H2(로컬·테스트), MySQL(`local-dev` 프로필, docker-compose). 진행 중인 방·참가자는 서버 메모리. 상세는 `core/CLAUDE.md`
 - 데이터 수집: Python 3 (`initial_crawler/`)
 
 ## 자주 쓰는 명령
 
+- 게임 서버를 IntelliJ·bootRun으로 실행하면 게임 웹 컨테이너가 함께 뜨고 앱을 끄면 멈춘다(Docker 실행 필요, 상세는 `core/CLAUDE.md`)
+- 게임 서버 + 게임 웹 둘 다 컨테이너로 실행: 루트에서 `docker compose up --build` → 웹 http://localhost:5173, 서버 http://localhost:8080 (8080이 이미 쓰이면 `GAME_API_PORT=18080`을 앞에 붙인다)
 - 게임 서버 빌드·테스트·로컬 실행: `core/CLAUDE.md`
 - 프론트엔드 개발 서버·빌드·테스트: `front/CLAUDE.md`
 - 크롤러(노래·영화 목록): `initial_crawler/CLAUDE.md`

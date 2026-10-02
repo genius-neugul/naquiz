@@ -1,0 +1,27 @@
+# 게임 웹(Vite 개발 서버)만 띄운다. game-api를 호스트(IntelliJ, bootRun)에서 실행하면
+# Spring Boot Docker Compose 지원이 이 파일로 게임 웹을 함께 띄우고, 앱을 끄면 멈춘다.
+# 게임 서버까지 컨테이너로 띄우려면 compose.yml을 쓴다(이 파일의 game-web을 가져다 쓴다).
+name: naquiz-game-web
+
+services:
+  game-web:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_GAME_CLIENT: stomp
+      # 호스트에서 실행 중인 game-api로 붙는다. 포트를 바꿔 실행했다면 GAME_API_PORT로 맞춘다.
+      GAME_API_URL: ws://host.docker.internal:${GAME_API_PORT:-8080}
+    extra_hosts:
+      # Docker Desktop이 아닌 리눅스에서도 host.docker.internal이 호스트를 가리키게 한다.
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "5173:5173"
+    volumes:
+      # 소스는 호스트와 공유해 고치면 바로 반영되고, node_modules는 이미지 안의 것을 쓴다.
+      - ./front:/app
+      - /app/node_modules
+      - /app/apps/game/node_modules
+      - /app/apps/admin/node_modules
+      - /app/packages/ui/node_modules
+      - /app/packages/shared/node_modules

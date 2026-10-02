@@ -7,5 +7,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // IDE·bootRun으로 실행할 때 게임 웹 컨테이너를 함께 띄운다(compose.game-web.yml). 실행 jar에는 들어가지 않는다.
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     testImplementation 'org.awaitility:awaitility'
 }
