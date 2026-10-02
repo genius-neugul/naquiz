@@ -2,7 +2,8 @@
 
 ## **목표**
 
-이 문서는 백엔드가 제공하는 HTTP API의 **요청/응답 규격**을 기록한다. 프론트엔드 연동, 신규 입사자 온보딩, API 변경 리뷰의 기준 문서로 사용한다.
+이 문서는 백엔드가 제공하는 HTTP API와 실시간 메시지(STOMP)의 **요청/응답 규격**을 기록한다. 프론트엔드 연동, 신규 입사자 온보딩, API 변경 리뷰의 기준 문서로 사용한다.
+
 
 API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응답 DTO는 presentation 레이어에서만 정의하고, service는 command/result 모델로 소통한다. 에러 응답 형식은 `core/docs/EXCEPTION.md`를 따른다. 도메인 모델이 JPA 엔티티를 겸하므로, 엔티티가 응답으로 새어 나가는 것을 레이어 규칙이 막아 주지 않는다. 아래 공통 규칙으로 명시적으로 금지한다.
 
@@ -13,7 +14,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - 성공 응답의 HTTP 상태 코드는 유스케이스 의미에 맞춘다. 리소스 생성은 `201 Created`, 조회는 `200 OK`를 사용한다.
 - 요청 형식 검증 실패는 `400 Bad Request`와 **`COMMON_INVALID_REQUEST`** 코드로 내려간다. 필드별 상세는 `errors` 배열에 담긴다.
 - 비즈니스 규칙 위반은 공통 `ErrorCode`에 정의된 상태 코드와 코드로 내려간다.
-- 인증은 없다. 참가자는 비회원 게스트이며, 요청에서 참가자를 식별하는 방식은 미정이다.
+- 인증은 없다. 참가자는 비회원 게스트이며, 실시간 메시지에서는 연결 단위로 참가자를 식별한다(「실시간 메시지(STOMP) 규격」). HTTP 요청에서 참가자를 식별하는 방식은 아직 없다.
 - 도메인 모델을 응답 본문으로 직접 직렬화하지 않는다. presentation은 service가 반환한 result 모델만 응답 DTO로 변환한다.
 - service의 result 모델에도 도메인 모델을 담지 않는다. 필요한 값만 옮긴 record로 만든다.
 - 요청 본문을 도메인 모델에 바인딩하지 않는다. 요청 DTO → command로만 들어온다.
@@ -69,5 +70,65 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
   "errors": [{ "field": "title", "message": "must not be blank" }]
 }
 ```
+
+## **실시간 메시지(STOMP) 규격**
+
+방·게임 진행은 STOMP over WebSocket으로 주고받는다. 본문은 모두 JSON이다.
+
+**연결과 참가자 식별**
+
+- 엔드포인트는 `/ws`다(순수 WebSocket, SockJS 없음).
+- 서버는 연결마다 새 Principal을 붙이고, 그 이름을 참가자 토큰으로 쓴다. 클라이언트는 토큰을 보내지 않는다. 연결이 끊기면 참가자는 퇴장한다(`docs/DOMAIN.md` 참가자).
+- 한 연결은 한 방에만 들어갈 수 있다.
+- 한 연결이 보낸 메시지는 보낸 순서대로 처리한다.
+
+**destination**
+
+| 방향 | destination | 본문 | 설명 |
+| --- | --- | --- | --- |
+| SEND | `/app/rooms/create` | `{ "nickname": "방장" }` | 방을 만들고 초대 코드를 발급한다. 닉네임은 앞뒤 공백을 빼고 1~10자 |
+| SEND | `/app/rooms/join` | `{ "inviteCode": "A1B2C3", "nickname": "감자" }` | 초대 코드로 방에 들어간다. 초대 코드는 앞뒤 공백을 빼고 대문자로 바꿔 받는다. 닉네임 규칙은 방 만들기와 같고, 같은 방에서 겹쳐도 된다 |
+| SEND | `/app/rooms/leave` | 없음 | 방을 나간다. 들어간 방이 없으면 무시한다 |
+| SUBSCRIBE | `/user/queue/room` | 방 상태 | 방 만들기·참가하기 응답. 보낸 연결에만 온다 |
+| SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다 |
+| SUBSCRIBE | `/user/queue/errors` | 에러 응답 | 메시지 처리 실패. 보낸 연결에만 온다 |
+
+**방 상태**
+
+```json
+{
+  "roomId": 1,
+  "inviteCode": "A1B2C3",
+  "status": "WAITING",
+  "meId": 1,
+  "participants": [{ "participantId": 1, "nickname": "방장", "tag": 1, "role": "HOST" }]
+}
+```
+
+- `meId`는 이 메시지를 받는 참가자의 ID다.
+- `inviteCode`는 숫자·영문 대문자 6자리다.
+- `tag`는 방 안에서 유일한 입장 순서 번호다(방장 1, 나간 사람 번호는 다시 쓰지 않음). 화면에는 `nickname#tag`로 보여준다.
+
+**방 이벤트**
+
+| type | 의미 | 본문 |
+| --- | --- | --- |
+| `PARTICIPANT_JOINED` | 참가자가 들어왔다 | `{ "type": "PARTICIPANT_JOINED", "participantId": 3, "participants": [...] }` (들어온 사람 포함 전체) |
+| `PARTICIPANT_LEFT` | 게스트가 나갔다 | `{ "type": "PARTICIPANT_LEFT", "participantId": 2, "participants": [...] }` (남은 참가자) |
+| `ROOM_CLOSED` | 방장이 나가 방이 끝났다 | `{ "type": "ROOM_CLOSED", "participantId": 1 }` |
+
+**에러**
+
+본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방 관련 코드:
+
+| code | 상황 |
+| --- | --- |
+| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다 |
+| `ROOM_ALREADY_JOINED` | 이미 방에 들어가 있는 연결이 방을 또 만들거나 다른 방에 들어간다 |
+| `ROOM_INVITE_CODE_EXHAUSTED` | 겹치지 않는 초대 코드를 만들지 못했다 |
+| `ROOM_INVALID_INVITE_CODE` | 초대 코드가 숫자·영문 6자리가 아니다 |
+| `ROOM_NOT_FOUND` | 그 초대 코드의 방이 없다(방장이 나가 닫힌 방 포함) |
+| `ROOM_FULL` | 방 인원(10명)이 가득 찼다 |
+| `ROOM_ALREADY_PLAYING` | 게임이 진행 중인 방이다 |
 
 ---
