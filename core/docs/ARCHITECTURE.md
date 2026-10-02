@@ -204,6 +204,25 @@ domain은 프로젝트의 핵심 개념과 정책을 담는다.
 - **Spring과 Web 의존은 두지 않는다.** `@Component`, `@Transactional`, `ResponseEntity`, `HttpStatus`는 domain에 들어오지 않는다. 비즈니스 규칙 위반은 `common/exception`의 `BusinessException`과 `ErrorCode`로 던진다(`EXCEPTION.md`). **`ErrorCode`가 `HttpStatus`를 가지므로 domain이 `ErrorCode`를 통해 간접적으로 Web에 의존하는 것은 허용한다.** domain 코드에서 `HttpStatus`를 직접 쓰지는 않는다.
 - `@Entity` 클래스는 record로 만들 수 없다. 기본 생성자와 가변 필드가 필요하므로 `@NoArgsConstructor(access = PROTECTED)` 일반 클래스로 둔다. **setter는 두지 않는다.** 상태 변경은 의미 있는 도메인 메서드로만 한다.
 
+## 동시성
+
+방·참가자는 서버 메모리에 있고, 같은 방을 여러 스레드가 동시에 건드린다. 서로 다른 참가자의 메시지는 STOMP 처리 스레드 풀에서 병렬로 실행되고, 연결 끊김은 웹소켓 I/O 스레드에서, 서버 타이머는 스케줄러 스레드에서 온다. **같은 방의 상태를 읽고 바꾸는 흐름은 방 단위 락(`room/implement/RoomLock`) 안에서 실행한다.**
+
+```java
+roomLock.withLock(roomId, () -> {
+    roomEntryValidator.validate(room, nickname);           // 확인
+    return participantAppender.append(room, nickname, token); // 변경
+});
+```
+
+- **확인과 변경을 한 락 안에 둔다.** 인원 상한·닉네임 중복·선착순 정답자처럼 "확인한 뒤 바꾸는" 규칙은 락 밖에서 확인하면 동시 요청이 함께 통과한다.
+- **락은 implement에서 잡는다.** service는 흐름만 표현하고 락을 직접 다루지 않는다.
+- **도메인 객체(`Room`)는 스스로 동기화하지 않는다.** 저장소에 들어간 방은 락 밖에서 읽지 않는다. 락 밖으로 넘기는 결과는 락 안에서 만든 스냅샷(record)으로 넘긴다.
+- **락 안에서는 메모리 상태만 다룬다.** DB 조회·저장, 외부 API 호출, STOMP 발송은 락 밖에서 한다. 락 안에서 I/O를 하면 그 방의 모든 요청이 밀리고, 기다리는 스레드가 STOMP 처리 스레드 풀을 차지해 다른 방까지 느려진다.
+- **락 안에서 다시 확인한다.** 방을 찾은 뒤 락을 잡기까지 다른 스레드가 먼저 상태를 바꿨을 수 있다.
+- **닫힌 방은 다시 바뀌지 않는다.** 지워진 방의 락을 정리할 때 같은 방 ID로 락이 둘 생길 수 있어도, 닫힌 방에 대한 변경은 아무것도 하지 않으므로 상태가 깨지지 않는다.
+- 공정 락(`new ReentrantLock(true)`)은 쓰지 않는다. 처리 순서가 중요한 규칙(선착순 정답)은 락 안의 상태 확인으로 지킨다.
+
 ## 트랜잭션 경계
 
 - 기본 트랜잭션 경계는 service public 메서드에 둔다.
@@ -220,3 +239,4 @@ domain은 프로젝트의 핵심 개념과 정책을 담는다.
 - domain에 Spring·Web 의존이 들어오지 않았는가? (`ErrorCode`를 통한 간접 의존만 허용)
 - 레이어를 건너뛰는 참조가 없고, 다른 도메인은 implement로만 참조하며 순환 참조가 없는가?
 - 이벤트 페이로드가 직렬화 가능한 불변 record이며, 리스너가 예외를 삼키지 않는가?
+- 같은 방의 상태를 읽고 바꾸는 흐름이 방 락 안에 있고, 락 안에서 I/O를 하지 않는가?
