@@ -1,0 +1,22 @@
+# 로컬 개발용: 게임 서버(game-api)와 게임 웹(Vite 개발 서버)을 함께 컨테이너로 띄운다.
+#   docker compose up --build   →  게임 웹 http://localhost:5173, 게임 서버 http://localhost:8080
+#   8080을 이미 쓰고 있으면 GAME_API_PORT=18080 docker compose up --build (게임 웹은 컨테이너끼리 붙으므로 영향 없음)
+# game-api를 IntelliJ에서 실행할 때는 이 파일이 아니라 compose.game-web.yml이 자동으로 쓰인다.
+# DB는 game-api 기본 설정(H2 인메모리)을 쓴다. MySQL은 core/docker-compose.yml(local-dev)을 따로 쓴다.
+services:
+  game-api:
+    build:
+      context: ./core
+      dockerfile: game-api/Dockerfile
+    ports:
+      - "${GAME_API_PORT:-8080}:8080"
+
+  game-web:
+    extends:
+      file: compose.game-web.yml
+      service: game-web
+    depends_on:
+      - game-api
+    environment:
+      # 같은 compose 네트워크의 game-api 컨테이너로 붙는다.
+      GAME_API_URL: ws://game-api:8080

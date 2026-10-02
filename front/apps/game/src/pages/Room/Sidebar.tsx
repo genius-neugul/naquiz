@@ -1,7 +1,8 @@
 import { MAX_PARTICIPANTS } from "@naquiz/shared";
 import { Badge, Button, Eyebrow, PulseDot } from "@naquiz/ui";
 import { useState } from "react";
-import { host, isHost, passRuleText } from "../../game/selectors";
+import { ParticipantName } from "../../components/ParticipantName";
+import { hostDisplayName, isHost, passRuleText } from "../../game/selectors";
 import type { RoomState } from "../../game/types";
 import { useNow } from "../../hooks/useNow";
 import styles from "./Sidebar.module.css";
@@ -17,7 +18,7 @@ export function Sidebar({ room }: { room: RoomState }) {
 
   return (
     <div className={styles.root}>
-      {!playing && (isHost(room) ? <InviteCode code={room.inviteCode} /> : <GuestWaiting hostName={host(room)?.nickname ?? "방장"} />)}
+      {!playing && (isHost(room) ? <InviteCode code={room.inviteCode} /> : <GuestWaiting hostName={hostDisplayName(room)} />)}
 
       <div>
         <div className={styles.listHead}>
@@ -33,7 +34,9 @@ export function Sidebar({ room }: { room: RoomState }) {
             return (
               <li key={p.id} className={[styles.player, mine && styles.mine, flash && styles.flash].filter(Boolean).join(" ")}>
                 <span className={styles.rank}>{playing ? i + 1 : ""}</span>
-                <span className={styles.name}>{p.nickname}</span>
+                <span className={styles.name}>
+                  <ParticipantName participant={p} />
+                </span>
                 {turnId === p.id && <Badge tone="accent">차례</Badge>}
                 {p.role === "HOST" && <Badge>방장</Badge>}
                 {mine && <Badge tone="text">나</Badge>}

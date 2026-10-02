@@ -10,7 +10,7 @@
 - `docs/LOG.md`: 로그 prefix, 레벨, 로그를 남기는 위치, 민감 정보, Trace ID
 - `docs/TEST.md`: 테스트 계층, 네이밍, Given-When-Then, Fixture, Assertion, Mock
 - `docs/review/`: 컨벤션 검토 기록. 사용자가 고른 선택지와 메모가 남아 있다
-- `../docs/API.md`: HTTP API 요청/응답 규격
+- `../docs/API.md`: HTTP API와 실시간 메시지(STOMP) 요청/응답 규격
 - `../docs/DOMAIN.md`: 유비쿼터스 언어, 애그리거트, 정답 판정·마스킹·투표 규칙
 - `../docs/MUSIC_SELECTION_RULE.md`: 게임에서 Spotify 곡 정보 조회와 YouTube 영상 선택 규칙
 
@@ -18,13 +18,13 @@
 
 - Java 25, Spring Boot 4.1.1, Gradle (wrapper 포함)
 - 테스트: JUnit 5 (`spring-boot-starter-test`)
-- 실시간 통신:
+- 실시간 통신: Spring WebSocket + STOMP(simple broker), `game-api`의 `/ws`. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
 - Gradle 멀티모듈: `core-domain`(라이브러리), `game-api`, `admin-api`, `crawler-batch`(실행 앱). 역할은 `docs/ARCHITECTURE.md` 「모듈 구조」
 - 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`). 설정은 `core-domain`의 `domain.yml` 한 벌
 - 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
 - 캐시: 없음
 - Lombok
-- 인증: 없음. 참가자는 비회원 게스트이고, 참가자 식별 방식(토큰 등)은 미정
+- 인증: 없음. 참가자는 비회원 게스트이고, 실시간 연결마다 서버가 붙이는 Principal 이름을 참가자 토큰으로 쓴다
 - 기본 패키지: `geniusneugul.project.core`
 
 ### Spring Boot 4 주의사항
@@ -40,7 +40,7 @@
 ./gradlew build                      # 전 모듈 컴파일 + 테스트
 ./gradlew test                       # 전 모듈 테스트
 ./gradlew :game-api:test             # 한 모듈만
-./gradlew :game-api:bootRun          # 게임 서버 로컬 실행 (H2 인메모리, 8080)
+./gradlew :game-api:bootRun          # 게임 서버 로컬 실행 (H2 인메모리, 8080). 게임 웹 컨테이너도 함께 뜬다(아래)
 ./gradlew :admin-api:bootRun         # 관리자 API (8081)
 ./gradlew :crawler-batch:bootRun     # 데일리 크롤링 (웹 없음)
 
@@ -49,6 +49,13 @@ docker compose up -d
 set -a; source .env; set +a
 ./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
 ```
+
+game-api를 IntelliJ나 `bootRun`으로 실행하면 Spring Boot Docker Compose 지원(`spring-boot-docker-compose`, developmentOnly)이 루트의 `compose.game-web.yml`로 게임 웹(Vite 개발 서버, http://localhost:5173)을 함께 띄우고, 앱을 끄면 멈춘다. 게임 웹은 호스트의 game-api로 `/ws`를 프록시한다.
+
+- Docker가 실행 중이어야 앱이 뜬다. 게임 웹 없이 서버만 띄우려면 환경 변수 `SPRING_DOCKER_COMPOSE_ENABLED=false`를 준다.
+- 작업 디렉터리에서 위로 올라가며 `compose.game-web.yml`을 찾는다(`common/config/GameWebComposeFileEnvironmentPostProcessor`). 저장소 안 어디서 실행해도 되고, 못 찾으면 Docker Compose 지원을 끈다. 다른 파일을 쓰려면 `SPRING_DOCKER_COMPOSE_FILE`로 지정한다.
+- 8080이 아닌 포트로 실행하면 `GAME_API_PORT`도 같은 값으로 준다(예: `GAME_API_PORT=18081`, `--server.port=18081`).
+- 테스트와 실행 jar(컨테이너)에서는 이 기능이 동작하지 않는다.
 
 ## 디렉터리 구조
 
@@ -61,7 +68,7 @@ core/
 ├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
 ├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
 │   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL)
-├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러
+├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러, STOMP 설정, Dockerfile(루트 compose.yml에서 씀)
 ├── admin-api/         실행 앱. admin·question·report·song·movie·statistics·crawl presentation·service
 └── crawler-batch/     실행 앱. crawl service
 ```

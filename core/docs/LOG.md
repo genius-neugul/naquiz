@@ -71,7 +71,7 @@ Trace ID는 한 요청의 로그를 이어 붙이기 위한 식별자다. **지�
 
 예외 로그는 중복으로 남기지 않는다.
 
-- 예상 가능한 비즈니스 예외는 GlobalExceptionHandler에서 WARN으로 **한 번만** 남긴다.
+- 예상 가능한 비즈니스 예외는 GlobalExceptionHandler에서 WARN으로 **한 번만** 남긴다. `BusinessException`의 `context`와 `cause`를 함께 남긴다(`EXCEPTION.md` 「BusinessException 규칙」).
 - 예상하지 못한 예외는 GlobalExceptionHandler에서 ERROR로 **한 번만** 남긴다.
 - 외부 시스템 호출 실패처럼 원인 위치가 중요하면 infra에서 맥락과 exception을 함께 남긴다. `log.error(exception.getMessage())`처럼 stack trace와 맥락이 빠진 형태는 쓰지 않는다.
 

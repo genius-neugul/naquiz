@@ -6,3 +6,8 @@ spring:
 
 server:
   port: 8080
+
+app:
+  websocket:
+    # 게임 앱 개발 서버. Vite 프록시로 붙으면 같은 출처라 필요 없지만 직접 붙는 경우를 위해 둔다.
+    allowed-origins: http://localhost:5173

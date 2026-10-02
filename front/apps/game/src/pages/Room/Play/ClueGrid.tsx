@@ -1,5 +1,6 @@
 import { CLUES, type ClueType } from "@naquiz/shared";
 import { useGameClient } from "../../../game/GameProvider";
+import { displayName } from "../../../game/selectors";
 import type { RoomState, Round } from "../../../game/types";
 import { secondsLeft, useNow } from "../../../hooks/useNow";
 import styles from "./ClueGrid.module.css";
@@ -11,7 +12,8 @@ export function ClueGrid({ room, round }: { room: RoomState; round: Round }) {
   const turn = round.status === "IN_PROGRESS" ? round.turn : null;
   const now = useNow(!!turn);
   const myTurn = turn?.participantId === room.meId;
-  const turnName = room.participants.find((p) => p.id === turn?.participantId)?.nickname;
+  const turnPlayer = room.participants.find((p) => p.id === turn?.participantId);
+  const turnName = turnPlayer ? displayName(turnPlayer) : "";
 
   let turnText = "모든 단서 공개";
   if (turn) {

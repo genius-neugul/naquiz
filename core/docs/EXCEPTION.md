@@ -45,6 +45,28 @@ public enum ErrorCode {
 
 비즈니스 예외는 `ErrorCode`를 담은 공통 타입 `BusinessException`(RuntimeException)을 사용한다.
 
+```java
+throw new BusinessException(ErrorCode.ROOM_INVITE_CODE_EXHAUSTED, Map.of("attempts", MAX_ATTEMPTS));
+throw new BusinessException(ErrorCode.SONG_LOOKUP_FAILED, Map.of("songId", songId), e);
+```
+
+- 사용자에게 보이는 메시지는 `ErrorCode`의 메시지만 쓴다. `getMessage()`도 이 값이다.
+- 원인 추적에 필요한 식별자는 key-value `context`로 넘긴다. context는 로그에만 남고 응답에는 나가지 않는다. 참가자 토큰 같은 민감 정보와 사용자가 입력한 원문은 넣지 않는다(`LOG.md` 「민감 정보 규칙」).
+- 다른 예외를 바꿔 던질 때는 원래 예외를 `cause`로 넘겨 stack trace를 잃지 않는다.
+
+## 불변식 위반
+
+사용자가 일으킬 수 없는 코드 오류(ID를 두 번 부여, 있어야 할 방장이 없음 등)는 `BusinessException`이 아니라 자바 표준 예외 `IllegalStateException`·`IllegalArgumentException`으로 던진다. 문구는 다른 에러와 마찬가지로 `ErrorCode`에 두고(상태 코드 `INTERNAL_SERVER_ERROR`, 도메인 구역 안에 "불변식 위반" 주석으로 묶는다), 메시지 뒤에 식별자를 붙인다.
+
+```java
+throw new IllegalStateException(ErrorCode.ROOM_ID_ALREADY_ASSIGNED.getMessage() + " roomId=" + id);
+```
+
+- 이 ErrorCode는 응답에 쓰지 않는다. 클라이언트는 `COMMON_INTERNAL_ERROR`를 받고, 문구와 식별자는 error 로그에만 남는다.
+
+- 판단 기준: 클라이언트가 요청을 바꿔서 피할 수 있는 실패면 `BusinessException`, 코드가 잘못돼야만 일어나는 실패면 표준 예외다.
+- 표준 예외는 핸들러의 예상하지 못한 예외 처리로 들어가 `COMMON_INTERNAL_ERROR` 응답과 error 로그(stack trace 포함)로 한 번 남는다. 버그를 warn에 묻지 않고 바로 드러내기 위한 규칙이다.
+
 ## GlobalExceptionHandler 규칙
 
 `@RestControllerAdvice`에서 예외를 응답으로 변환한다. 처리 우선순위는 `BusinessException` → `MethodArgumentNotValidException` → `ConstraintViolationException` → 예상하지 못한 `Exception` 순이다.
@@ -64,13 +86,13 @@ public enum ErrorCode {
 ## 예외를 던지는 위치
 
 - 요청 형식 검증은 presentation에서 처리한다.
-- 비즈니스 규칙 위반은 domain 또는 implement에서 `BusinessException`으로 던진다.
+- 비즈니스 규칙 위반은 domain 또는 implement에서 `BusinessException`으로 던진다. 불변식 위반은 표준 예외로 던진다.
 - service는 비즈니스 흐름 중 실패를 자연스럽게 전파한다.
-- infra의 기술 예외는 가능한 도메인 의미가 있는 예외로 변환한다.
+- infra의 기술 예외는 가능한 도메인 의미가 있는 예외로 변환하고, 원래 예외를 `cause`로 넘긴다.
 
 ## 리뷰 체크리스트
 
 - 에러 코드가 `ErrorCode` 한 곳에 도메인 기준으로 명확하고, 사용자가 볼 수 없는 내부 정보가 응답에 포함되지 않았는가?
-- 예상 가능한 실패를 Exception이나 RuntimeException으로 직접 던지지 않았는가?
+- 예상 가능한 실패를 Exception이나 RuntimeException으로 직접 던지지 않았는가? (불변식 위반은 「불변식 위반」대로 표준 예외)
 - 검증 실패 응답이 필드 단위로 내려가고, 로그 레벨이 실패 성격에 맞는가?
 - STOMP 메시지 경로의 예외가 `@MessageExceptionHandler`로 보낸 참가자에게만 전달되는가?
