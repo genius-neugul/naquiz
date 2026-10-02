@@ -23,7 +23,7 @@ REMOVED = os.path.join(OUT_DIR, "radio_songs_removed.csv")
 
 # 처리 못한 곡(CSV)의 컬럼. 사람이 표 형태로 검토하기 쉽게 가수는 ', '로 잇는다
 UNRESOLVED_FIELDS = ["radio", "radio_name", "seq", "date", "title", "subtitle", "artist", "artist_sub",
-                     "raw_title", "raw_artist", "reason"]
+                     "raw_title", "raw_artist", "play_count", "reason"]
 NO_ARTIST = "아티스트 없음"
 
 # 처리하지 못하는 곡의 이유 (docs/MUSIC_PARSING_RULE.md 1-11과 같은 이름)
@@ -82,7 +82,7 @@ def main():
                 "title": title if title is not None else normalize(r["title"]), "subtitle": subtitle or "",
                 # 가수 여러 명은 배열로 담는다. 이름 안의 쉼표(Earth, Wind & Fire)와 구분할 필요가 없다
                 "artists": [{"artist": a, "artist_sub": s} for a, s in zip(artists, subs)],
-                "raw_title": r["title"], "raw_artist": r["artist"]}
+                "raw_title": r["title"], "raw_artist": r["artist"], "play_count": int(r["play_count"])}
         reasons = unresolved_reasons(r["title"], r["artist"], title, subtitle)
         if reasons:
             unresolved.append({**{k: v for k, v in song.items() if k != "artists"},

@@ -1,7 +1,7 @@
 """radio_songs.csv → radio_songs_unique.csv
 
 - 가사 없는 곡(Inst·MR, 연주 시그널·BGM)을 지운다. 지운 곡은 radio_songs_removed.csv에 남긴다.
-- 같은 곡은 가장 많이 나온 표기 한 행만 남긴다.
+- 같은 곡은 가장 많이 나온 표기 한 행만 남긴다. 합친 방송 수는 play_count로 남긴다.
 - crawl.py의 RADIOS에 있는 라디오의 행만 쓴다.
 
 usage: python3 scripts/radio/make_unique.py [crawl_output 디렉터리]
@@ -107,13 +107,14 @@ def main():
         row = max((r for r, _ in members if (r["title"], r["artist"]) == best),
                   key=lambda r: (r["date"], int(r["seq"])))
         row = dict(row)
+        row["play_count"] = len(members)  # crawl.py가 회차 안 같은 (제목, 아티스트)를 지우므로 행 수를 방송 수로 쓴다
         if stat[best][2]:
             row["title"] = VOCAL_TAG.sub("", row["title"]).strip()
         out.append(row)
 
     out.sort(key=lambda r: (radios.index(r["radio"]), int(r["seq"]), r["title"]))
     with open(DST, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.DictWriter(f, fieldnames=["radio", "radio_name", "seq", "date", "title", "artist"])
+        w = csv.DictWriter(f, fieldnames=["radio", "radio_name", "seq", "date", "title", "artist", "play_count"])
         w.writeheader()
         w.writerows(out)
 
