@@ -6,7 +6,7 @@
 
 - `../docs/기획.md`: 게임 종류, 게임 룰, 힌트·투표 규칙, 백오피스
 - `../docs/DOMAIN.md`: 유비쿼터스 언어, 정답 판정·마스킹·투표 규칙, 오류 신고 유형
-- `../docs/API.md`: HTTP API 요청/응답 규격
+- `../docs/API.md`: HTTP API와 실시간 메시지(STOMP) 요청/응답 규격
 - 디자인 원본: [퀴즈방 · 시안 C](https://claude.ai/artifact/Hq4ZJQ85CgvRpYhMpanhqy) (Claude Design 캔버스). 화면 레이아웃·스타일은 이 디자인을, 규칙·문구는 `docs/`를 따른다
 
 ## 기술 스택
@@ -47,7 +47,7 @@ front/
 │   │       ├── game/        GameClient 인터페이스, 상태 타입, GameProvider(useRoom), selectors
 │   │       │   ├── mock/    MockGameClient(봇 시뮬레이션), fixtures
 │   │       │   └── stomp/   StompGameClient(게임 서버 STOMP 연결)
-│   │       ├── components/  Header, ReportPanel(문제 오류 신고)
+│   │       ├── components/  Header, ReportPanel(문제 오류 신고), ParticipantName(닉네임#태그 표시)
 │   │       ├── hooks/       useNow(남은 시간 표시)
 │   │       └── pages/       Home(방 만들기·참가), Room(대기실·게임 진행·채팅·결과)
 │   └── admin/           @naquiz/admin 백오피스 앱

@@ -209,9 +209,11 @@ domain은 프로젝트의 핵심 개념과 정책을 담는다.
 방·참가자는 서버 메모리에 있고, 같은 방을 여러 스레드가 동시에 건드린다. 서로 다른 참가자의 메시지는 STOMP 처리 스레드 풀에서 병렬로 실행되고, 연결 끊김은 웹소켓 I/O 스레드에서, 서버 타이머는 스케줄러 스레드에서 온다. **같은 방의 상태를 읽고 바꾸는 흐름은 방 단위 락(`room/implement/RoomLock`) 안에서 실행한다.**
 
 ```java
-roomLock.withLock(roomId, () -> {
-    roomEntryValidator.validate(room, nickname);           // 확인
-    return participantAppender.append(room, nickname, token); // 변경
+// RoomJoiner: 인원·상태 확인과 참가자 추가가 한 락 안에서 일어난다
+return roomLock.withLock(room.getId(), () -> {
+    Participant participant = room.join(nickname, participantToken, LocalDateTime.now(clock)); // 확인 + 변경
+    roomRepository.save(room);                                                                 // 색인 갱신
+    return RoomJoin.of(room, participant);                                                     // 스냅샷
 });
 ```
 

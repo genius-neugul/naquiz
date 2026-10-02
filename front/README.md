@@ -31,12 +31,12 @@ npm test
 
 ## Mock 클라이언트
 
-게임 서버의 실시간 API가 아직 없어서 두 앱 모두 Mock 클라이언트로 동작한다.
+기본 실행은 두 앱 모두 Mock 클라이언트로 동작한다. 게임 서버의 실시간 API는 방 만들기·참가하기·나가기만 있어서 나머지 게임 진행은 Mock이 대신한다(서버에 붙이려면 아래 「게임 서버에 붙여 실행」).
 
 - 게임 앱 `MockGameClient`: 방을 만들면 봇 7명이 들어온다. 봇은 잡담, 오답·정답 입력, 힌트·스킵 투표, 스무고개 단서 선택을 한다. 참가하기로 들어가면 방장 봇이 게임을 골라 시작한다. 초대 코드는 숫자·영문 6자리면 아무 값이나 된다.
 - 백오피스 앱 `MockAdminClient`: 고정 시드로 만든 문제 통계와 샘플 신고를 보여준다. 게임 앱과 데이터를 공유하지 않는다.
 
-서버 API가 생기면 `apps/game/src/game/GameClient.ts`, `apps/admin/src/admin/AdminClient.ts` 인터페이스의 실제 구현을 만들어 `main.tsx`에서 바꿔 끼운다.
+게임 앱의 실제 구현은 `StompGameClient`(`VITE_GAME_CLIENT=stomp`)다. 백오피스 앱은 서버 API가 생기면 `apps/admin/src/admin/AdminClient.ts` 인터페이스의 실제 구현을 만들어 `main.tsx`에서 바꿔 끼운다.
 
 ## 게임 서버에 붙여 실행
 
