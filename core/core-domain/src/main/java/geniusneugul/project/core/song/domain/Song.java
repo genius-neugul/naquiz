@@ -59,4 +59,31 @@ public class Song {
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "audio_id")
     private Audio audio;
+
+    private Song(String title, String subtitle, List<ArtistName> artists, String rawTitle, String rawArtist,
+                 int playCount, SourceProgram sourceProgram, int sourceSeq, LocalDate sourceDate) {
+        this.title = title;
+        this.subtitle = subtitle;
+        this.artists = new ArrayList<>(artists);
+        this.rawTitle = rawTitle;
+        this.rawArtist = rawArtist;
+        this.playCount = playCount;
+        this.sourceProgram = sourceProgram;
+        this.sourceSeq = sourceSeq;
+        this.sourceDate = sourceDate;
+    }
+
+    /**
+     * 선곡표에서 정제한 곡을 만든다. Spotify 정보와 음원은 비워 두고 나중에 채운다.
+     */
+    public static Song create(String title, String subtitle, List<ArtistName> artists, String rawTitle,
+                              String rawArtist, int playCount, SourceProgram sourceProgram, int sourceSeq,
+                              LocalDate sourceDate) {
+        return new Song(title, subtitle, artists, rawTitle, rawArtist, playCount, sourceProgram, sourceSeq,
+                sourceDate);
+    }
+
+    public SongSourceKey sourceKey() {
+        return new SongSourceKey(sourceProgram, sourceSeq, rawTitle, rawArtist);
+    }
 }

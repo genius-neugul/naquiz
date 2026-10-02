@@ -19,4 +19,9 @@ public class ArtistName {
 
     @Column(nullable = false)
     private String artistSub;
+
+    public ArtistName(String artist, String artistSub) {
+        this.artist = artist;
+        this.artistSub = artistSub;
+    }
 }
