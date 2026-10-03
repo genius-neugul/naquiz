@@ -8,16 +8,14 @@ import {
   TARGET_SCORE_MAX,
   TARGET_SCORE_MIN,
   TURN_SECONDS,
+  answerHintContent,
   answerMeta,
+  isAnswerHintType,
   isCorrectAnswer,
   isVotePassed,
-  maskAll,
   maskTitleInSynopsis,
-  pickRandomCharIndex,
-  revealInitials,
-  revealInitialsWith,
-  revealPartial,
-  revealSymbols,
+  nextAnswerHintType,
+  type AnswerHintContent,
   type ClueType,
   type GameType,
   type HintType,
@@ -29,7 +27,6 @@ import { BOT_NAMES, BOT_TALK, MOVIES, SONGS, type MovieFixture, type SongFixture
 const ME = "me";
 const NEXT_ROUND_MS = 5000;
 const CODE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const SONG_ANSWER_STAGES: HintType[] = ["ANSWER_MASK", "ANSWER_SYMBOL", "ANSWER_PARTIAL"];
 const SONG_INFO_HINTS: HintType[] = ["ALBUM", "ARTIST", "RELEASE_DATE"];
 
 type Item = { kind: "song"; song: SongFixture } | { kind: "movie"; movie: MovieFixture };
@@ -57,7 +54,6 @@ export class MockGameClient implements GameClient {
   private seq = 0;
 
   private item: Item | null = null;
-  private randomCharIndices: number[] = [];
   private queue: number[] = [];
   private queuePos = 0;
   private turnOrder: string[] = [];
@@ -144,6 +140,10 @@ export class MockGameClient implements GameClient {
 
   pickClue(clueType: ClueType): void {
     this.revealClue(ME, clueType);
+  }
+
+  openAnswerHint(): void {
+    this.revealAnswerHintOnTurn(ME);
   }
 
   report(input: ReportInput): void {
@@ -251,7 +251,6 @@ export class MockGameClient implements GameClient {
     if (!s) return;
     this.clear(this.roundTimers);
     this.item = this.nextItem();
-    this.randomCharIndices = [];
     const now = Date.now();
     const game = s.gameType;
     const stillTotal = this.item.kind === "movie" ? this.item.movie.stillCutCount : 0;
@@ -261,7 +260,7 @@ export class MockGameClient implements GameClient {
       status: "IN_PROGRESS",
       answerMeta: answerMeta(this.answer().answer),
       hints: [],
-      nextAnswerHint: game === "SONG" ? "ANSWER_MASK" : null,
+      nextAnswerHint: game === "SONG" ? nextAnswerHintType(game, this.answer().answer, null) : null,
       clues: [],
       turn: null,
       stillCut: game === "MOVIE_STILL_CUT" ? { index: 0, total: stillTotal, imageUrl: null, shownAt: now, nextAt: now + STILL_CUT_SECONDS * 1000 } : null,
@@ -367,8 +366,13 @@ export class MockGameClient implements GameClient {
         this.scheduleStillCut();
         return;
       }
-      this.setRound({ ...round, stillCut: { ...cur, nextAt: null }, hints: [...round.hints, { type: "ANSWER_INITIAL", content: revealInitials(this.answer().answer) }] });
-      this.system("모든 스틸컷을 보여줬어요 · 초성 힌트가 열렸어요");
+      this.setRound({ ...round, stillCut: { ...cur, nextAt: null }, nextAnswerHint: nextAnswerHintType("MOVIE_STILL_CUT", this.answer().answer, null) });
+      if (this.state?.round?.nextAnswerHint) {
+        this.revealHint(this.state.round.nextAnswerHint);
+        this.system("모든 스틸컷을 보여줬어요 · 정답 힌트가 열렸어요");
+      } else {
+        this.system("모든 스틸컷을 보여줬어요");
+      }
     });
   }
 
@@ -399,6 +403,7 @@ export class MockGameClient implements GameClient {
         const opened = this.state?.round?.clues.map((c) => c.type) ?? [];
         const left = CLUES.filter(([k]) => !opened.includes(k));
         if (left.length) this.revealClue(participantId, pick(left)[0]);
+        else this.revealAnswerHintOnTurn(participantId);
       });
     }
   }
@@ -415,11 +420,32 @@ export class MockGameClient implements GameClient {
     const label = CLUES.find(([k]) => k === clueType)?.[1] ?? clueType;
     this.system(`${name}님이 '${label}' 단서를 열었어요`);
     if (clues.length >= CLUES.length) {
-      this.setRound({ ...round, clues, turn: null, nextAnswerHint: "ANSWER_LENGTH" });
-      this.system("모든 단서가 열렸어요 · 이제 정답 힌트 투표를 할 수 있어요");
+      const nextAnswerHint = nextAnswerHintType("MOVIE_TWENTY_QUESTIONS", it.movie.answer, null);
+      this.setRound({ ...round, clues, turn: null, nextAnswerHint });
+      if (!nextAnswerHint) {
+        this.system("모든 단서가 열렸어요");
+        return;
+      }
+      this.system("모든 단서가 열렸어요 · 이제 차례대로 정답 힌트를 열 수 있어요");
+    } else {
+      this.setRound({ ...round, clues });
+    }
+    this.turnIndex++;
+    this.startTurn();
+  }
+
+  /** 모든 단서가 열린 뒤 차례 참가자가 다음 단계 정답 힌트를 연다 */
+  private revealAnswerHintOnTurn(participantId: string): void {
+    const round = this.state?.round;
+    const next = round?.nextAnswerHint;
+    if (!round || round.status !== "IN_PROGRESS" || !next || this.state?.gameType !== "MOVIE_TWENTY_QUESTIONS") return;
+    if (round.turn?.participantId !== participantId || round.clues.length < CLUES.length) return;
+    this.revealHint(next);
+    this.system(`${this.nickname(participantId)}님이 '${HINT_LABEL[next]}'을(를) 열었어요`);
+    if (!this.state?.round?.nextAnswerHint) {
+      this.setRound({ ...this.state!.round!, turn: null });
       return;
     }
-    this.setRound({ ...round, clues });
     this.turnIndex++;
     this.startTurn();
   }
@@ -431,7 +457,7 @@ export class MockGameClient implements GameClient {
     if (round.votes.some((v) => v.type === type && v.targetHintType === target)) return false;
     if (type === "SKIP") return true;
     if (!target) return false;
-    if (target === round.nextAnswerHint) return true;
+    if (target === round.nextAnswerHint) return this.state?.gameType === "SONG";
     return this.state?.gameType === "SONG" && SONG_INFO_HINTS.includes(target) && !round.hints.some((h) => h.type === target);
   }
 
@@ -479,28 +505,16 @@ export class MockGameClient implements GameClient {
     const it = this.item;
     if (!round || !it || round.status !== "IN_PROGRESS") return;
     const { answer } = this.answer();
+    if (isAnswerHintType(type)) {
+      if (type !== round.nextAnswerHint) return;
+      const last = this.lastAnswerHint(round);
+      const content = answerHintContent(type, answer, last);
+      const nextAnswerHint = nextAnswerHintType(this.state!.gameType, answer, { type, content });
+      this.setRound({ ...round, hints: [...round.hints, { type, content }], nextAnswerHint });
+      return;
+    }
     let content = "";
-    let nextAnswerHint = round.nextAnswerHint;
     switch (type) {
-      case "ANSWER_MASK":
-      case "ANSWER_LENGTH":
-        content = maskAll(answer);
-        break;
-      case "ANSWER_SYMBOL":
-        content = revealSymbols(answer);
-        break;
-      case "ANSWER_PARTIAL":
-        content = revealPartial(answer);
-        break;
-      case "ANSWER_INITIAL":
-        content = revealInitials(answer);
-        break;
-      case "ANSWER_RANDOM_CHAR": {
-        const index = pickRandomCharIndex(answer, this.randomCharIndices);
-        if (index !== null) this.randomCharIndices.push(index);
-        content = revealInitialsWith(answer, this.randomCharIndices);
-        break;
-      }
       case "ALBUM":
         content = it.kind === "song" ? it.song.albumImageUrl ?? "" : "";
         break;
@@ -513,18 +527,15 @@ export class MockGameClient implements GameClient {
       case "STILL_CUT":
         return;
     }
-    if (type === nextAnswerHint) nextAnswerHint = this.nextStage(type, answer);
-    this.setRound({ ...round, hints: [...round.hints, { type, content }], nextAnswerHint });
+    this.setRound({ ...round, hints: [...round.hints, { type, content }] });
   }
 
-  private nextStage(current: HintType, answer: string): HintType | null {
-    if (this.state?.gameType === "SONG") {
-      const i = SONG_ANSWER_STAGES.indexOf(current);
-      return SONG_ANSWER_STAGES[i + 1] ?? null;
+  private lastAnswerHint(round: Round): AnswerHintContent | null {
+    for (let i = round.hints.length - 1; i >= 0; i--) {
+      const { type, content } = round.hints[i]!;
+      if (isAnswerHintType(type)) return { type, content };
     }
-    if (current === "ANSWER_LENGTH") return "ANSWER_INITIAL";
-    const remaining = pickRandomCharIndex(answer, this.randomCharIndices);
-    return remaining === null ? null : "ANSWER_RANDOM_CHAR";
+    return null;
   }
 
   // ---- 봇 ----
@@ -555,8 +566,10 @@ export class MockGameClient implements GameClient {
     const bots = this.bots();
     if (!round || round.status !== "IN_PROGRESS" || !bots.length) return;
     const options: [VoteType, HintType | null][] = [];
-    if (round.nextAnswerHint) options.push(["HINT", round.nextAnswerHint]);
-    if (this.state?.gameType === "SONG") SONG_INFO_HINTS.forEach((h) => options.push(["HINT", h]));
+    if (this.state?.gameType === "SONG") {
+      if (round.nextAnswerHint) options.push(["HINT", round.nextAnswerHint]);
+      SONG_INFO_HINTS.forEach((h) => options.push(["HINT", h]));
+    }
     if (Math.random() < 0.15) options.push(["SKIP", null]);
     const open = options.filter(([t, h]) => this.canVote(round, t, h));
     if (!open.length) return;

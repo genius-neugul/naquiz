@@ -1,8 +1,10 @@
 export type GameType = "SONG" | "MOVIE_TWENTY_QUESTIONS" | "MOVIE_STILL_CUT";
 
-export type SongHintType = "ANSWER_MASK" | "ANSWER_SYMBOL" | "ANSWER_PARTIAL" | "ALBUM" | "ARTIST" | "RELEASE_DATE";
-export type MovieHintType = "ANSWER_LENGTH" | "ANSWER_INITIAL" | "ANSWER_RANDOM_CHAR";
-export type StillHintType = "STILL_CUT" | "ANSWER_INITIAL";
+/** 정답 힌트 1~4단계. 노래·영화 스무고개는 모두, 스틸컷은 ANSWER_PARTIAL만 쓴다 */
+export type AnswerHintType = "ANSWER_MASK" | "ANSWER_SYMBOL" | "ANSWER_PARTIAL" | "ANSWER_RANDOM_CHAR";
+export type SongHintType = AnswerHintType | "ALBUM" | "ARTIST" | "RELEASE_DATE";
+export type MovieHintType = AnswerHintType;
+export type StillHintType = "STILL_CUT" | "ANSWER_PARTIAL";
 export type HintType = SongHintType | MovieHintType | StillHintType;
 
 export type ClueType = "AUDIENCE" | "RELEASE_DATE" | "DIRECTOR" | "CAST" | "SYNOPSIS" | "GENRE" | "NATION" | "RATING";
