@@ -15,7 +15,7 @@
 - Vite 8, React 19, TypeScript 6 (strict), CSS Modules, react-router 7
 - 테스트: Vitest 4 (`packages/shared` 순수 함수)
 - 린트: ESLint 10 + typescript-eslint + react-hooks
-- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 지금은 방 만들기·참가하기·나가기와 채팅만 서버로 처리하고, 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
+- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·게임 종료를 서버로 처리하고(힌트·투표·스무고개 단서·스틸컷·신고는 아직 없음), 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
 - `.npmrc`의 `legacy-peer-deps=true`는 npm 10.9의 peer 해석 버그(vite 8 → `@vitejs/devtools` → vitest 순환에서 `edgesOut` 오류)를 피하려고 둔다. 필요한 peer는 `package.json`에 직접 적는다
 
 ## 자주 쓰는 명령

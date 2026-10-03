@@ -1,7 +1,8 @@
 import { Client, type IMessage } from "@stomp/stompjs";
+import { TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType } from "@naquiz/shared";
 import type { GameClient } from "../GameClient";
 import { displayName } from "../selectors";
-import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus } from "../types";
+import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus, Round, RoundLog } from "../types";
 
 /** 서버 규격: docs/API.md 「실시간 메시지(STOMP) 규격」 */
 interface ParticipantResponse {
@@ -23,7 +24,54 @@ type RoomEvent =
   | { type: "PARTICIPANT_JOINED"; participantId: number; participants: ParticipantResponse[] }
   | { type: "PARTICIPANT_LEFT"; participantId: number; participants: ParticipantResponse[] }
   | { type: "ROOM_CLOSED"; participantId: number }
-  | ChatMessageResponse;
+  | ChatMessageResponse
+  | GameStartedResponse
+  | RoundStartedResponse
+  | RoundSolvedResponse
+  | GameFinishedResponse;
+
+interface ScoreResponse {
+  participantId: number;
+  score: number;
+}
+
+interface GameStartedResponse {
+  type: "GAME_STARTED";
+  gameId: number;
+  gameType: GameType;
+  targetScore: number;
+  scores: ScoreResponse[];
+}
+
+interface RoundStartedResponse {
+  type: "ROUND_STARTED";
+  gameId: number;
+  roundNo: number;
+  startedAt: string;
+}
+
+/** 정답 채팅은 CHAT 대신 이 이벤트로 온다. 게임이 끝났으면 nextRoundAt이 null이다 */
+interface RoundSolvedResponse {
+  type: "ROUND_SOLVED";
+  gameId: number;
+  roundNo: number;
+  solverId: number;
+  nickname: string;
+  tag: number;
+  text: string;
+  answer: string;
+  subAnswer: string | null;
+  solvedAt: string;
+  scores: ScoreResponse[];
+  nextRoundAt: string | null;
+}
+
+interface GameFinishedResponse {
+  type: "GAME_FINISHED";
+  gameId: number;
+  winnerId: number;
+  scores: ScoreResponse[];
+}
 
 interface ChatMessageResponse {
   type: "CHAT";
@@ -54,7 +102,8 @@ function defaultBrokerUrl(): string {
 }
 
 /**
- * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 지금은 방 만들기·참가하기·나가기와 채팅만 서버로 처리한다.
+ * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행을
+ * 서버로 처리한다. 게임 상태는 서버 이벤트로만 바꾼다.
  * 서버는 연결 하나를 참가자 한 명으로 보므로 방을 나가면 연결도 닫는다(재접속 없음).
  */
 export class StompGameClient implements GameClient {
@@ -95,11 +144,30 @@ export class StompGameClient implements GameClient {
     this.client.publish({ destination: "/app/rooms/chat", body: JSON.stringify({ text: message }) });
   }
 
-  // 게임 진행은 아직 서버에 없다. 서버 규격이 생기면 채운다.
-  selectGame(): void {}
-  setTargetScore(): void {}
-  startGame(): void {}
-  dismissResult(): void {}
+  // 게임 종류·목표 점수는 시작할 때 한 번에 보낸다. 고르는 중인 값은 방장 화면에만 둔다.
+  selectGame(gameType: GameType): void {
+    if (!this.state || this.state.status !== "WAITING") return;
+    this.setState({ ...this.state, gameType });
+  }
+
+  setTargetScore(score: number): void {
+    if (!this.state || this.state.status !== "WAITING") return;
+    const targetScore = Math.min(TARGET_SCORE_MAX, Math.max(TARGET_SCORE_MIN, Math.round(score)));
+    this.setState({ ...this.state, targetScore });
+  }
+
+  startGame(): void {
+    if (!this.state || !this.client?.connected) return;
+    const { gameType, targetScore } = this.state;
+    this.client.publish({ destination: "/app/games/start", body: JSON.stringify({ gameType, targetScore }) });
+  }
+
+  dismissResult(): void {
+    if (!this.state) return;
+    this.setState({ ...this.state, result: null });
+  }
+
+  // 투표·스무고개 단서·오류 신고는 아직 서버에 없다. 서버 규격이 생기면 채운다.
   openVote(): void {}
   approveVote(): void {}
   pickClue(): void {}
@@ -179,11 +247,28 @@ export class StompGameClient implements GameClient {
       return;
     }
     if (!this.state) return;
-    if (event.type === "CHAT") {
-      this.onChat(event);
-      return;
+    switch (event.type) {
+      case "CHAT":
+        this.onChat(event);
+        return;
+      case "GAME_STARTED":
+        this.onGameStarted(event);
+        return;
+      case "ROUND_STARTED":
+        this.onRoundStarted(event);
+        return;
+      case "ROUND_SOLVED":
+        this.onRoundSolved(event);
+        return;
+      case "GAME_FINISHED":
+        this.onGameFinished(event);
+        return;
     }
-    const participants = event.participants.map(toParticipant);
+    // 게임 중에 들어오고 나가도 남은 참가자의 점수는 그대로 둔다.
+    const participants = event.participants.map(toParticipant).map((p) => {
+      const current = this.state?.participants.find((c) => c.id === p.id);
+      return current ? { ...p, score: current.score, scoredAt: current.scoredAt } : p;
+    });
     if (event.type === "PARTICIPANT_JOINED") {
       // 내가 들어온 이벤트는 방 상태 응답에서 이미 반영했다.
       if (String(event.participantId) === this.state.meId) return;
@@ -206,6 +291,103 @@ export class StompGameClient implements GameClient {
       tag: chat.tag,
       text: chat.text,
     });
+  }
+
+  private onGameStarted(event: GameStartedResponse): void {
+    if (!this.state) return;
+    this.setState({
+      ...this.state,
+      status: "PLAYING",
+      gameType: event.gameType,
+      targetScore: event.targetScore,
+      participants: withScores(this.state.participants, event.scores, null),
+      round: null,
+      rounds: [],
+      result: null,
+    });
+    this.system(`게임을 시작했어요 · 목표 ${event.targetScore}점`);
+  }
+
+  private onRoundStarted(event: RoundStartedResponse): void {
+    if (!this.state) return;
+    const round: Round = {
+      roundNo: event.roundNo,
+      startedAt: Date.parse(event.startedAt),
+      status: "IN_PROGRESS",
+      answerMeta: "",
+      hints: [],
+      nextAnswerHint: null,
+      clues: [],
+      turn: null,
+      stillCut: null,
+      audioSeconds: null,
+      votes: [],
+      result: null,
+    };
+    this.setState({ ...this.state, round });
+    this.system(`${event.roundNo}번째 문제`);
+  }
+
+  private onRoundSolved(event: RoundSolvedResponse): void {
+    const state = this.state;
+    if (!state) return;
+    const solverId = String(event.solverId);
+    const solverName = `${event.nickname}#${event.tag}`;
+    const solvedAt = Date.parse(event.solvedAt);
+    const round = state.round;
+    const solvedSeconds = round ? Math.round((solvedAt - round.startedAt) / 100) / 10 : null;
+    const answer = event.subAnswer ? `${event.answer} (${event.subAnswer})` : event.answer;
+    const log: RoundLog = {
+      roundNo: event.roundNo,
+      answer,
+      solverId,
+      solverNickname: solverName,
+      solvedSeconds,
+      revealedHintCount: round ? round.hints.length + round.clues.length : 0,
+      status: "SOLVED",
+    };
+    this.setState({
+      ...state,
+      participants: withScores(state.participants, event.scores, solverId),
+      rounds: [...state.rounds, log],
+      round: round && {
+        ...round,
+        status: "SOLVED",
+        votes: [],
+        result: {
+          answer: event.answer,
+          subAnswer: event.subAnswer ?? "",
+          detail: "",
+          solverId,
+          solverNickname: solverName,
+          solvedSeconds,
+          nextAt: event.nextRoundAt ? Date.parse(event.nextRoundAt) : Date.now(),
+        },
+      },
+    });
+    this.post({ id: `chat-${++this.messageSeq}`, kind: "correct", participantId: solverId, nickname: event.nickname, tag: event.tag, text: event.text });
+    this.system(`정답은 ${answer}`);
+  }
+
+  private onGameFinished(event: GameFinishedResponse): void {
+    const state = this.state;
+    if (!state) return;
+    const participants = withScores(state.participants, event.scores, null);
+    const winner = participants.find((p) => p.id === String(event.winnerId));
+    this.setState({
+      ...state,
+      status: "WAITING",
+      participants,
+      round: null,
+      result: {
+        gameType: state.gameType,
+        targetScore: state.targetScore,
+        winnerId: winner?.id ?? null,
+        ranking: [...participants].sort((a, b) => b.score - a.score),
+        rounds: state.rounds,
+      },
+    });
+    if (winner) this.system(`${displayName(winner)}님이 목표 ${state.targetScore}점에 도달했어요 · 게임이 끝났어요`);
   }
 
   private onError(message: IMessage): void {
@@ -242,6 +424,14 @@ export class StompGameClient implements GameClient {
   private guestName(nickname: string): string {
     return nickname.trim() || `손님${Math.floor(10 + Math.random() * 90)}`;
   }
+}
+
+/** 서버가 보낸 점수로 바꾼다. 점수를 얻은 정답자는 강조 시각을 남긴다 */
+function withScores(participants: Participant[], scores: ScoreResponse[], scorerId: string | null): Participant[] {
+  return participants.map((p) => {
+    const score = scores.find((s) => String(s.participantId) === p.id)?.score ?? p.score;
+    return { ...p, score, scoredAt: p.id === scorerId ? Date.now() : p.scoredAt };
+  });
 }
 
 function toParticipant(participant: ParticipantResponse): Participant {
