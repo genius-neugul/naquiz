@@ -44,6 +44,19 @@ public class Participant {
         this.id = id;
     }
 
+    void resetScore() {
+        roundScore = 0;
+    }
+
+    /** 정답 1회당 1점을 더하고 누적 점수를 돌려준다 */
+    int addScore() {
+        return ++roundScore;
+    }
+
+    void winGame() {
+        gameWins++;
+    }
+
     public boolean isHost() {
         return role == ParticipantRole.HOST;
     }

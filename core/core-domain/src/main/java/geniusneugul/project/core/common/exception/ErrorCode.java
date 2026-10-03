@@ -25,8 +25,20 @@ public enum ErrorCode {
     // room - 불변식 위반. 응답에는 쓰지 않고 IllegalStateException 메시지로만 쓴다(docs/EXCEPTION.md 「불변식 위반」)
     ROOM_ID_ALREADY_ASSIGNED(HttpStatus.INTERNAL_SERVER_ERROR, "방 ID는 한 번만 부여합니다."),
     ROOM_PARTICIPANT_ID_ALREADY_ASSIGNED(HttpStatus.INTERNAL_SERVER_ERROR, "참가자 ID는 한 번만 부여합니다."),
+    ROOM_PARTICIPANT_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "방에 없는 참가자입니다."),
     ROOM_HOST_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "방장이 없는 방입니다."),
-    ROOM_INVITE_CODE_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "이미 쓰고 있는 초대 코드입니다.");
+    ROOM_INVITE_CODE_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "이미 쓰고 있는 초대 코드입니다."),
+
+    // game
+    GAME_INVALID_TYPE(HttpStatus.BAD_REQUEST, "게임 종류가 올바르지 않습니다."),
+    GAME_NOT_HOST(HttpStatus.FORBIDDEN, "방장만 게임을 시작할 수 있습니다."),
+    GAME_ALREADY_PLAYING(HttpStatus.CONFLICT, "이미 게임이 진행 중입니다."),
+    GAME_INVALID_TARGET_SCORE(HttpStatus.BAD_REQUEST, "목표 점수는 1~50점입니다."),
+    GAME_QUESTION_NOT_FOUND(HttpStatus.CONFLICT, "출제할 문제가 없습니다."),
+
+    // game - 불변식 위반
+    GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
+    GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다.");
 
     private final HttpStatus status;
     private final String message;

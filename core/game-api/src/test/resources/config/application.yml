@@ -1,0 +1,6 @@
+# 테스트 전용 설정. classpath:config/application.yml은 classpath:application.yml 위에 덮여 모든 game-api 테스트에
+# 같이 적용되므로 테스트 클래스마다 설정을 바꾸지 않아도 된다(context를 하나로 유지).
+app:
+  game:
+    # 다음 라운드를 실제 3초씩 기다리지 않는다
+    next-round-delay: 100ms
