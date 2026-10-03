@@ -53,7 +53,7 @@ docs/                  기획·도메인·파싱 규칙·API 문서
 initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python 3.10+, venv: initial_crawler/.venv)
 ├── CLAUDE.md          크롤러 명령, 기록 규칙
 ├── records/           크롤링 결과 기록
-├── data/              초기 데이터. 게임은 이 파일만 읽는다
+├── data/              초기 데이터. 게임 서버의 초기 데이터 SQL(core-domain sql/initial-data.sql)을 이 파일로 만든다
 │   ├── movies.json            KOBIS 역대 박스오피스 200편 + titles.txt 추가 영화
 │   └── radio_songs_final.json MBC 라디오 선곡표 기반 노래 목록
 ├── music/             노래 크롤러 (scripts/radio/, 중간 산출물 crawl_output/)

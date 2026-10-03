@@ -203,7 +203,7 @@
 
 | 단서 종류 | 코드 | 공개 내용 |
 | --- | --- | --- |
-| 관객 수 | AUDIENCE | 누적 관객 수 |
+| 관객 수 | AUDIENCE | 누적 관객 수. 관객 수가 없는 영화는 `집계 X`로 보여줍니다. |
 | 개봉일 | RELEASE_DATE | 개봉일 |
 | 감독 | DIRECTOR | 감독 이름 |
 | 출연자 | CAST | 주요 출연 배우 |
@@ -238,8 +238,8 @@
 | 보조 정답 | subAnswer | String | X | 노래는 `subtitle`, 영화는 영문 제목(`titleEn`)입니다. 없으면 빈 값입니다. 예: Boy With Luv |
 | 활성 여부 | active | Boolean | O | 오류 신고를 처리하면서 정답을 고쳐도 쓸 수 없는 문제면 비활성화합니다. |
 | 검수 상태 | reviewStatus | Enum | O | PENDING(검수 대기), APPROVED(승인), REJECTED(반려). APPROVED이고 활성인 문제만 출제합니다. 데일리 크롤링으로 생긴 문제는 PENDING, 초기 데이터(`initial_crawler/data/`)로 적재한 문제는 APPROVED로 시작합니다. |
-| 검수한 관리자 ID | reviewedByAdminId | Long | X | PENDING이 아닐 때 존재합니다. |
-| 검수 시각 | reviewedAt | DateTime | X |  |
+| 검수한 관리자 ID | reviewedByAdminId | Long | X | PENDING이 아닐 때 존재합니다. 초기 데이터로 적재한 문제는 검수 없이 승인되므로 비어 있습니다. |
+| 검수 시각 | reviewedAt | DateTime | X | 초기 데이터로 적재한 문제는 비어 있습니다. |
 
 판정은 입력값과 answer, subAnswer를 각각 정규화해 비교하고, 둘 중 하나와 같으면 정답입니다. 예: 입력 `boy with luv`는 subAnswer `Boy With Luv`와 정규화 값(boywithluv)이 같아 정답입니다. 특수문자는 그대로 비교합니다 (예: `행복하니?`는 `행복하니`와 다릅니다).
 
@@ -356,7 +356,7 @@
 | KOBIS 영화 코드 | kobisMovieCode | String | O | 수집·보강용 외부 ID입니다. |
 | 제목 | title | String | O | 한글 제목입니다. 문제의 answer로 씁니다. |
 | 영문 제목 | titleEn | String | X | 문제의 subAnswer로 씁니다. |
-| 관객 수 | audienceCount | Long | O |  |
+| 관객 수 | audienceCount | Long | X | 누적 관객 수입니다. 역대 박스오피스 밖에서 추가한 영화(`initial_crawler/movie/titles.txt`)는 없고, 단서로 공개할 때 `집계 X`로 보여줍니다. |
 | 개봉일 | releaseDate | Date | O |  |
 | 감독 | directors | List<String> | O |  |
 | 출연자 | actors | List<String> | O |  |
@@ -371,8 +371,8 @@
 | --- | --- | --- | --- | --- |
 | 스틸컷 ID | stillCutId | Long | O |  |
 | 영화 ID | movieId | Long | O |  |
-| 이미지 URL | imageUrl | String | O |  |
-| 노출 순서 | displayOrder | Integer | O | 스틸컷 게임에서 10초마다 이 순서로 넘어갑니다. |
+| 이미지 URL | imageUrl | String | O | KOBIS 원본 이미지 URL입니다. |
+| 노출 순서 | displayOrder | Integer | O | 1부터 시작합니다. 스틸컷 게임에서 10초마다 이 순서로 넘어갑니다. |
 
 ### 3-6. 오류 신고 애그리거트
 

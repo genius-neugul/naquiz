@@ -25,4 +25,14 @@ public class StillCut {
 
     @Column(nullable = false)
     private int displayOrder;
+
+    private StillCut(Long movieId, String imageUrl, int displayOrder) {
+        this.movieId = movieId;
+        this.imageUrl = imageUrl;
+        this.displayOrder = displayOrder;
+    }
+
+    public static StillCut create(Long movieId, String imageUrl, int displayOrder) {
+        return new StillCut(movieId, imageUrl, displayOrder);
+    }
 }
