@@ -66,6 +66,21 @@ geniusneugul.project.core
     └── service
 ```
 
+**게임별 하위 패키지.** 게임 종류가 여럿인 `game` 도메인은 도메인 아래를 공통(`common`)과 게임별(`stillcut`, 이후 `song`, `twentyquestions`)로 한 번 더 나누고, 그 아래에 레이어를 둔다. 게임·라운드·정답 제출·카운트다운처럼 모든 게임이 쓰는 것은 `game/common`에, 한 게임에서만 쓰는 것은 그 게임 패키지에 둔다. 게임 패키지는 `game/common`을 참조할 수 있지만 `game/common`은 게임 패키지를 참조하지 않는다. 공통 흐름이 게임별 처리를 불러야 하면 `game/common`에 확장점 인터페이스(예: `RoundStartedHandler`)를 두고 게임 패키지가 구현한다.
+
+```java
+// core-domain                          // game-api
+game                                    game
+├── common                              ├── common
+│   ├── domain                          │   ├── presentation
+│   ├── implement                       │   └── service
+│   └── infra                           └── stillcut
+└── stillcut                                ├── presentation
+    ├── domain                              └── service
+    ├── implement
+    └── infra
+```
+
 | 패키지 | 역할 |
 | --- | --- |
 | common | 도메인 공통 요소. core-domain: 에러 코드·예외(`exception`), 여러 도메인이 함께 쓰는 값(`domain`), 이벤트(`domain/event`, `infra/event`). 앱 모듈: 에러 응답·예외 핸들러(`exception`) |
@@ -147,7 +162,7 @@ infra는 기술 의존성을 격리한다.
 >
 > - 참가자를 저장하지 않으므로 다른 엔티티의 참가자 ID(승자, 정답자, 단서를 연 참가자, 투표 찬성)는 FK 없는 값으로만 남긴다.
 > - 라운드의 차례 필드(차례 순서, 현재 차례 인덱스, 차례 마감 시각)는 진행 중에만 쓰므로 `@Transient`로 둔다.
-> - 진행 중인 게임의 판정 상태(현재 라운드 정답, 목표 점수, 라운드가 풀렸는지)는 `game/domain/GameProgress`로 메모리에 두고 방 락 안에서만 쓴다. 선착순 정답자를 락 안에서 DB 없이 확정하기 위해서다. 게임·라운드 기록은 DB의 `Game`이, 점수는 방의 참가자가 가진다.
+> - 진행 중인 게임의 판정 상태(현재 라운드 정답, 목표 점수, 라운드가 풀렸는지)는 `game/common/domain/GameProgress`로 메모리에 두고 방 락 안에서만 쓴다. 선착순 정답자를 락 안에서 DB 없이 확정하기 위해서다. 게임·라운드 기록은 DB의 `Game`이, 점수는 방의 참가자가 가진다.
 
 ## 이벤트 발행 규약
 
@@ -166,7 +181,7 @@ common
 ```
 
 - implement는 `EventPublisher`만 참조한다. `ApplicationEventPublisher` 같은 기술 객체를 직접 주입받지 않는다.
-- 다른 도메인의 이벤트를 받는 리스너는 받는 도메인의 앱 모듈 `service` 패키지에 두고, 그 도메인의 service를 부른다(예: `game/service/GameRoomClosedListener`). presentation은 domain을 참조하지 않으므로 이벤트 record를 받는 리스너를 두지 않는다.
+- 다른 도메인의 이벤트를 받는 리스너는 받는 도메인의 앱 모듈 `service` 패키지에 두고, 그 도메인의 service를 부른다(예: `game/common/service/GameRoomClosedListener`). presentation은 domain을 참조하지 않으므로 이벤트 record를 받는 리스너를 두지 않는다.
 
 ### 이벤트 페이로드
 

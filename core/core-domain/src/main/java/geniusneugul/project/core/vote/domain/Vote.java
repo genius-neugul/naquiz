@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import geniusneugul.project.core.game.domain.HintType;
+import geniusneugul.project.core.game.common.domain.HintType;
 import java.util.ArrayList;
 import java.util.List;
 

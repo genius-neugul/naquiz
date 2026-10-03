@@ -1,8 +1,8 @@
 package geniusneugul.project.core.chat.service;
 
-import geniusneugul.project.core.game.implement.AnswerSubmitter;
-import geniusneugul.project.core.game.implement.GameRecorder;
-import geniusneugul.project.core.game.implement.RoundSolve;
+import geniusneugul.project.core.game.common.implement.AnswerSubmitter;
+import geniusneugul.project.core.game.common.implement.GameRecorder;
+import geniusneugul.project.core.game.common.implement.RoundSolve;
 import geniusneugul.project.core.room.implement.RoomMember;
 import geniusneugul.project.core.room.implement.RoomMemberReader;
 import java.time.Clock;
