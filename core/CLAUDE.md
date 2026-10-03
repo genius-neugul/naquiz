@@ -68,12 +68,12 @@ core/
 ├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
 ├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
 │   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL)
-├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러, STOMP 설정, Dockerfile(루트 compose.yml에서 씀)
+├── game-api/          실행 앱. room·chat·game·vote·report presentation·service, 에러 응답·예외 핸들러, STOMP 설정, Dockerfile(루트 compose.yml에서 씀)
 ├── admin-api/         실행 앱. admin·question·report·song·movie·statistics·crawl presentation·service
 └── crawler-batch/     실행 앱. crawl service
 ```
 
-- 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, game, question, vote, song, movie, report, admin, crawl, statistics)이다.
+- 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, chat, game, question, vote, song, movie, report, admin, crawl, statistics)이다.
 - 앱 모듈의 `src/test/java/geniusneugul/project/core/support/`에 통합 테스트 공통 상위 클래스·설정을 둔다(목록은 docs/TEST.md 「Spring Context 재사용」).
 
 ## 작업 규칙
