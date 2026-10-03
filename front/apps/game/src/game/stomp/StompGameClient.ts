@@ -1,7 +1,7 @@
 import { Client, type IMessage } from "@stomp/stompjs";
 import type { GameClient } from "../GameClient";
 import { displayName } from "../selectors";
-import type { Participant, ParticipantRole, RoomState, RoomStatus } from "../types";
+import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus } from "../types";
 
 /** 서버 규격: docs/API.md 「실시간 메시지(STOMP) 규격」 */
 interface ParticipantResponse {
@@ -22,7 +22,17 @@ interface RoomResponse {
 type RoomEvent =
   | { type: "PARTICIPANT_JOINED"; participantId: number; participants: ParticipantResponse[] }
   | { type: "PARTICIPANT_LEFT"; participantId: number; participants: ParticipantResponse[] }
-  | { type: "ROOM_CLOSED"; participantId: number };
+  | { type: "ROOM_CLOSED"; participantId: number }
+  | ChatMessageResponse;
+
+interface ChatMessageResponse {
+  type: "CHAT";
+  participantId: number;
+  nickname: string;
+  tag: number;
+  text: string;
+  sentAt: string;
+}
 
 interface ErrorResponse {
   code: string;
@@ -35,6 +45,8 @@ interface Pending {
 }
 
 const DEFAULT_TARGET_SCORE = 5;
+/** 화면에 남겨 두는 최근 채팅 수 */
+const CHAT_LIMIT = 200;
 
 function defaultBrokerUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -42,7 +54,7 @@ function defaultBrokerUrl(): string {
 }
 
 /**
- * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 지금은 방 만들기·참가하기·나가기만 서버로 처리한다.
+ * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 지금은 방 만들기·참가하기·나가기와 채팅만 서버로 처리한다.
  * 서버는 연결 하나를 참가자 한 명으로 보므로 방을 나가면 연결도 닫는다(재접속 없음).
  */
 export class StompGameClient implements GameClient {
@@ -77,12 +89,17 @@ export class StompGameClient implements GameClient {
     this.disconnect();
   }
 
+  sendChat(text: string): void {
+    const message = text.trim();
+    if (!message || !this.client?.connected) return;
+    this.client.publish({ destination: "/app/rooms/chat", body: JSON.stringify({ text: message }) });
+  }
+
   // 게임 진행은 아직 서버에 없다. 서버 규격이 생기면 채운다.
   selectGame(): void {}
   setTargetScore(): void {}
   startGame(): void {}
   dismissResult(): void {}
-  sendChat(): void {}
   openVote(): void {}
   approveVote(): void {}
   pickClue(): void {}
@@ -162,6 +179,10 @@ export class StompGameClient implements GameClient {
       return;
     }
     if (!this.state) return;
+    if (event.type === "CHAT") {
+      this.onChat(event);
+      return;
+    }
     const participants = event.participants.map(toParticipant);
     if (event.type === "PARTICIPANT_JOINED") {
       // 내가 들어온 이벤트는 방 상태 응답에서 이미 반영했다.
@@ -174,6 +195,17 @@ export class StompGameClient implements GameClient {
     const left = this.state.participants.find((p) => p.id === String(event.participantId));
     this.setState({ ...this.state, participants });
     if (left) this.system(`${displayName(left)}님이 나갔어요`);
+  }
+
+  private onChat(chat: ChatMessageResponse): void {
+    this.post({
+      id: `chat-${++this.messageSeq}`,
+      kind: "chat",
+      participantId: String(chat.participantId),
+      nickname: chat.nickname,
+      tag: chat.tag,
+      text: chat.text,
+    });
   }
 
   private onError(message: IMessage): void {
@@ -194,8 +226,12 @@ export class StompGameClient implements GameClient {
   }
 
   private system(text: string): void {
+    this.post({ id: `sys-${++this.messageSeq}`, kind: "system", text });
+  }
+
+  private post(message: ChatMessage): void {
     if (!this.state) return;
-    this.setState({ ...this.state, chat: [...this.state.chat, { id: `sys-${++this.messageSeq}`, kind: "system", text }] });
+    this.setState({ ...this.state, chat: [...this.state.chat, message].slice(-CHAT_LIMIT) });
   }
 
   private setState(state: RoomState | null): void {
