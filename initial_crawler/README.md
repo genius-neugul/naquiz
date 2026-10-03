@@ -1,6 +1,6 @@
 # initial_crawler
 
-게임에 쓸 초기 데이터(노래 목록, 영화 정보)를 모으는 크롤러다. 게임 서버는 크롤링을 하지 않고, 여기서 만든 `data/`의 파일만 읽는다.
+게임에 쓸 초기 데이터(노래 목록, 영화 정보)를 모으는 크롤러다. 게임 서버는 크롤링을 하지 않는다. 여기서 만든 `data/`의 파일로 서버의 초기 데이터 SQL(`core/core-domain/src/main/resources/sql/initial-data.sql`)을 만들고, 서버는 시작할 때 DB가 비어 있으면 그 SQL을 실행한다. 문제(question)는 크롤러가 만들지 않고, SQL 끝에서 적재된 노래·영화·스틸컷으로 만든다.
 
 | 결과 파일 | 내용 | 만드는 곳 |
 |---|---|---|
@@ -72,8 +72,8 @@ python3 scripts/radio/opening_stats.py                              # 오프닝�
 | 단계 | 입력 | 출력 |
 |---|---|---|
 | `crawl.py` | MBC 선곡표 | `radio_songs.csv`, `state.json`(진행 기록) |
-| `make_unique.py` | `radio_songs.csv` | `radio_songs_unique.csv`, `radio_songs_removed.csv`(가사 없는 곡) |
-| `make_final.py` | `radio_songs_unique.csv` | `radio_songs_final.json`, `radio_songs_removed.csv`, `radio_songs_unresolved.csv`(규칙으로 처리 못 한 곡) |
+| `make_unique.py` | `radio_songs.csv` | `radio_songs_unique.csv`(같은 곡으로 합친 방송 수 `play_count` 포함), `radio_songs_removed.csv`(가사 없는 곡) |
+| `make_final.py` | `radio_songs_unique.csv` | `radio_songs_final.json`(`play_count` 포함), `radio_songs_removed.csv`, `radio_songs_unresolved.csv`(규칙으로 처리 못 한 곡) |
 | `diff_unique.py` | 이전·새 `radio_songs_unique.csv` | `radio_songs_added.csv`(새로 추가된 곡) |
 | `opening_stats.py` | `radio_songs.csv` | 화면 출력(오프닝일 가능성이 높은 곡) |
 
