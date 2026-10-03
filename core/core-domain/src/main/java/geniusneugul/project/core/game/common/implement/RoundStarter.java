@@ -28,6 +28,7 @@ public class RoundStarter {
     private RoundStart startNext(GameProgress progress, Question question, LocalDateTime now) {
         int roundNo = progress.getRoundNo() + 1;
         progress.startRound(roundNo, question.getId(), question.toAnswer());
-        return new RoundStart(progress.getRoomId(), progress.getGameId(), roundNo, question.getId(), now);
+        return new RoundStart(progress.getRoomId(), progress.getGameId(), progress.getGameType(), roundNo, question.getId(),
+                now);
     }
 }

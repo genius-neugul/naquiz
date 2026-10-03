@@ -4,30 +4,29 @@ import geniusneugul.project.core.game.common.service.GameService;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
 /**
- * 정답자가 나오고 일정 시간(정답 공개 시간)이 지나면 서버 타이머로 다음 라운드를 연다.
+ * 정답자가 나오고 일정 시간(정답 공개 시간)이 지나면 서버 카운트다운으로 다음 라운드를 연다.
  */
-@Slf4j
 @Component
 public class NextRoundScheduler {
 
-    private final TaskScheduler taskScheduler;
+    private final CountdownTimer countdownTimer;
     private final GameService gameService;
     private final GameBroadcaster gameBroadcaster;
+    private final RoundStartedHandlers roundStartedHandlers;
     private final Clock clock;
     private final Duration delay;
 
-    public NextRoundScheduler(@Qualifier("gameTaskScheduler") TaskScheduler taskScheduler, GameService gameService,
-            GameBroadcaster gameBroadcaster, Clock clock, @Value("${app.game.next-round-delay}") Duration delay) {
-        this.taskScheduler = taskScheduler;
+    public NextRoundScheduler(CountdownTimer countdownTimer, GameService gameService, GameBroadcaster gameBroadcaster,
+            RoundStartedHandlers roundStartedHandlers, Clock clock,
+            @Value("${app.game.next-round-delay}") Duration delay) {
+        this.countdownTimer = countdownTimer;
         this.gameService = gameService;
         this.gameBroadcaster = gameBroadcaster;
+        this.roundStartedHandlers = roundStartedHandlers;
         this.clock = clock;
         this.delay = delay;
     }
@@ -38,16 +37,13 @@ public class NextRoundScheduler {
     }
 
     public void schedule(Long roomId, Long gameId) {
-        taskScheduler.schedule(() -> startNextRound(roomId, gameId), taskScheduler.getClock().instant().plus(delay));
+        countdownTimer.start(roomId, CountdownKind.NEXT_ROUND, delay, () -> startNextRound(roomId, gameId));
     }
 
     private void startNextRound(Long roomId, Long gameId) {
-        try {
-            gameService.startNextRound(roomId, gameId).ifPresent(gameBroadcaster::broadcastRoundStart);
-        } catch (RuntimeException e) {
-            // 타이머 스레드의 예외는 호출자가 없어 여기서 남기지 않으면 사라진다.
-            log.error("[NextRoundScheduler.startNextRound] Failed to start next round. roomId={}, gameId={}",
-                    roomId, gameId, e);
-        }
+        gameService.startNextRound(roomId, gameId).ifPresent(result -> {
+            gameBroadcaster.broadcastRoundStart(result);
+            roundStartedHandlers.roundStarted(StartedRound.from(result));
+        });
     }
 }

@@ -31,7 +31,7 @@ public class GameStarter {
             gameProgressRepository.save(new GameProgress(game.getRoomId(), game.getId(), game.getGameType(),
                     game.getTargetScore(), firstRound.getRoundNo(), firstQuestion.getId(), firstQuestion.toAnswer()));
             return new GameStart(game.getRoomId(), game.getId(), game.getGameType(), game.getTargetScore(),
-                    firstRound.getRoundNo(), firstRound.getStartedAt(), scores);
+                    firstRound.getRoundNo(), firstQuestion.getId(), firstRound.getStartedAt(), scores);
         });
     }
 }

@@ -49,6 +49,11 @@ public class GameProgress {
         return true;
     }
 
+    /** 그 게임의 그 라운드가 아직 풀리지 않고 진행 중이다. 늦게 도착한 타이머가 끝난 라운드를 건드리지 않게 확인한다 */
+    public boolean isPlaying(Long gameId, int roundNo) {
+        return this.gameId.equals(gameId) && this.roundNo == roundNo && !roundSolved;
+    }
+
     public boolean reachedTarget(int score) {
         return score >= targetScore;
     }

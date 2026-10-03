@@ -14,6 +14,7 @@ public record GameStart(
         GameType gameType,
         int targetScore,
         int roundNo,
+        Long questionId,
         LocalDateTime roundStartedAt,
         List<ParticipantScore> scores
 ) {

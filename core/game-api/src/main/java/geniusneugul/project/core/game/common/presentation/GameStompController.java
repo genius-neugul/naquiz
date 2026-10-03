@@ -2,6 +2,7 @@ package geniusneugul.project.core.game.common.presentation;
 
 import geniusneugul.project.core.game.common.presentation.dto.StartGameRequest;
 import geniusneugul.project.core.game.common.service.GameService;
+import geniusneugul.project.core.game.common.service.GameStartResult;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,12 @@ public class GameStompController {
 
     private final GameService gameService;
     private final GameBroadcaster gameBroadcaster;
+    private final RoundStartedHandlers roundStartedHandlers;
 
     @MessageMapping("/games/start")
     public void start(@Valid @Payload StartGameRequest request, Principal principal) {
-        gameBroadcaster.broadcastStart(gameService.start(request.toCommand(principal.getName())));
+        GameStartResult result = gameService.start(request.toCommand(principal.getName()));
+        gameBroadcaster.broadcastStart(result);
+        roundStartedHandlers.roundStarted(StartedRound.from(result));
     }
 }
