@@ -1,6 +1,6 @@
 # initial_crawler
 
-게임에 쓸 초기 데이터(노래 목록, 영화 정보)를 모으는 크롤러다. 게임 서버는 크롤링을 하지 않는다. 여기서 만든 `data/`의 파일로 서버의 초기 데이터 SQL(`core/core-domain/src/main/resources/sql/initial-data.sql`)을 만들고, 서버는 시작할 때 그 SQL을 실행한다.
+게임에 쓸 초기 데이터(노래 목록, 영화 정보)를 모으는 크롤러다. 게임 서버는 크롤링을 하지 않는다. 여기서 만든 `data/`의 파일로 서버의 초기 데이터 SQL(`core/core-domain/src/main/resources/sql/initial-data.sql`)을 만들고, 서버는 시작할 때 DB가 비어 있으면 그 SQL을 실행한다.
 
 | 결과 파일 | 내용 | 만드는 곳 |
 |---|---|---|
