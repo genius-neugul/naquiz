@@ -82,8 +82,4 @@ public class Song {
         return new Song(title, subtitle, artists, rawTitle, rawArtist, playCount, sourceProgram, sourceSeq,
                 sourceDate);
     }
-
-    public SongSourceKey sourceKey() {
-        return new SongSourceKey(sourceProgram, sourceSeq, rawTitle, rawArtist);
-    }
 }

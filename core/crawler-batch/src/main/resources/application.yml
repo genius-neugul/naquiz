@@ -5,8 +5,3 @@ spring:
     import: classpath:domain.yml
   main:
     web-application-type: none
-
-naquiz:
-  # 초기 데이터 적재(--naquiz.initial-load.enabled=true)가 읽는 폴더. bootRun 작업 디렉터리(core/crawler-batch) 기준이다.
-  initial-data:
-    dir: ../../initial_crawler/data

@@ -9,3 +9,12 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+    # Hibernate가 테이블을 만든 뒤 초기 데이터 SQL을 실행한다.
+    defer-datasource-initialization: true
+  # 초기 데이터. H2·MySQL 모두 앱이 시작할 때 실행하고, 이미 있는 행은 INSERT IGNORE로 건너뛴다.
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:sql/initial-data.sql
+      # Windows 기본 인코딩(MS949)으로 읽지 않게 한다.
+      encoding: UTF-8

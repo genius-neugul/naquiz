@@ -1,0 +1,2 @@
+# 초기 데이터 SQL은 문자열 안에 줄바꿈이 있어, 체크아웃할 때 CRLF로 바뀌면 DB에 들어가는 값이 달라진다.
+core/core-domain/src/main/resources/sql/*.sql text eol=lf
