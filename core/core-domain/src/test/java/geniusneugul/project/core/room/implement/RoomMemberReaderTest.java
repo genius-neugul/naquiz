@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import geniusneugul.project.core.common.exception.BusinessException;
+import geniusneugul.project.core.common.infra.event.EventPublisher;
 import geniusneugul.project.core.room.domain.InviteCode;
 import geniusneugul.project.core.room.domain.Participant;
 import geniusneugul.project.core.room.domain.Room;
 import geniusneugul.project.core.room.fixture.RoomFixture;
 import geniusneugul.project.core.room.infra.MemoryRoomRepository;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +61,8 @@ class RoomMemberReaderTest {
     @Test
     void read_left() {
         // given
-        new RoomLeaver(roomRepository, new RoomLock()).leave(GUEST_TOKEN);
+        new RoomLeaver(roomRepository, new RoomLock(), new EventPublisher(event -> {
+        }), Clock.systemDefaultZone()).leave(GUEST_TOKEN);
 
         // when & then
         assertThatThrownBy(() -> roomMemberReader.read(GUEST_TOKEN))

@@ -39,4 +39,8 @@ public class Question {
     private Long reviewedByAdminId;
 
     private LocalDateTime reviewedAt;
+
+    public Answer toAnswer() {
+        return new Answer(answer, subAnswer);
+    }
 }

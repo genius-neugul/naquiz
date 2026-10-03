@@ -49,4 +49,18 @@ public class Round {
     private LocalDateTime startedAt;
 
     private LocalDateTime endedAt;
+
+    Round(Game game, int roundNo, Long questionId, LocalDateTime startedAt) {
+        this.game = game;
+        this.roundNo = roundNo;
+        this.questionId = questionId;
+        this.status = RoundStatus.IN_PROGRESS;
+        this.startedAt = startedAt;
+    }
+
+    void solve(Long solverParticipantId, LocalDateTime now) {
+        this.status = RoundStatus.SOLVED;
+        this.solverParticipantId = solverParticipantId;
+        this.endedAt = now;
+    }
 }

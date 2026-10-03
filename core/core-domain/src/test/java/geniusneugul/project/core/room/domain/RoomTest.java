@@ -1,5 +1,7 @@
 package geniusneugul.project.core.room.domain;
 
+import static geniusneugul.project.core.common.exception.ErrorCode.GAME_ALREADY_PLAYING;
+import static geniusneugul.project.core.common.exception.ErrorCode.GAME_NOT_HOST;
 import static geniusneugul.project.core.common.exception.ErrorCode.ROOM_ALREADY_PLAYING;
 import static geniusneugul.project.core.common.exception.ErrorCode.ROOM_FULL;
 import static geniusneugul.project.core.common.exception.ErrorCode.ROOM_NOT_FOUND;
@@ -114,12 +116,76 @@ class RoomTest {
     void join_roomIsPlaying() {
         // given
         Room room = createRoom();
-        RoomFixture.status(room, RoomStatus.PLAYING);
+        room.startGame(HOST_TOKEN);
 
         // when & then
         assertThatThrownBy(() -> room.join("감자", "guest-1", NOW))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ROOM_ALREADY_PLAYING.getMessage());
+    }
+
+    @DisplayName("방장이 게임을 시작하면 방이 게임 중이 되고 모든 참가자 점수가 0이 된다.")
+    @Test
+    void startGame() {
+        // given
+        Room room = createRoom();
+        Participant guest = RoomFixture.addGuest(room, "감자", "guest-1");
+        RoomFixture.id(guest, 2L);
+        room.startGame(HOST_TOKEN);
+        room.addScore(2L);
+        room.endGame(2L);
+
+        // when
+        room.startGame(HOST_TOKEN);
+
+        // then
+        assertThat(room.getStatus()).isEqualTo(RoomStatus.PLAYING);
+        assertThat(room.getParticipants()).extracting(Participant::getRoundScore).containsOnly(0);
+    }
+
+    @DisplayName("방장이 아닌 참가자는 게임을 시작할 수 없다.")
+    @Test
+    void startGame_notHost() {
+        // given
+        Room room = createRoom();
+        RoomFixture.addGuest(room, "감자", "guest-1");
+
+        // when & then
+        assertThatThrownBy(() -> room.startGame("guest-1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(GAME_NOT_HOST.getMessage());
+    }
+
+    @DisplayName("이미 게임 중인 방에서는 게임을 다시 시작할 수 없다.")
+    @Test
+    void startGame_alreadyPlaying() {
+        // given
+        Room room = createRoom();
+        room.startGame(HOST_TOKEN);
+
+        // when & then
+        assertThatThrownBy(() -> room.startGame(HOST_TOKEN))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(GAME_ALREADY_PLAYING.getMessage());
+    }
+
+    @DisplayName("게임이 끝나면 방은 대기 상태로 돌아가고 승자의 승리 횟수만 1 늘어난다.")
+    @Test
+    void endGame() {
+        // given
+        Room room = createRoom();
+        RoomFixture.id(room.getHost(), 1L);
+        Participant guest = RoomFixture.addGuest(room, "감자", "guest-1");
+        RoomFixture.id(guest, 2L);
+        room.startGame(HOST_TOKEN);
+
+        // when
+        room.endGame(2L);
+
+        // then
+        assertThat(room.getStatus()).isEqualTo(RoomStatus.WAITING);
+        assertThat(guest.getGameWins()).isEqualTo(1);
+        assertThat(room.getHost().getGameWins()).isZero();
     }
 
     @DisplayName("방장이 나가 닫힌 방에는 들어갈 수 없다.")

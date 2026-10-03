@@ -13,7 +13,7 @@ public record ChatResult(
         int tag,
         String text,
         LocalDateTime sentAt
-) {
+) implements SendChatResult {
 
     static ChatResult of(RoomMember sender, String text, LocalDateTime sentAt) {
         return new ChatResult(sender.roomId(), sender.participantId(), sender.nickname(), sender.tag(), text, sentAt);
