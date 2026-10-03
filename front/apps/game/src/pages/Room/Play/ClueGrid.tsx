@@ -1,8 +1,8 @@
-import { CLUES, type ClueType } from "@naquiz/shared";
+import { CLUES, TURN_SECONDS, type ClueType } from "@naquiz/shared";
 import { useGameClient } from "../../../game/GameProvider";
 import { displayName } from "../../../game/selectors";
 import type { RoomState, Round } from "../../../game/types";
-import { secondsLeft, useNow } from "../../../hooks/useNow";
+import { useCountdown } from "../../../hooks/useCountdown";
 import styles from "./ClueGrid.module.css";
 
 const WIDE: ClueType[] = ["SYNOPSIS", "CAST"];
@@ -10,14 +10,13 @@ const WIDE: ClueType[] = ["SYNOPSIS", "CAST"];
 export function ClueGrid({ room, round }: { room: RoomState; round: Round }) {
   const client = useGameClient();
   const turn = round.status === "IN_PROGRESS" ? round.turn : null;
-  const now = useNow(!!turn);
+  const { secondsLeft: left } = useCountdown(turn?.deadline ?? null, TURN_SECONDS * 1000);
   const myTurn = turn?.participantId === room.meId;
   const turnPlayer = room.participants.find((p) => p.id === turn?.participantId);
   const turnName = turnPlayer ? displayName(turnPlayer) : "";
 
   let turnText = "모든 단서 공개";
   if (turn) {
-    const left = secondsLeft(turn.deadline, now);
     turnText = myTurn ? `내 차례예요. 열어볼 단서를 고르세요 · ${left}초` : `${turnName}님이 단서를 고르는 중… ${left}초`;
   } else if (round.status !== "IN_PROGRESS") {
     turnText = "라운드가 끝났어요";
