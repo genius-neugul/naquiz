@@ -18,7 +18,7 @@ core/
 │         (Spotify·YouTube 클라이언트는 song/infra, 곡 정제 규칙은 song/domain)
 ├── game-api       실행 앱. 방·게임·투표 presentation·service, WebSocket(STOMP), 웹 공통
 ├── admin-api      실행 앱. 관리자 로그인, 검수, 오류 신고 처리, 통계, 크롤링 현황
-└── crawler-batch  실행 앱. 웹 없음. 데일리 크롤링(정제 → 중복 제외 → Spotify → YouTube → 검수 대기로 저장), 초기 데이터 적재
+└── crawler-batch  실행 앱. 웹 없음. 데일리 크롤링(정제 → 중복 제외 → Spotify → YouTube → 검수 대기로 저장)
 ```
 
 | 모듈 | 종류 | 의존 | 담는 것 |
@@ -26,7 +26,7 @@ core/
 | core-domain | 라이브러리 | — | 도메인별 domain·implement·infra(엔티티, 저장소, 외부 API 클라이언트), 공통 예외·이벤트 |
 | game-api | 실행 앱 | core-domain | 게임 유스케이스(service), Controller·STOMP 핸들러, 에러 응답·예외 핸들러·요청 로그 필터 |
 | admin-api | 실행 앱 | core-domain | 관리자 유스케이스(service), Controller, 자체 에러 응답·예외 핸들러 |
-| crawler-batch | 실행 앱 | core-domain | 데일리 크롤링 스케줄과 유스케이스, 초기 데이터 적재 유스케이스와 실행 진입점 |
+| crawler-batch | 실행 앱 | core-domain | 데일리 크롤링 스케줄과 유스케이스 |
 
 - **세 앱은 따로 배포한다.** 크롤링이 실패하거나 배포해도 게임이 멈추지 않고, 관리자 API는 게임과 다른 인증·접근 제한을 둘 수 있다.
 - **공통 코드는 core-domain에 둔다.** 게임 서버도 초기 데이터 곡을 출제할 때 Spotify·YouTube를 호출하므로 외부 API 클라이언트를 core-domain에서 함께 쓴다.
@@ -69,7 +69,7 @@ geniusneugul.project.core
 | 패키지 | 역할 |
 | --- | --- |
 | common | 도메인 공통 요소. core-domain: 에러 코드·예외(`exception`), 여러 도메인이 함께 쓰는 값(`domain`), 이벤트(`domain/event`, `infra/event`). 앱 모듈: 에러 응답·예외 핸들러(`exception`) |
-| presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별. 웹이 없는 crawler-batch에서는 실행 진입점(`ApplicationRunner`) |
+| presentation | HTTP·실시간 메시지 요청/응답, Controller, API DTO, 참가자 식별 |
 | service | 비즈니스 흐름 조립, 유스케이스 단위 트랜잭션 경계 |
 | implement | 비즈니스 흐름을 구성하는 상세 구현 도구. core-domain의 `<도메인>.implement`에 둔다([모듈 구조](#모듈-구조)) |
 | infra | 저장소 접근(Repository), 외부 API·캐시·메시징 기술 격리 |

@@ -39,7 +39,7 @@ core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── core-domain/       라이브러리. 엔티티·저장소·implement, 공통 예외·이벤트
 ├── game-api/          실행 앱. 게임·방·투표 API
 ├── admin-api/         실행 앱. 백오피스 API
-└── crawler-batch/     실행 앱. 데일리 크롤링, 초기 데이터 적재
+└── crawler-batch/     실행 앱. 데일리 크롤링
 front/                 프론트엔드 (npm workspaces, Vite + React + TypeScript)
 ├── CLAUDE.md          프론트 기술 스택, 명령, 작업 규칙
 ├── apps/game/         게임 앱
@@ -53,7 +53,7 @@ docs/                  기획·도메인·파싱 규칙·API 문서
 initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python 3.10+, venv: initial_crawler/.venv)
 ├── CLAUDE.md          크롤러 명령, 기록 규칙
 ├── records/           크롤링 결과 기록
-├── data/              초기 데이터. 게임은 이 파일만 읽는다
+├── data/              초기 데이터. 게임 서버의 초기 데이터 SQL(core-domain sql/initial-data.sql)을 이 파일로 만든다
 │   ├── movies.json            KOBIS 역대 박스오피스 200편 + titles.txt 추가 영화
 │   └── radio_songs_final.json MBC 라디오 선곡표 기반 노래 목록
 ├── music/             노래 크롤러 (scripts/radio/, 중간 산출물 crawl_output/)

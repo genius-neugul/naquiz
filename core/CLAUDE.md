@@ -48,9 +48,6 @@
 docker compose up -d
 set -a; source .env; set +a
 ./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
-
-# 초기 데이터(../initial_crawler/data/의 노래·영화·스틸컷) 적재. 적재 후 종료하고, 이미 있는 콘텐츠는 건너뛴다
-./gradlew :crawler-batch:bootRun --args='--spring.profiles.active=local-dev --naquiz.initial-load.enabled=true'
 ```
 
 ## 디렉터리 구조
@@ -63,10 +60,10 @@ core/
 ├── docker-compose.yml local-dev 프로필용 MySQL
 ├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
 ├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
-│   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL)
+│   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL), sql/initial-data.sql(초기 데이터)
 ├── game-api/          실행 앱. room·game·vote·report presentation·service, 에러 응답·예외 핸들러
 ├── admin-api/         실행 앱. admin·question·report·song·movie·statistics·crawl presentation·service
-└── crawler-batch/     실행 앱. crawl service, 초기 데이터 적재 실행 진입점(crawl presentation)
+└── crawler-batch/     실행 앱. crawl service
 ```
 
 - 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, game, question, vote, song, movie, report, admin, crawl, statistics)이다.
@@ -84,5 +81,5 @@ core/
 - `core/<모듈>/src/test`의 Java 파일은 Write/Edit 도구로만 쓴다. Bash(heredoc, sed, python 등)로 쓰면 테스트 context 가드 훅을 거치지 않는다.
 - Spring 설정 파일은 `.properties`가 아니라 `.yml`로 쓴다.
 - 클래스·메서드 이름은 `../docs/DOMAIN.md`의 유비쿼터스 언어를 따른다.
-- 초기 데이터는 `../initial_crawler/data/`의 JSON만 읽는다. 크롤러 중간 산출물에 의존하지 않는다.
+- 초기 데이터는 core-domain의 `sql/initial-data.sql`로 넣는다. 앱이 시작할 때 H2·MySQL 모두 실행된다. 이 SQL은 `../initial_crawler/data/`의 JSON으로 만들고, 크롤러 중간 산출물에 의존하지 않는다.
 - 코드를 바꿔 기술 스택·명령·구조가 달라지면 이 파일을 함께 고친다. `docs/` 컨벤션과 달라지면 문서를 고치지 말고 먼저 알린다.
