@@ -1,4 +1,5 @@
 -- 초기 데이터: initial_crawler/data/의 radio_songs_final.json, movies.json으로 만들었다. 직접 고치지 않는다.
+-- 단, 파일 끝의 문제(question) 섹션은 JSON이 아니라 위에서 넣은 콘텐츠 테이블로 만든다. SQL을 다시 만들 때 이 섹션을 그대로 붙인다.
 -- 앱이 시작할 때 song 테이블이 비어 있으면 실행된다(InitialDataLoader). 여러 앱이 동시에 넣어도 같은 PK 행은 INSERT IGNORE로 건너뛴다.
 
 INSERT IGNORE INTO song (id, title, subtitle, raw_title, raw_artist, play_count, source_program, source_seq, source_date) VALUES
@@ -72643,3 +72644,19 @@ INSERT IGNORE INTO still_cut (id, movie_id, image_url, display_order) VALUES
 (4440, 284, 'https://www.kobis.or.kr/common/mast/movie/2017/11/87c76d2787064dfbb3c42925c77baa4a.jpg', 7),
 (4441, 284, 'https://www.kobis.or.kr/common/mast/movie/2017/11/c6bfffe7865c4c05ab1d1eb5fab90bad.jpg', 8),
 (4442, 284, 'https://www.kobis.or.kr/common/mast/movie/2017/11/c6d8329a5e8246b09ed74e43935bf7a4.jpg', 9);
+
+-- 문제: 초기 데이터 문제는 검수 없이 승인(APPROVED)·활성 상태로 시작한다. 검수자·검수 시각은 비워 둔다.
+-- ID는 고정한다(노래 song.id, 영화 스무고개 100000 + movie.id, 스틸컷 200000 + movie.id). 여러 앱이 동시에 넣어도 INSERT IGNORE로 건너뛴다.
+-- 스틸컷이 없는 영화는 스틸컷 문제를 만들지 않는다.
+INSERT IGNORE INTO question (id, game_type, content_id, answer, sub_answer, active, review_status)
+SELECT s.id, 'SONG', s.id, s.title, s.subtitle, TRUE, 'APPROVED'
+FROM song s;
+
+INSERT IGNORE INTO question (id, game_type, content_id, answer, sub_answer, active, review_status)
+SELECT 100000 + m.id, 'MOVIE_TWENTY_QUESTIONS', m.id, m.title, m.title_en, TRUE, 'APPROVED'
+FROM movie m;
+
+INSERT IGNORE INTO question (id, game_type, content_id, answer, sub_answer, active, review_status)
+SELECT 200000 + m.id, 'MOVIE_STILL_CUT', m.id, m.title, m.title_en, TRUE, 'APPROVED'
+FROM movie m
+WHERE EXISTS (SELECT 1 FROM still_cut c WHERE c.movie_id = m.id);

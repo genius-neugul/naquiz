@@ -14,7 +14,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.stereotype.Component;
 
 /**
- * 초기 데이터(노래·영화·스틸컷) SQL을 song 테이블이 비어 있을 때만 넣는다.
+ * 초기 데이터(노래·영화·스틸컷·문제) SQL을 song 테이블이 비어 있을 때만 넣는다.
  * 매번 넣으면 MySQL에서 지운 콘텐츠가 재시작할 때 같은 ID로 되살아나므로, 첫 적재 뒤에는 실행하지 않는다.
  * Hibernate가 테이블을 만든 뒤(entityManagerFactory 생성 뒤), 앱이 요청을 받기 전에 실행된다.
  */
