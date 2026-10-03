@@ -1,11 +1,18 @@
 package geniusneugul.project.core.support;
 
+import static org.awaitility.Awaitility.await;
+
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.JacksonJsonMessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
@@ -32,8 +39,26 @@ public abstract class WebSocketTestSupport {
         }).get(MESSAGE_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static Class<Map<String, Object>> jsonObject() {
-        return (Class<Map<String, Object>>) (Class<?>) Map.class;
+    /** destination을 구독하고 받은 JSON 본문을 쌓는 큐를 돌려준다 */
+    protected BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
+        BlockingQueue<Map<String, Object>> messages = new LinkedBlockingQueue<>();
+        session.subscribe(destination, new StompFrameHandler() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return Map.class;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public void handleFrame(StompHeaders headers, Object payload) {
+                messages.add((Map<String, Object>) payload);
+            }
+        });
+        return messages;
+    }
+
+    protected Map<String, Object> awaitMessage(BlockingQueue<Map<String, Object>> messages) {
+        await().atMost(MESSAGE_TIMEOUT).until(() -> !messages.isEmpty());
+        return messages.poll();
     }
 }
