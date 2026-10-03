@@ -1,5 +1,5 @@
 -- 초기 데이터: initial_crawler/data/의 radio_songs_final.json, movies.json으로 만들었다. 직접 고치지 않는다.
--- 앱이 시작할 때 실행된다. 이미 있는 행(같은 PK)은 INSERT IGNORE로 건너뛴다.
+-- 앱이 시작할 때 song 테이블이 비어 있으면 실행된다(InitialDataLoader). 여러 앱이 동시에 넣어도 같은 PK 행은 INSERT IGNORE로 건너뛴다.
 
 INSERT IGNORE INTO song (id, title, subtitle, raw_title, raw_artist, play_count, source_program, source_seq, source_date) VALUES
 (1, 'Dreamer', '', 'Dreamer', 'YB', 1, 'MUSIC_PARTY', 3000, '2017-06-07'),

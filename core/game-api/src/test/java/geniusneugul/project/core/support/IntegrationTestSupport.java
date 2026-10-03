@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * 테스트 격리는 @Transactional 롤백이 아니라 매 테스트 전 테이블 비우기로 한다(docs/TEST.md 「DB 테스트 독립 환경 설정」).
  * 매 테스트 전에 테이블을 비우므로 초기 데이터 SQL은 실행하지 않는다.
  */
-@SpringBootTest(properties = "spring.sql.init.mode=never")
+@SpringBootTest(properties = "naquiz.initial-data.enabled=false")
 public abstract class IntegrationTestSupport {
 
     @Autowired
