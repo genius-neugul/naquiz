@@ -4,6 +4,10 @@ import static geniusneugul.project.core.common.exception.ErrorCode.GAME_QUESTION
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import geniusneugul.project.core.chat.service.AnswerSolvedResult;
+import geniusneugul.project.core.chat.service.ChatService;
+import geniusneugul.project.core.chat.service.SendChatCommand;
+import geniusneugul.project.core.chat.service.SendChatResult;
 import geniusneugul.project.core.common.exception.BusinessException;
 import geniusneugul.project.core.room.service.CreateRoomCommand;
 import geniusneugul.project.core.room.service.JoinRoomCommand;
@@ -26,6 +30,10 @@ class GameServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private RoomService roomService;
+
+    // 정답 제출은 채팅으로 들어온다.
+    @Autowired
+    private ChatService chatService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -94,10 +102,11 @@ class GameServiceTest extends IntegrationTestSupport {
         GameStartResult start = gameService.start(new StartGameCommand(GAME_TYPE, 1, room.hostToken()));
 
         // when
-        RoundSolvedResult solved = gameService.submit(new SubmitAnswerCommand("기 생 충", room.hostToken())).orElseThrow();
+        SendChatResult result = chatService.send(new SendChatCommand("기 생 충", room.hostToken()));
 
         // then
-        assertThat(solved.gameFinished()).isTrue();
+        assertThat(result).isInstanceOfSatisfying(AnswerSolvedResult.class,
+                solved -> assertThat(solved.gameFinished()).isTrue());
         assertThat(roundRow(start.gameId(), 1)).containsEntry("STATUS", "SOLVED")
                 .containsEntry("SOLVER_PARTICIPANT_ID", room.hostId());
         assertThat(gameRow(start.gameId())).containsEntry("STATUS", "FINISHED").containsEntry("WINNER_ID", room.hostId());
@@ -122,7 +131,7 @@ class GameServiceTest extends IntegrationTestSupport {
         String answer = jdbcTemplate.queryForObject(
                 "SELECT q.answer FROM game_round r JOIN question q ON q.id = r.question_id WHERE r.game_id = ? AND r.round_no = ?",
                 String.class, gameId, roundNo);
-        gameService.submit(new SubmitAnswerCommand(answer, room.hostToken())).orElseThrow();
+        assertThat(chatService.send(new SendChatCommand(answer, room.hostToken()))).isInstanceOf(AnswerSolvedResult.class);
     }
 
     private Long insertQuestion(String answer, String reviewStatus, boolean active) {

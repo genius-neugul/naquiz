@@ -2,13 +2,11 @@ package geniusneugul.project.core.game.service;
 
 import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.domain.Game;
-import geniusneugul.project.core.game.implement.AnswerSubmitter;
 import geniusneugul.project.core.game.implement.GameAppender;
 import geniusneugul.project.core.game.implement.GameProgressRemover;
 import geniusneugul.project.core.game.implement.GameReader;
 import geniusneugul.project.core.game.implement.GameStart;
 import geniusneugul.project.core.game.implement.GameStarter;
-import geniusneugul.project.core.game.implement.RoundSolve;
 import geniusneugul.project.core.game.implement.RoundStarter;
 import geniusneugul.project.core.question.domain.Question;
 import geniusneugul.project.core.question.implement.QuestionPicker;
@@ -24,7 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 게임 진행. 판정·점수·승자 결정은 메모리(방 락 안)에서 하고, 그 결과를 게임·라운드 기록으로 DB에 남긴다.
+ * 게임 시작·다음 라운드·승자 없는 종료. 판정·점수·승자 결정은 메모리(방 락 안)에서 하고, 그 결과를 DB에 남긴다.
+ * 정답 제출은 채팅으로 들어오므로 ChatService가 game implement로 처리한다.
  */
 @Slf4j
 @Service
@@ -36,7 +35,6 @@ public class GameService {
     private final GameAppender gameAppender;
     private final GameStarter gameStarter;
     private final GameReader gameReader;
-    private final AnswerSubmitter answerSubmitter;
     private final RoundStarter roundStarter;
     private final GameProgressRemover gameProgressRemover;
     private final Clock clock;
@@ -57,16 +55,6 @@ public class GameService {
         log.info("[GameService.start] Game started. roomId={}, gameId={}, gameType={}, targetScore={}",
                 start.roomId(), start.gameId(), start.gameType(), start.targetScore());
         return GameStartResult.from(start);
-    }
-
-    /** 채팅을 정답 제출로 판정한다. 정답자가 확정되면 그 결과를, 아니면 빈 값을 돌려준다 */
-    @Transactional
-    public Optional<RoundSolvedResult> submit(SubmitAnswerCommand command) {
-        return answerSubmitter.submit(command.participantToken(), command.text())
-                .map(solve -> {
-                    record(solve);
-                    return RoundSolvedResult.from(solve);
-                });
     }
 
     /** 정답자가 나온 뒤 다음 라운드를 연다. 그 사이 게임이 끝났으면 빈 값이다 */
@@ -95,17 +83,5 @@ public class GameService {
                 log.info("[GameService.endWithoutWinner] Game ended without winner. roomId={}, gameId={}", roomId, gameId);
             }
         });
-    }
-
-    private void record(RoundSolve solve) {
-        Game game = gameReader.readForUpdate(solve.gameId());
-        game.solveRound(solve.roundNo(), solve.solverId(), solve.solvedAt());
-        log.info("[GameService.submit] Round solved. roomId={}, gameId={}, roundNo={}, participantId={}",
-                solve.roomId(), solve.gameId(), solve.roundNo(), solve.solverId());
-        if (solve.gameFinished()) {
-            game.finish(solve.solverId(), solve.solvedAt());
-            log.info("[GameService.submit] Game finished. roomId={}, gameId={}, winnerId={}",
-                    solve.roomId(), solve.gameId(), solve.solverId());
-        }
     }
 }

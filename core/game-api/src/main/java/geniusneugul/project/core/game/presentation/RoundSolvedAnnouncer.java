@@ -1,6 +1,5 @@
 package geniusneugul.project.core.game.presentation;
 
-import geniusneugul.project.core.game.service.RoundSolvedResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +13,7 @@ public class RoundSolvedAnnouncer {
     private final GameBroadcaster gameBroadcaster;
     private final NextRoundScheduler nextRoundScheduler;
 
-    public void announce(RoundSolvedResult result) {
+    public void announce(SolvedRound result) {
         if (result.gameFinished()) {
             gameBroadcaster.broadcastSolved(result, null);
             gameBroadcaster.broadcastFinish(result);

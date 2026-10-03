@@ -1,6 +1,6 @@
 package geniusneugul.project.core.game.presentation.dto;
 
-import geniusneugul.project.core.game.service.RoundSolvedResult;
+import geniusneugul.project.core.game.presentation.SolvedRound;
 import java.util.List;
 
 /**
@@ -10,7 +10,7 @@ public record GameFinishedResponse(String type, Long gameId, Long winnerId, List
 
     private static final String TYPE = "GAME_FINISHED";
 
-    public static GameFinishedResponse from(RoundSolvedResult result) {
-        return new GameFinishedResponse(TYPE, result.gameId(), result.solverId(), ScoreResponse.listOf(result.scores()));
+    public static GameFinishedResponse from(SolvedRound result) {
+        return new GameFinishedResponse(TYPE, result.gameId(), result.solverId(), ScoreResponse.listOfSolved(result.scores()));
     }
 }

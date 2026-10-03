@@ -1,6 +1,6 @@
 package geniusneugul.project.core.game.presentation.dto;
 
-import geniusneugul.project.core.game.service.RoundSolvedResult;
+import geniusneugul.project.core.game.presentation.SolvedRound;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,9 +25,9 @@ public record RoundSolvedResponse(
 
     private static final String TYPE = "ROUND_SOLVED";
 
-    public static RoundSolvedResponse of(RoundSolvedResult result, LocalDateTime nextRoundAt) {
+    public static RoundSolvedResponse of(SolvedRound result, LocalDateTime nextRoundAt) {
         return new RoundSolvedResponse(TYPE, result.gameId(), result.roundNo(), result.solverId(), result.nickname(),
                 result.tag(), result.text(), result.answer(), result.subAnswer(), result.solvedAt(),
-                ScoreResponse.listOf(result.scores()), nextRoundAt);
+                ScoreResponse.listOfSolved(result.scores()), nextRoundAt);
     }
 }

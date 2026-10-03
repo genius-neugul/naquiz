@@ -5,7 +5,6 @@ import geniusneugul.project.core.game.presentation.dto.GameStartedResponse;
 import geniusneugul.project.core.game.presentation.dto.RoundSolvedResponse;
 import geniusneugul.project.core.game.presentation.dto.RoundStartedResponse;
 import geniusneugul.project.core.game.service.GameStartResult;
-import geniusneugul.project.core.game.service.RoundSolvedResult;
 import geniusneugul.project.core.game.service.RoundStartResult;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +30,11 @@ public class GameBroadcaster {
     }
 
     /** nextRoundAt은 게임이 끝났으면 null이다 */
-    public void broadcastSolved(RoundSolvedResult result, LocalDateTime nextRoundAt) {
+    public void broadcastSolved(SolvedRound result, LocalDateTime nextRoundAt) {
         messagingTemplate.convertAndSend(topic(result.roomId()), RoundSolvedResponse.of(result, nextRoundAt));
     }
 
-    public void broadcastFinish(RoundSolvedResult result) {
+    public void broadcastFinish(SolvedRound result) {
         messagingTemplate.convertAndSend(topic(result.roomId()), GameFinishedResponse.from(result));
     }
 
