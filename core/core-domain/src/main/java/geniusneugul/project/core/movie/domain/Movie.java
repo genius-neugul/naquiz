@@ -25,8 +25,8 @@ public class Movie {
 
     private String titleEn;
 
-    @Column(nullable = false)
-    private long audienceCount;
+    // 역대 박스오피스 밖에서 추가한 영화는 관객 수가 없다.
+    private Long audienceCount;
 
     @Column(nullable = false)
     private LocalDate releaseDate;
@@ -61,4 +61,27 @@ public class Movie {
 
     @Column(nullable = false)
     private String rating;
+
+    private Movie(String kobisMovieCode, String title, String titleEn, Long audienceCount, LocalDate releaseDate,
+                  List<String> directors, List<String> actors, String synopsis, List<String> genres,
+                  List<String> nations, String rating) {
+        this.kobisMovieCode = kobisMovieCode;
+        this.title = title;
+        this.titleEn = titleEn;
+        this.audienceCount = audienceCount;
+        this.releaseDate = releaseDate;
+        this.directors = new ArrayList<>(directors);
+        this.actors = new ArrayList<>(actors);
+        this.synopsis = synopsis;
+        this.genres = new ArrayList<>(genres);
+        this.nations = new ArrayList<>(nations);
+        this.rating = rating;
+    }
+
+    public static Movie create(String kobisMovieCode, String title, String titleEn, Long audienceCount,
+                               LocalDate releaseDate, List<String> directors, List<String> actors, String synopsis,
+                               List<String> genres, List<String> nations, String rating) {
+        return new Movie(kobisMovieCode, title, titleEn, audienceCount, releaseDate, directors, actors, synopsis,
+                genres, nations, rating);
+    }
 }
