@@ -16,8 +16,8 @@ export interface Participant {
 
 export type ChatMessage =
   | { id: string; kind: "system"; text: string }
-  | { id: string; kind: "chat"; participantId: string; nickname: string; text: string }
-  | { id: string; kind: "correct"; participantId: string; nickname: string; text: string };
+  | { id: string; kind: "chat"; participantId: string; nickname: string; tag: number; text: string }
+  | { id: string; kind: "correct"; participantId: string; nickname: string; tag: number; text: string };
 
 export type VoteType = "HINT" | "SKIP";
 

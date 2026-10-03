@@ -81,6 +81,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - 서버는 연결마다 새 Principal을 붙이고, 그 이름을 참가자 토큰으로 쓴다. 클라이언트는 토큰을 보내지 않는다. 연결이 끊기면 참가자는 퇴장한다(`docs/DOMAIN.md` 참가자).
 - 한 연결은 한 방에만 들어갈 수 있다.
 - 한 연결이 보낸 메시지는 보낸 순서대로 처리한다.
+- 한 연결로 가는 메시지는 서버가 보낸 순서대로 도착한다. 한 참가자가 연달아 보낸 채팅은 모두에게 보낸 순서대로 보인다.
 
 **destination**
 
@@ -89,8 +90,9 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | SEND | `/app/rooms/create` | `{ "nickname": "방장" }` | 방을 만들고 초대 코드를 발급한다. 닉네임은 앞뒤 공백을 빼고 1~10자 |
 | SEND | `/app/rooms/join` | `{ "inviteCode": "A1B2C3", "nickname": "감자" }` | 초대 코드로 방에 들어간다. 초대 코드는 앞뒤 공백을 빼고 대문자로 바꿔 받는다. 닉네임 규칙은 방 만들기와 같고, 같은 방에서 겹쳐도 된다 |
 | SEND | `/app/rooms/leave` | 없음 | 방을 나간다. 들어간 방이 없으면 무시한다 |
+| SEND | `/app/rooms/chat` | `{ "text": "안녕하세요" }` | 들어가 있는 방에 채팅을 보낸다. 앞뒤 공백을 빼고 1~100자 |
 | SUBSCRIBE | `/user/queue/room` | 방 상태 | 방 만들기·참가하기 응답. 보낸 연결에만 온다 |
-| SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다 |
+| SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다. 채팅도 이 토픽으로 온다(보낸 사람 포함) |
 | SUBSCRIBE | `/user/queue/errors` | 에러 응답 | 메시지 처리 실패. 보낸 연결에만 온다 |
 
 **방 상태**
@@ -116,19 +118,30 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `PARTICIPANT_JOINED` | 참가자가 들어왔다 | `{ "type": "PARTICIPANT_JOINED", "participantId": 3, "participants": [...] }` (들어온 사람 포함 전체) |
 | `PARTICIPANT_LEFT` | 게스트가 나갔다 | `{ "type": "PARTICIPANT_LEFT", "participantId": 2, "participants": [...] }` (남은 참가자) |
 | `ROOM_CLOSED` | 방장이 나가 방이 끝났다 | `{ "type": "ROOM_CLOSED", "participantId": 1 }` |
+| `CHAT` | 참가자가 채팅을 보냈다 | 아래 「채팅」 |
+
+**채팅**
+
+```json
+{ "type": "CHAT", "participantId": 2, "nickname": "감자", "tag": 2, "text": "안녕하세요", "sentAt": "2026-10-03T21:00:00" }
+```
+
+- 채팅은 저장하지 않는다. 방에 들어온 뒤 구독한 채팅만 받는다.
+- `sentAt`은 서버가 받은 시각이다.
 
 **에러**
 
-본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방 관련 코드:
+본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅 관련 코드:
 
 | code | 상황 |
 | --- | --- |
-| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다 |
+| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다 |
 | `ROOM_ALREADY_JOINED` | 이미 방에 들어가 있는 연결이 방을 또 만들거나 다른 방에 들어간다 |
 | `ROOM_INVITE_CODE_EXHAUSTED` | 겹치지 않는 초대 코드를 만들지 못했다 |
 | `ROOM_INVALID_INVITE_CODE` | 초대 코드가 숫자·영문 6자리가 아니다 |
 | `ROOM_NOT_FOUND` | 그 초대 코드의 방이 없다(방장이 나가 닫힌 방 포함) |
 | `ROOM_FULL` | 방 인원(10명)이 가득 찼다 |
 | `ROOM_ALREADY_PLAYING` | 게임이 진행 중인 방이다 |
+| `ROOM_NOT_JOINED` | 방에 들어가 있지 않은 연결이 채팅을 보낸다 |
 
 ---

@@ -20,6 +20,7 @@ public enum ErrorCode {
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "방을 찾을 수 없습니다. 초대 코드를 확인해 주세요."),
     ROOM_FULL(HttpStatus.CONFLICT, "방 인원이 가득 찼습니다."),
     ROOM_ALREADY_PLAYING(HttpStatus.CONFLICT, "게임이 진행 중인 방에는 들어갈 수 없습니다."),
+    ROOM_NOT_JOINED(HttpStatus.CONFLICT, "방에 들어가 있지 않습니다."),
 
     // room - 불변식 위반. 응답에는 쓰지 않고 IllegalStateException 메시지로만 쓴다(docs/EXCEPTION.md 「불변식 위반」)
     ROOM_ID_ALREADY_ASSIGNED(HttpStatus.INTERNAL_SERVER_ERROR, "방 ID는 한 번만 부여합니다."),

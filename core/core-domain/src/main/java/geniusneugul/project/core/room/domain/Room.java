@@ -86,6 +86,16 @@ public class Room {
         return findParticipant(participantToken).isPresent();
     }
 
+    /** 닫힌 방이거나 이미 나간 참가자면 비어 있다 */
+    public Optional<Participant> findParticipant(String participantToken) {
+        if (isClosed()) {
+            return Optional.empty();
+        }
+        return participants.stream()
+                .filter(participant -> participant.hasToken(participantToken))
+                .findFirst();
+    }
+
     public List<Participant> getParticipants() {
         return List.copyOf(participants);
     }
@@ -107,14 +117,5 @@ public class Room {
 
     private int issueTag() {
         return nextTag++;
-    }
-
-    private Optional<Participant> findParticipant(String participantToken) {
-        if (isClosed()) {
-            return Optional.empty();
-        }
-        return participants.stream()
-                .filter(participant -> participant.hasToken(participantToken))
-                .findFirst();
     }
 }

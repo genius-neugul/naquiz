@@ -32,5 +32,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.setApplicationDestinationPrefixes("/app");
         registry.enableSimpleBroker("/topic", "/queue");
         registry.setUserDestinationPrefix("/user");
+        // 같은 연결로 나가는 메시지는 보낸 순서대로 전달한다(한 사람이 연달아 보낸 채팅, 방 이벤트).
+        registry.setPreservePublishOrder(true);
     }
 }
