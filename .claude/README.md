@@ -88,7 +88,7 @@ gh auth login
 - 코드·문서에서 사실만 모아 그린다. 섹션마다 그림 하나와 2문장 이하 설명, 긴 설명은 그림 아래 카드로 뺀다. 문장은 존댓말(합니다체)로 쓰고, 게시 직전에 `humanize-korean` 스킬로 윤문한다.
 - 모양은 `skills/explain/template.html`(왼쪽 요약 리스트 + 본문, 색 토큰·라이트/다크·SVG 클래스)을 그대로 쓴다. 모양의 기준: [naquiz STOMP 가이드](https://claude.ai/artifact/WEuWeG2HXZASFHJriTs9te)
 - 아티팩트는 비공개로 만들어진다. 팀원과 보려면 Share로 공유한다. 링크는 개발일지와 PR 본문에 남긴다.
-- `/pre-pr`에서도 쓴다. 만들지 매번 묻고, 만들면 `explain-drafter`가 초안을 쓰고 메인 대화가 게시한다. 브랜치마다 하나의 링크를 갱신한다.
+- `/pre-pr`에서도 쓴다. 만들지 매번 묻고, 만들면 `explain-drafter`가 초안을 쓰고 메인 대화가 윤문한 뒤 게시한다. 브랜치마다 하나의 링크를 갱신한다.
 
 ## 에이전트
 
@@ -98,7 +98,7 @@ gh auth login
 |---|---|---|---|
 | `test-runner` | Haiku (effort low) | 없음 | `core/` Spring 서버 테스트(Gradle)를 실행하고 **실패만** 요약한다. `core/` 코드 변경이 없으면 실행하지 않는다. 메인 대화 토큰을 아끼기 위해 테스트는 항상 이 에이전트로 돌린다. |
 | `code-reviewer` | Sonnet | 코드 수정 안 함 | `core/` Spring 게임 서버 변경분만 리뷰한다(크롤러는 대상 아님). 게임 규칙 준수, 서버 단일 진실 원천, 서버 타이머, 동시 정답 race condition, 유비쿼터스 언어, `core/docs/` 컨벤션(레이어·예외·로그)을 보고, 신뢰도 70 이상만 🔴/🟡/💡/❓로 보고한다. 반복되는 패턴은 프로젝트 메모리에 쌓는다. |
-| `explain-drafter` | Sonnet | `.git/claude-explain/`에만 씀 | `/pre-pr`에서 아티팩트를 만들기로 했을 때 PR 변경을 읽고 `/explain` 규칙·`template.html`로 HTML 초안을 쓴다. 저장소 파일은 고치지 않고, 게시는 메인 대화가 한다. 코드·문서가 어긋난 부분은 그리지 않고 보고한다. |
+| `explain-drafter` | Sonnet | `.git/claude-explain/`에만 씀 | `/pre-pr`에서 아티팩트를 만들기로 했을 때 PR 변경을 읽고 `/explain` 규칙·`template.html`로 HTML 초안을 존댓말로 쓴다. 저장소 파일은 고치지 않고, 윤문과 게시는 메인 대화가 한다. 코드·문서가 어긋난 부분은 그리지 않고 보고한다. |
 | `docs-syncer` | Sonnet | 문서만 | 변경분이 영향을 주는 문서를 찾는다. 규칙 문서(기획, DOMAIN, MUSIC_PARSING_RULE, MUSIC_SELECTION_RULE, `core/docs/`)는 **보고만** 하고, 사실 기록 문서(CLAUDE.md, `core/CLAUDE.md`, `front/CLAUDE.md`, `front/README.md`, `initial_crawler/README.md`, `initial_crawler/CLAUDE.md`)는 코드에 맞춰 고친다. |
 
 ## 훅
