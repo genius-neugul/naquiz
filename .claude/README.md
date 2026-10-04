@@ -61,7 +61,7 @@ gh auth login
 |---|---|
 | 1. 준비 | 이번 작업(대화 context)과 무관한 변경은 묻지 않고 `git stash`로 치워둔다(`pre-pr: 작업 외 변경 임시 보관`). stash 전에 `git restore --staged .`로 staging 영역을 비운다(stash가 staging 전체를 저장해 pop 때 충돌하는 것을 막는다). 작업한 변경은 커밋할지 묻는다. `origin`과 충돌하는지 확인한다. 이번 PR을 그림으로 설명하는 아티팩트를 만들지 매번 묻는다(이미 만든 게 있으면 갱신할지 묻는다). |
 | 2. 병렬 점검 | `test-runner`, `code-reviewer`, `docs-syncer`를 동시에 실행한다. `core/` 코드(`src/`, Gradle 설정) 변경이 없으면 `test-runner`를, `core/` 변경이 없으면 `code-reviewer`를 건너뛴다. 아티팩트를 만들기로 했으면 `explain-drafter`도 함께 띄운다. |
-| 3. 결과 처리 | 🔴 Critical이나 테스트 실패가 있으면 고친 뒤 2단계를 다시 한다. 🟡 Warning은 PR 본문 "리뷰어에게"에 적는다. 문서를 고쳤으면 `docs: sync with <기능>`으로 커밋한다. 아티팩트 초안이 있으면 Warning을 "아직 없는 것"에 보태고 메인 대화가 게시한다(갱신이면 같은 링크). 링크는 `.git/claude-explain/<브랜치>.url`에 남는다. |
+| 3. 결과 처리 | 🔴 Critical이나 테스트 실패가 있으면 고친 뒤 2단계를 다시 한다. 🟡 Warning은 PR 본문 "리뷰어에게"에 적는다. 문서를 고쳤으면 `docs: sync with <기능>`으로 커밋한다. 아티팩트 초안이 있으면 Warning을 "아직 없는 것"에 보태고, 메인 대화가 `humanize-korean`으로 문장을 윤문한 뒤 게시한다(갱신이면 같은 링크). 링크는 `.git/claude-explain/<브랜치>.url`에 남는다. |
 | 4. 개발일지 | `/devlog` 절차로 오늘 일지를 쓰거나 이어서 쓰고, `docs: devlog YYYY-MM-DD`로 **같은 PR 브랜치에** 커밋한다. 아티팩트를 만들었으면 "한 일"에 링크를 넣는다. |
 | 5. 통과 기록 | HEAD 커밋 해시를 `.git/claude-pr-ready`에 적는다. |
 | 6. PR 생성 | push한 뒤 템플릿(무엇을 / 왜 / 확인한 것 / 리뷰어에게, 아티팩트가 있으면 "무엇을"에 링크)으로 `gh pr create`를 실행하고 팀원을 리뷰어로 지정한다. 만든 PR 링크를 일지에 채워 다시 커밋·push한다. |
@@ -85,8 +85,8 @@ gh auth login
 ### `/explain [주제]`: 그림으로 설명하는 아티팩트
 
 - 기능·흐름·개념을 짧은 글과 그림(흐름도, 순서도, 메시지 표, 상태 칩)으로 설명하는 아티팩트를 만든다. "흐름 그림으로 정리해줘"처럼 말로 요청해도 된다.
-- 코드·문서에서 사실만 모아 그린다. 섹션마다 그림 하나와 2문장 이하 설명, 긴 설명은 그림 아래 카드로 뺀다.
-- 모양은 `skills/explain/template.html`(색 토큰·라이트/다크·SVG 클래스)을 그대로 쓴다. 예시: [naquiz 게임 흐름](https://claude.ai/artifact/CbjLX7rpHqonpXk31ycx4Y)
+- 코드·문서에서 사실만 모아 그린다. 섹션마다 그림 하나와 2문장 이하 설명, 긴 설명은 그림 아래 카드로 뺀다. 문장은 존댓말(합니다체)로 쓰고, 게시 직전에 `humanize-korean` 스킬로 윤문한다.
+- 모양은 `skills/explain/template.html`(왼쪽 요약 리스트 + 본문, 색 토큰·라이트/다크·SVG 클래스)을 그대로 쓴다. 모양의 기준: [naquiz STOMP 가이드](https://claude.ai/artifact/WEuWeG2HXZASFHJriTs9te)
 - 아티팩트는 비공개로 만들어진다. 팀원과 보려면 Share로 공유한다. 링크는 개발일지와 PR 본문에 남긴다.
 - `/pre-pr`에서도 쓴다. 만들지 매번 묻고, 만들면 `explain-drafter`가 초안을 쓰고 메인 대화가 게시한다. 브랜치마다 하나의 링크를 갱신한다.
 

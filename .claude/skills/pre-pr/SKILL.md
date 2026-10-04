@@ -41,6 +41,7 @@ description: PR을 올리기 전에 테스트·코드리뷰·문서 동기화를
 - 설명 아티팩트 (`explain-drafter`를 띄웠을 때)
   - drafter가 "그리지 않은 것"(코드·문서 불일치)을 보고하면 사용자에게 알린다.
   - code-reviewer 🟡 Warning이 있으면 초안의 "아직 없는 것" 섹션에 한 줄씩 보탠다.
+  - 게시 직전에 메인 대화가 `humanize-korean:humanize-korean` 스킬로 페이지 문장을 윤문한다(`/explain` 4단계 5번 규칙: 문장만 다듬고 태그·코드 이름·그림 이름표는 그대로, 존댓말 유지).
   - 게시는 메인 대화가 한다(`Artifact` 도구).
     - 새로 만들기: `action: quickstart`(intent `other`) → 초안 경로로 publish. `icon`·`description`은 drafter 보고를 쓴다.
     - 갱신: `.url`의 링크를 `action: read`로 읽은 뒤 같은 `url`로 publish한다(링크가 그대로 유지된다).
