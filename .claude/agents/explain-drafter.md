@@ -20,7 +20,8 @@ color: green
 - 이름(클래스, 메서드, 메시지 type, destination, enum)은 코드에 있는 그대로 쓴다. 추측해서 그리지 않는다.
 
 ## 절차
-1. 변경 파악: `git log --oneline <base>..HEAD`, `git diff --stat <base>...HEAD`, 필요한 파일의 `git diff <base>...HEAD -- <경로>`.
+1. 변경 파악: `git log --oneline --first-parent <base>..HEAD`, `git diff --stat <base>...HEAD`, 필요한 파일의 `git diff <base>...HEAD -- <경로>`.
+   - 브랜치에 다른 브랜치(main 등)를 머지한 커밋이 있으면, 그 머지로 들어온 변경은 이번 PR이 한 일이 아니다. `--first-parent` 로그에 보이는 이 브랜치의 커밋만 그린다.
 2. 사실 모으기: 바뀐 코드와 관련 문서(`docs/기획.md`, `docs/DOMAIN.md`, `docs/API.md`, `core/docs/`, `front/CLAUDE.md`)를 읽는다. 코드와 문서가 다르면 그 부분은 그리지 않고 보고에 적는다.
 3. 섹션 고르기: 관점은 "이번 PR로 무엇이 어떻게 동작하게 됐는가"다. 해당하는 것만 쓴다.
    - 큰 흐름(흐름도): 바뀐 흐름 전체. 이번 PR에서 새로 생긴 노드·화살표는 `node-accent`·`edge-accent`로 구분한다.
