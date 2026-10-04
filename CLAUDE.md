@@ -20,7 +20,7 @@
 - `initial_crawler/README.md`: 크롤러 실행 방법(가상환경 포함)과 저장 경로
 - `initial_crawler/CLAUDE.md`: 크롤러 자주 쓰는 명령, 크롤링 결과 기록 규칙
 - `initial_crawler/records/`: 크롤링 결과 기록(`YYYY-MM-DD-<music|movie>.md`). 단계별 곡 수, 실패 회차, 통계
-- `.claude/README.md` (`docs/CLAUDE_CODE.md`는 이 파일의 심볼릭 링크): 팀 공용 스킬(/pre-pr, /sync-docs, /devlog), 에이전트, 훅 설명과 처음 설정·문제 해결
+- `.claude/README.md` (`docs/CLAUDE_CODE.md`는 이 파일의 심볼릭 링크): 팀 공용 스킬(/pre-pr, /sync-docs, /devlog, /explain), 에이전트, 훅 설명과 처음 설정·문제 해결
 - `docs/devlog/`: 날짜별 개발일지(`YYYY-MM-DD-<작성자>.md`). 무엇을 했고 왜 그렇게 정했는지, 다음 할 일
 - `docs/troubleshooting/`: 문제별 기록(`YYYY-MM-DD-<주제>.md`). 증상, 원인, 해결, 확인
 
@@ -32,7 +32,7 @@
 ├── settings.json      훅 등록 (세션 시작 브리핑, PR 게이트, 테스트 context 가드)
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
 ├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
-└── skills/            /pre-pr, /sync-docs, /devlog
+└── skills/            /pre-pr, /sync-docs, /devlog, /explain
 core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션

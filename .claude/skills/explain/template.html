@@ -1,0 +1,233 @@
+<title>주제 이름</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 한 열 문서. 큰 그림(흐름도) → 한 동작의 순서도 → 표 → 상태 → 남은 일 순으로 확대해 들어간다 */
+:root {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --fg: #171a21;
+  --muted: #5d6474;
+  --line: #9aa1b2;
+  --accent: #2f55d4;
+  --accent-soft: #e3e9fb;
+  --gold: #b97a00;
+  --gold-soft: #fbf0d6;
+  --danger: #c2413a;
+  --lock: #eef0f6;
+  --font-display: "Black Han Sans", "IBM Plex Sans KR", sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12141a; --surface: #1b1e26; --fg: #e8eaf0; --muted: #a0a7b8; --line: #6b7387;
+    --accent: #7d9bff; --accent-soft: #1f2a4d; --gold: #f0b93d; --gold-soft: #3a2f14;
+    --danger: #f07a72; --lock: #222633; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12141a; --surface: #1b1e26; --fg: #e8eaf0; --muted: #a0a7b8; --line: #6b7387;
+  --accent: #7d9bff; --accent-soft: #1f2a4d; --gold: #f0b93d; --gold-soft: #3a2f14;
+  --danger: #f07a72; --lock: #222633; color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+.page { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 56px; }
+
+header { display: grid; gap: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 52px); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { max-width: 62ch; color: var(--muted); margin: 0; }
+
+section { display: grid; gap: 16px; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 0; text-wrap: balance; }
+section > p { margin: 0; max-width: 66ch; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+p code, li code, td code { background: var(--accent-soft); color: var(--fg); padding: 1px 5px; border-radius: 4px; }
+
+.figure { background: var(--surface); border: 1px solid color-mix(in srgb, var(--line) 35%, transparent); border-radius: 14px; overflow-x: auto; }
+.figure svg { display: block; width: 100%; min-width: 760px; height: auto; }
+
+/* SVG 색은 모두 토큰에서 */
+svg text { font-family: var(--font-body); fill: var(--fg); }
+svg .muted { fill: var(--muted); }
+svg .mono { font-family: var(--font-mono); font-size: 11.5px; fill: var(--accent); }
+svg .node { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+svg .node-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .node-gold { fill: var(--gold-soft); stroke: var(--gold); stroke-width: 1.5; }
+svg .edge { fill: none; stroke: var(--line); stroke-width: 1.6; }
+svg .edge-accent { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+svg .edge-gold { fill: none; stroke: var(--gold); stroke-width: 1.8; }
+svg .dashed { stroke-dasharray: 5 5; }
+svg .head { fill: var(--line); }
+svg .head-accent { fill: var(--accent); }
+svg .head-gold { fill: var(--gold); }
+svg .title { font-size: 16px; font-weight: 600; }
+svg .small { font-size: 12.5px; }
+svg .lifeline { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; }
+svg .lock { fill: var(--lock); stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 6 4; }
+svg .lane { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+svg .step { fill: var(--accent); }
+svg .step-text { fill: var(--surface); font-size: 11px; font-weight: 600; font-family: var(--font-mono); }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.note { background: var(--surface); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; border: 1px solid color-mix(in srgb, var(--line) 30%, transparent); }
+.note strong { font-weight: 600; }
+.note span { color: var(--muted); font-size: 14px; }
+.note.warn { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.note.warn strong { color: var(--danger); }
+
+.table-wrap { overflow-x: auto; background: var(--surface); border-radius: 14px; border: 1px solid color-mix(in srgb, var(--line) 35%, transparent); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 11px 16px; vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+tr + tr td { border-top: 1px solid color-mix(in srgb, var(--line) 22%, transparent); }
+.dir { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.dir.send { background: var(--gold-soft); color: var(--gold); }
+.dir.recv { background: var(--accent-soft); color: var(--accent); }
+td .mono { white-space: nowrap; }
+
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.state-card { background: var(--surface); border-radius: 14px; padding: 18px 20px; display: grid; gap: 12px; min-width: 0; border: 1px solid color-mix(in srgb, var(--line) 35%, transparent); }
+.state-card h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12.5px; }
+.chip { padding: 3px 10px; border-radius: 999px; background: var(--lock); border: 1px solid color-mix(in srgb, var(--line) 50%, transparent); }
+.chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip.end { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.chip.off { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); background: transparent; }
+.arrow { color: var(--muted); }
+.state-card p { margin: 0; color: var(--muted); font-size: 14px; }
+
+ul.todo { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 70ch; }
+ul.todo li::marker { color: var(--accent); }
+</style>
+
+<!-- ===== 아래부터 본문. 섹션마다 그림 하나 + 2문장 이하 설명 + 필요하면 note 카드 ===== -->
+<div class="page">
+  <header>
+    <div class="eyebrow">PR #00 · feat/branch · 한 줄 분류</div>
+    <h1>주제 이름</h1>
+    <p class="lede">이 페이지가 설명하는 것을 한두 문장으로.</p>
+  </header>
+
+  <!-- [1] 흐름도: 노드(rect.node / rect.node-accent / polygon.node-gold) + 화살표(path.edge*) + 메시지 이름(text.mono) -->
+  <section>
+    <h2>큰 흐름</h2>
+    <p>그림을 읽는 법 한 문장. 파란 글씨는 그 순간 나가는 메시지.</p>
+    <div class="figure" role="img" aria-label="그림을 문장으로 설명">
+      <svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="ah-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-accent" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="ah-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head-gold" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="node" x="20" y="110" width="160" height="90" rx="12"/>
+        <text x="100" y="148" text-anchor="middle" class="title">시작 상태</text>
+        <text x="100" y="172" text-anchor="middle" class="mono">STATE_A</text>
+
+        <path class="edge" d="M180,155 L278,155" marker-end="url(#ah)"/>
+        <text x="229" y="140" text-anchor="middle" class="small">무엇이 일어나면</text>
+
+        <rect class="node-accent" x="280" y="100" width="180" height="110" rx="12"/>
+        <text x="370" y="140" text-anchor="middle" class="title">핵심 단계</text>
+        <text x="370" y="162" text-anchor="middle" class="small muted">보조 설명</text>
+        <text x="370" y="186" text-anchor="middle" class="mono">EVENT_NAME</text>
+
+        <path class="edge-gold" d="M460,155 L528,155" marker-end="url(#ah-g)"/>
+        <polygon class="node-gold" points="605,100 680,155 605,210 530,155"/>
+        <text x="605" y="160" text-anchor="middle" class="small" font-weight="600">조건?</text>
+
+        <!-- 되돌아가는 고리: 위로 돌아 앞 노드로 -->
+        <path class="edge-accent" d="M605,100 L605,50 L370,50 L370,96" marker-end="url(#ah-a)"/>
+        <text x="488" y="40" text-anchor="middle" class="small">아니오 · 다시</text>
+
+        <path class="edge" d="M680,155 L798,155" marker-end="url(#ah)"/>
+        <text x="740" y="142" text-anchor="middle" class="small">예</text>
+        <rect class="node" x="800" y="110" width="170" height="90" rx="12"/>
+        <text x="885" y="160" text-anchor="middle" class="title">끝 상태</text>
+      </svg>
+    </div>
+    <div class="notes">
+      <div class="note"><strong>짧은 제목</strong><span>그림에 다 못 넣은 규칙 한두 문장.</span></div>
+      <div class="note warn"><strong>예외·주의</strong><span>실패하거나 끊기는 경우.</span></div>
+    </div>
+  </section>
+
+  <!-- [2] 순서도: 레인(rect.lane) + 생명선(line.lifeline) + 번호 원(circle.step) + 락/트랜잭션 영역(rect.lock) -->
+  <section>
+    <h2>한 동작이 처리되는 길</h2>
+    <p>누가 누구를 부르는지 번호 순서대로.</p>
+    <div class="figure" role="img" aria-label="순서도를 문장으로 설명">
+      <svg viewBox="0 0 960 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+          <marker id="sh-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="head-accent" d="M0,0 L10,5 L0,10 z"/></marker>
+        </defs>
+        <rect class="lock" x="472" y="150" width="176" height="80" rx="10"/>
+        <text x="484" y="170" class="small" style="fill: var(--accent)" font-weight="600">락 안</text>
+
+        <rect class="lane" x="10" y="16" width="120" height="48" rx="10"/><text x="70" y="45" text-anchor="middle" class="small" font-weight="600">클라이언트</text>
+        <rect class="lane" x="330" y="16" width="120" height="48" rx="10"/><text x="390" y="37" text-anchor="middle" class="small" font-weight="600">Service</text><text x="390" y="54" text-anchor="middle" class="small muted">레이어</text>
+        <rect class="lane" x="480" y="16" width="160" height="48" rx="10"/><text x="560" y="45" text-anchor="middle" class="small" font-weight="600">Implement</text>
+        <rect class="lane" x="820" y="16" width="130" height="48" rx="10"/><text x="885" y="45" text-anchor="middle" class="small" font-weight="600">토픽</text>
+        <line class="lifeline" x1="70" y1="64" x2="70" y2="310"/>
+        <line class="lifeline" x1="390" y1="64" x2="390" y2="310"/>
+        <line class="lifeline" x1="560" y1="64" x2="560" y2="310"/>
+        <line class="lifeline" x1="885" y1="64" x2="885" y2="310"/>
+
+        <path class="edge" d="M70,108 L388,108" marker-end="url(#sh)"/>
+        <text x="230" y="98" text-anchor="middle" class="mono">/app/destination</text>
+        <path class="edge" d="M390,140 L558,140" marker-end="url(#sh)"/>
+        <text x="474" y="130" text-anchor="middle" class="small">호출</text>
+        <text x="560" y="200" text-anchor="middle" class="small" font-weight="600">확인 + 변경</text>
+        <path class="edge dashed" d="M558,256 L392,256" marker-end="url(#sh)"/>
+        <text x="474" y="246" text-anchor="middle" class="small">결과</text>
+        <path class="edge-accent" d="M390,292 L883,292" marker-end="url(#sh-a)"/>
+        <text x="636" y="282" text-anchor="middle" class="mono">EVENT_NAME</text>
+
+        <circle class="step" cx="22" cy="108" r="10"/><text x="22" y="112" text-anchor="middle" class="step-text">1</text>
+        <circle class="step" cx="22" cy="140" r="10"/><text x="22" y="144" text-anchor="middle" class="step-text">2</text>
+        <circle class="step" cx="22" cy="200" r="10"/><text x="22" y="204" text-anchor="middle" class="step-text">3</text>
+        <circle class="step" cx="22" cy="256" r="10"/><text x="22" y="260" text-anchor="middle" class="step-text">4</text>
+        <circle class="step" cx="22" cy="292" r="10"/><text x="22" y="296" text-anchor="middle" class="step-text">5</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- [3] 표: 메시지·API 목록. 방향은 칩(.dir.send / .dir.recv) -->
+  <section>
+    <h2>주고받는 메시지</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>방향</th><th>destination · type</th><th>언제</th><th>담는 것</th></tr></thead>
+        <tbody>
+          <tr><td><span class="dir send">SEND</span></td><td><span class="mono">/app/example</span></td><td>언제 보내는지</td><td><code>field</code></td></tr>
+          <tr><td><span class="dir recv">TOPIC</span></td><td><span class="mono">EVENT_NAME</span></td><td>언제 오는지</td><td>무엇이 담기는지</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- [4] 상태 전이: 칩 사슬. .chip.on 진행 중, .chip.end 정상 종료, .chip.off 비정상 종료 -->
+  <section>
+    <h2>상태가 바뀌는 방식</h2>
+    <div class="states">
+      <div class="state-card">
+        <h3>대상</h3>
+        <div class="chain"><span class="chip">WAITING</span><span class="arrow">→</span><span class="chip on">PLAYING</span><span class="arrow">→</span><span class="chip end">FINISHED</span></div>
+        <div class="chain"><span class="chip">어느 상태든</span><span class="arrow">→</span><span class="chip off">CLOSED</span></div>
+        <p>전이 조건 한 문장.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- [5] 남은 것: 아직 없는 기능, 알려진 문제 -->
+  <section>
+    <h2>아직 없는 것</h2>
+    <ul class="todo">
+      <li><strong>항목.</strong> 한 문장.</li>
+    </ul>
+  </section>
+</div>

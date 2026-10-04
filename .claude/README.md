@@ -12,7 +12,8 @@
 ├── skills/
 │   ├── pre-pr/            /pre-pr     PR 전 점검 → PR 생성
 │   ├── sync-docs/         /sync-docs  코드와 문서 동기화
-│   └── devlog/            /devlog     개발일지·인수인계
+│   ├── devlog/            /devlog     개발일지·인수인계
+│   └── explain/           /explain    그림으로 설명하는 학습용 아티팩트 (template.html: 공통 모양)
 └── agents/
     ├── test-runner.md     core/ Gradle 테스트 실행 (Haiku)
     ├── code-reviewer.md   core/ 서버 변경분 리뷰 (Sonnet)
@@ -79,6 +80,13 @@ gh auth login
 - `docs: devlog YYYY-MM-DD`로 현재 PR 브랜치에 커밋하고(main에는 올리지 않는다), 채팅에 붙여넣을 3~5줄 요약을 출력한다.
 - 같은 날 여러 PR 브랜치에 같은 일지 파일이 올라가면 머지할 때 충돌할 수 있다. 나중에 머지하는 PR에서 두 내용을 합친다.
 - `/devlog week`: 최근 7일 일지를 합쳐 `docs/devlog/weekly/YYYY-Www.md`로 주간 회고를 쓴다.
+
+### `/explain [주제]`: 그림으로 설명하는 아티팩트
+
+- 기능·흐름·개념을 짧은 글과 그림(흐름도, 순서도, 메시지 표, 상태 칩)으로 설명하는 아티팩트를 만든다. "흐름 그림으로 정리해줘"처럼 말로 요청해도 된다.
+- 코드·문서에서 사실만 모아 그린다. 섹션마다 그림 하나와 2문장 이하 설명, 긴 설명은 그림 아래 카드로 뺀다.
+- 모양은 `skills/explain/template.html`(색 토큰·라이트/다크·SVG 클래스)을 그대로 쓴다. 예시: [naquiz 게임 흐름](https://claude.ai/artifact/CbjLX7rpHqonpXk31ycx4Y)
+- 아티팩트는 비공개로 만들어진다. 팀원과 보려면 Share로 공유한다. 링크는 개발일지와 PR 본문에 남긴다.
 
 ## 에이전트
 
