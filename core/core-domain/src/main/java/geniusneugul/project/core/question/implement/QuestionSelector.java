@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class QuestionPicker {
+public class QuestionSelector {
 
     private final QuestionRepository questionRepository;
 

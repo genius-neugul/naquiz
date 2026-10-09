@@ -9,7 +9,7 @@ import geniusneugul.project.core.game.common.implement.GameStart;
 import geniusneugul.project.core.game.common.implement.GameStarter;
 import geniusneugul.project.core.game.common.implement.RoundStarter;
 import geniusneugul.project.core.question.domain.Question;
-import geniusneugul.project.core.question.implement.QuestionPicker;
+import geniusneugul.project.core.question.implement.QuestionSelector;
 import geniusneugul.project.core.room.implement.RoomMember;
 import geniusneugul.project.core.room.implement.RoomMemberReader;
 import java.time.Clock;
@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GameService {
 
     private final RoomMemberReader roomMemberReader;
-    private final QuestionPicker questionSelector;
+    private final QuestionSelector questionSelector;
     private final GameAppender gameAppender;
     private final GameStarter gameStarter;
     private final GameReader gameReader;
