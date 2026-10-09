@@ -22,7 +22,7 @@ public class QuestionPicker {
 
     private final QuestionRepository questionRepository;
 
-    public Question pick(GameType gameType, Collection<Long> askedQuestionIds) {
+    public Question select(GameType gameType, Collection<Long> askedQuestionIds) {
         List<Long> playableIds = questionRepository.findPlayableIds(gameType);
         if (playableIds.isEmpty()) {
             throw new BusinessException(ErrorCode.GAME_QUESTION_NOT_FOUND, Map.of("gameType", gameType));

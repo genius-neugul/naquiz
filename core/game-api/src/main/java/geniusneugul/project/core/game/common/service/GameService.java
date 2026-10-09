@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GameService {
 
     private final RoomMemberReader roomMemberReader;
-    private final QuestionPicker questionPicker;
+    private final QuestionPicker questionSelector;
     private final GameAppender gameAppender;
     private final GameStarter gameStarter;
     private final GameReader gameReader;
@@ -47,7 +47,7 @@ public class GameService {
     public GameStartResult start(StartGameCommand command) {
         RoomMember starter = roomMemberReader.read(command.participantToken());
         GameType gameType = GameType.from(command.gameType());
-        Question firstQuestion = questionPicker.pick(gameType, List.of());
+        Question firstQuestion = questionSelector.select(gameType, List.of());
         Game game = gameAppender.append(starter.roomId(), gameType, command.targetScore(), firstQuestion,
                 LocalDateTime.now(clock));
         GameStart start = gameStarter.start(command.participantToken(), game, firstQuestion);
@@ -64,7 +64,7 @@ public class GameService {
         if (!game.isInProgress()) {
             return Optional.empty();
         }
-        Question question = questionPicker.pick(game.getGameType(), game.getAskedQuestionIds());
+        Question question = questionSelector.select(game.getGameType(), game.getAskedQuestionIds());
         LocalDateTime now = LocalDateTime.now(clock);
         return roundStarter.start(roomId, gameId, question, now)
                 .map(start -> {
