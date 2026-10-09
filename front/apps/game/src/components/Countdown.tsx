@@ -16,11 +16,11 @@ interface CountdownProps {
 
 /** 남은 시간 안내와 진행 막대. 스틸컷 교체, 스무고개 차례 등 서버 카운트다운을 보여준다 */
 export function Countdown({ deadline, durationMs, label, children }: CountdownProps) {
-  const { secondsLeft, progress, running } = useCountdown(deadline, durationMs);
+  const { secondsLeft, progress, running } = useCountdown(deadline, durationMs, true);
   return (
     <div className={styles.root}>
       {children && running && <span className={styles.text}>{children(secondsLeft)}</span>}
-      <ProgressBar value={progress} label={label} />
+      <ProgressBar value={progress} label={label} animated={false} />
     </div>
   );
 }
