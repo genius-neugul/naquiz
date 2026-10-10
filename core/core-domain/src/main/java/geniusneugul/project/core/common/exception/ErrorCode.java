@@ -11,7 +11,10 @@ public enum ErrorCode {
 
     // common
     COMMON_INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
-    COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다.");
+    COMMON_INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다."),
+
+    // game
+    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다.");
 
     private final HttpStatus status;
     private final String message;

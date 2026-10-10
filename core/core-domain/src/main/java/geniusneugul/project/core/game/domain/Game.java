@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import geniusneugul.project.core.common.domain.GameType;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -54,4 +56,17 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("roundNo, revealOrder")
     private List<RevealedClue> revealedClues = new ArrayList<>();
+
+    public RevealedHint revealHint(int roundNo, HintType hintType, String revealedContent, LocalDateTime revealedAt) {
+        int revealOrder = (int) revealedHints.stream().filter(hint -> hint.getRoundNo() == roundNo).count() + 1;
+        RevealedHint hint = RevealedHint.of(this, roundNo, hintType, revealedContent, revealOrder, revealedAt);
+        revealedHints.add(hint);
+        return hint;
+    }
+
+    public Optional<RevealedHint> lastAnswerHint(int roundNo) {
+        return revealedHints.stream()
+                .filter(hint -> hint.getRoundNo() == roundNo && hint.getHintType().isAnswerHint())
+                .max(Comparator.comparingInt(RevealedHint::getRevealOrder));
+    }
 }

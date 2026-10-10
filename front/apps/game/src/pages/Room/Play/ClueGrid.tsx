@@ -16,7 +16,9 @@ export function ClueGrid({ room, round }: { room: RoomState; round: Round }) {
   let turnText = "모든 단서 공개";
   if (turn) {
     const left = secondsLeft(turn.deadline, now);
-    turnText = myTurn ? `내 차례예요. 열어볼 단서를 고르세요 · ${left}초` : `${turnName}님이 단서를 고르는 중… ${left}초`;
+    const allOpened = round.clues.length >= CLUES.length;
+    if (allOpened) turnText = myTurn ? `내 차례예요. 정답 힌트를 열 수 있어요 · ${left}초` : `${turnName}님이 정답 힌트를 여는 중… ${left}초`;
+    else turnText = myTurn ? `내 차례예요. 열어볼 단서를 고르세요 · ${left}초` : `${turnName}님이 단서를 고르는 중… ${left}초`;
   } else if (round.status !== "IN_PROGRESS") {
     turnText = "라운드가 끝났어요";
   }

@@ -1,4 +1,4 @@
-import { CLUES, HINT_LABEL, type HintType } from "@naquiz/shared";
+import { CLUES, HINT_LABEL, isAnswerHintType, type HintType } from "@naquiz/shared";
 import { Button, ProgressBar } from "@naquiz/ui";
 import type { ReactNode } from "react";
 import { useGameClient } from "../../../game/GameProvider";
@@ -7,7 +7,6 @@ import type { RoomState, Round, Vote } from "../../../game/types";
 import styles from "./HintTiles.module.css";
 import { required } from "./vote";
 
-const ANSWER_HINTS: HintType[] = ["ANSWER_MASK", "ANSWER_SYMBOL", "ANSWER_PARTIAL", "ANSWER_LENGTH", "ANSWER_INITIAL", "ANSWER_RANDOM_CHAR"];
 const SONG_INFO: { type: HintType; label: string }[] = [
   { type: "ALBUM", label: "앨범" },
   { type: "ARTIST", label: "가수" },
@@ -47,35 +46,50 @@ export function HintTiles({ room, round }: { room: RoomState; round: Round }) {
 }
 
 function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
-  const latest = [...round.hints].reverse().find((h) => ANSWER_HINTS.includes(h.type));
+  const client = useGameClient();
+  const latest = [...round.hints].reverse().find((h) => isAnswerHintType(h.type));
   const next = round.nextAnswerHint;
-  const meta = room.gameType === "SONG" ? round.answerMeta : round.answerMeta.split(" · ")[0];
-  const label = room.gameType === "MOVIE_STILL_CUT" ? "정답 힌트 · 초성" : latest ? HINT_LABEL[latest.type] : "정답 힌트";
+  const label = latest ? HINT_LABEL[latest.type] : "정답 힌트";
+  const inProgress = round.status === "IN_PROGRESS";
 
-  let waiting: string | null = null;
-  if (round.status === "IN_PROGRESS" && !next) {
-    if (room.gameType === "MOVIE_STILL_CUT" && !latest) waiting = "모든 스틸컷이 나오면 열려요";
-    if (room.gameType === "MOVIE_TWENTY_QUESTIONS" && round.clues.length < CLUES.length) waiting = "모든 단서를 연 뒤 투표로 열 수 있어요";
+  let control: ReactNode = null;
+  if (room.gameType === "SONG") {
+    control = <VoteControl room={room} round={round} target={next} buttonText={next ? `${HINT_LABEL[next]} 투표` : ""} />;
+  } else if (inProgress && room.gameType === "MOVIE_TWENTY_QUESTIONS") {
+    if (round.clues.length < CLUES.length) control = <Wait text="모든 단서를 연 뒤 차례대로 열 수 있어요" />;
+    else if (next && round.turn?.participantId === room.meId)
+      control = (
+        <div className={styles.foot}>
+          <Button size="sm" variant="primary" onClick={() => client.openAnswerHint()}>
+            {HINT_LABEL[next]} 열기
+          </Button>
+        </div>
+      );
+    else if (next) control = <Wait text="차례인 참가자가 열 수 있어요" />;
+  } else if (inProgress && room.gameType === "MOVIE_STILL_CUT" && !latest) {
+    control = <Wait text="모든 스틸컷이 나오고 10초 뒤 열려요" />;
   }
 
   return (
-    <Tile label={label} wide vote={next ? round.votes.find((v) => v.targetHintType === next) : undefined}>
+    <Tile label={label} wide vote={room.gameType === "SONG" && next ? round.votes.find((v) => v.targetHintType === next) : undefined}>
       {latest ? (
         <div className={styles.value}>
           <span className={`${styles.text} ${styles.big}`}>{latest.content}</span>
-          <span className={styles.sub}>{meta}</span>
+          <span className={styles.sub}>{round.answerMeta}</span>
         </div>
       ) : (
         <Locked />
       )}
-      {waiting ? (
-        <div className={styles.foot}>
-          <span className={styles.wait}>{waiting}</span>
-        </div>
-      ) : (
-        <VoteControl room={room} round={round} target={next} buttonText={next ? `${HINT_LABEL[next]} 투표` : ""} />
-      )}
+      {control}
     </Tile>
+  );
+}
+
+function Wait({ text }: { text: string }) {
+  return (
+    <div className={styles.foot}>
+      <span className={styles.wait}>{text}</span>
+    </div>
   );
 }
 
