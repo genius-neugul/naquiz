@@ -1,0 +1,12 @@
+# 게임 웹 개발 서버 이미지. 소스는 compose가 마운트하고, 의존성만 이미지 안에 설치한다.
+# (호스트의 node_modules에는 macOS용 네이티브 바이너리가 들어 있어 컨테이너에서 쓸 수 없다)
+FROM node:22-alpine
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+COPY apps/game/package.json apps/game/
+COPY apps/admin/package.json apps/admin/
+COPY packages/ui/package.json packages/ui/
+COPY packages/shared/package.json packages/shared/
+RUN npm ci
+EXPOSE 5173
+CMD ["npm", "run", "dev", "-w", "@naquiz/game", "--", "--host", "0.0.0.0"]

@@ -45,7 +45,7 @@ export function JoinDialog({ nickname, onClose, onJoin }: JoinDialogProps) {
               초대 코드로 참가
             </h2>
             <span className={styles.sub}>
-              <b>{nickname}</b> 닉네임으로 입장해요
+              <b>{nickname}</b> 닉네임으로 입장해요. 들어가면 이름 뒤에 방 안 번호(#2 등)가 붙어요
             </span>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="닫기">

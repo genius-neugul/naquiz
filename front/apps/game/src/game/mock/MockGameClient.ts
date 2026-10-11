@@ -25,6 +25,7 @@ import {
 import type { GameClient } from "../GameClient";
 import type { ChatMessage, Participant, ReportInput, RoomState, Round, RoundLog, Vote, VoteType } from "../types";
 import { BOT_NAMES, BOT_TALK, MOVIES, SONGS, type MovieFixture, type SongFixture } from "./fixtures";
+import { displayName } from "../selectors";
 
 const ME = "me";
 const NEXT_ROUND_MS = 5000;
@@ -62,6 +63,8 @@ export class MockGameClient implements GameClient {
   private queuePos = 0;
   private turnOrder: string[] = [];
   private turnIndex = 0;
+  /** 다음 입장자에게 줄 태그. 입장 순서대로 늘고 나간 사람 번호는 다시 쓰지 않는다 */
+  private nextTag = 1;
 
   getState = (): RoomState | null => this.state;
 
@@ -76,7 +79,7 @@ export class MockGameClient implements GameClient {
     const code = Array.from({ length: INVITE_CODE_LENGTH }, () => pick([...CODE_CHARS])).join("");
     this.state = this.initialState(code, [this.participant(ME, nick, "HOST")]);
     this.system(`방을 만들었어요 · 초대 코드 ${code}`);
-    this.botsJoin(BOT_NAMES.filter((b) => b !== nick));
+    this.botsJoin(BOT_NAMES);
     return this.state;
   }
 
@@ -87,11 +90,11 @@ export class MockGameClient implements GameClient {
     }
     const hostName = BOT_NAMES[0]!;
     const nick = this.guestName(nickname);
-    if (nick === hostName) throw new Error("이미 같은 닉네임을 쓰는 참가자가 있어요. 다른 닉네임으로 들어와 주세요.");
     this.reset();
-    this.state = this.initialState(code, [this.participant(hostName, hostName, "HOST"), this.participant(ME, nick, "GUEST")]);
-    this.system(`초대 코드 ${code} 방에 들어왔어요 · 방장은 ${hostName}님이에요`);
-    this.botsJoin(BOT_NAMES.slice(1).filter((b) => b !== nick));
+    const host = this.participant(hostName, hostName, "HOST");
+    this.state = this.initialState(code, [host, this.participant(ME, nick, "GUEST")]);
+    this.system(`초대 코드 ${code} 방에 들어왔어요 · 방장은 ${displayName(host)}님이에요`);
+    this.botsJoin(BOT_NAMES.slice(1));
     this.hostBotPicksGame();
     return this.state;
   }
@@ -170,7 +173,7 @@ export class MockGameClient implements GameClient {
   }
 
   private participant(id: string, nickname: string, role: Participant["role"]): Participant {
-    return { id, nickname, role, score: 0, scoredAt: null };
+    return { id, nickname, tag: this.nextTag++, role, score: 0, scoredAt: null };
   }
 
   private guestName(nickname: string): string {
@@ -181,8 +184,9 @@ export class MockGameClient implements GameClient {
     names.forEach((name, i) => {
       this.later(this.roomTimers, 500 + i * 450, () => {
         if (!this.state || this.state.participants.length >= MAX_PARTICIPANTS) return;
-        this.update((s) => ({ ...s, participants: [...s.participants, this.participant(name, name, "GUEST")] }));
-        this.system(`${name}님이 들어왔어요`);
+        const bot = this.participant(name, name, "GUEST");
+        this.update((s) => ({ ...s, participants: [...s.participants, bot] }));
+        this.system(`${displayName(bot)}님이 들어왔어요`);
       });
     });
   }
@@ -196,7 +200,7 @@ export class MockGameClient implements GameClient {
     this.later(this.roomTimers, 6000, () => waiting() && this.update((s) => ({ ...s, gameType: pick(games), targetScore: pick([3, 5, 7]) })));
     this.later(this.roomTimers, 8500, () => {
       if (!waiting() || !this.state) return;
-      this.system(`${host.nickname}님이 '${GAME_LABEL[this.state.gameType]}'을(를) 골랐어요`);
+      this.system(`${displayName(host)}님이 '${GAME_LABEL[this.state.gameType]}'을(를) 골랐어요`);
       this.start();
     });
   }
@@ -295,7 +299,7 @@ export class MockGameClient implements GameClient {
       roundNo: round.roundNo,
       answer: subAnswer ? `${answer} (${subAnswer})` : answer,
       solverId: solver?.id ?? null,
-      solverNickname: solver?.nickname ?? null,
+      solverNickname: (solver ? displayName(solver) : null),
       solvedSeconds: seconds,
       revealedHintCount: round.hints.length + round.clues.length,
       status,
@@ -312,11 +316,11 @@ export class MockGameClient implements GameClient {
         turn: null,
         nextAnswerHint: null,
         stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
-        result: { answer, subAnswer, detail, solverId: solver?.id ?? null, solverNickname: solver?.nickname ?? null, solvedSeconds: seconds, nextAt },
+        result: { answer, subAnswer, detail, solverId: solver?.id ?? null, solverNickname: (solver ? displayName(solver) : null), solvedSeconds: seconds, nextAt },
       },
     }));
     if (solver) {
-      this.post({ id: this.id(), kind: "correct", participantId: solver.id, nickname: solver.nickname, text });
+      this.post({ id: this.id(), kind: "correct", participantId: solver.id, nickname: displayName(solver), text });
       this.system(`정답은 ${log.answer}`);
     } else {
       this.system(`스킵했어요 · 정답은 ${log.answer}`);
@@ -349,7 +353,7 @@ export class MockGameClient implements GameClient {
         rounds: st.rounds,
       },
     }));
-    this.system(`${winner.nickname}님이 목표 ${s.targetScore}점에 도달했어요 · 게임이 끝났어요`);
+    this.system(`${displayName(winner)}님이 목표 ${s.targetScore}점에 도달했어요 · 게임이 끝났어요`);
   }
 
   // ---- 스틸컷 ----
@@ -581,7 +585,8 @@ export class MockGameClient implements GameClient {
   // ---- 공통 ----
 
   private nickname(participantId: string): string {
-    return this.state?.participants.find((p) => p.id === participantId)?.nickname ?? "알 수 없음";
+    const participant = this.state?.participants.find((p) => p.id === participantId);
+    return participant ? displayName(participant) : "알 수 없음";
   }
 
   private chat(participantId: string, text: string): void {
@@ -632,5 +637,6 @@ export class MockGameClient implements GameClient {
     this.clear(this.roundTimers);
     this.state = null;
     this.item = null;
+    this.nextTag = 1;
   }
 }
