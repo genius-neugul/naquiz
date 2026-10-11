@@ -320,7 +320,7 @@ export class MockGameClient implements GameClient {
       },
     }));
     if (solver) {
-      this.post({ id: this.id(), kind: "correct", participantId: solver.id, nickname: displayName(solver), text });
+      this.post({ id: this.id(), kind: "correct", participantId: solver.id, nickname: solver.nickname, tag: solver.tag, text });
       this.system(`정답은 ${log.answer}`);
     } else {
       this.system(`스킵했어요 · 정답은 ${log.answer}`);
@@ -590,7 +590,9 @@ export class MockGameClient implements GameClient {
   }
 
   private chat(participantId: string, text: string): void {
-    this.post({ id: this.id(), kind: "chat", participantId, nickname: this.nickname(participantId), text });
+    const sender = this.state?.participants.find((p) => p.id === participantId);
+    if (!sender) return;
+    this.post({ id: this.id(), kind: "chat", participantId, nickname: sender.nickname, tag: sender.tag, text });
   }
 
   private system(text: string): void {

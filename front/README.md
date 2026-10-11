@@ -40,7 +40,7 @@ npm test
 
 ## 게임 서버에 붙여 실행
 
-게임 앱은 `StompGameClient`로 게임 서버(`core/game-api`)에 STOMP로 붙을 수 있다. 지금은 방 만들기·참가하기·나가기만 서버로 처리하고, 게임 진행은 아직 동작하지 않는다.
+게임 앱은 `StompGameClient`로 게임 서버(`core/game-api`)에 STOMP로 붙을 수 있다. 지금은 방 만들기·참가하기·나가기와 채팅만 서버로 처리하고, 게임 진행은 아직 동작하지 않는다.
 
 ```bash
 # core/ 에서
