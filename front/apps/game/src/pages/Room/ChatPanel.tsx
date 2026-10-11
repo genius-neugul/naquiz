@@ -1,5 +1,6 @@
 import { Badge, Button } from "@naquiz/ui";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { ParticipantName } from "../../components/ParticipantName";
 import { useGameClient } from "../../game/GameProvider";
 import type { RoomState } from "../../game/types";
 import styles from "./ChatPanel.module.css";
@@ -53,15 +54,20 @@ export function ChatPanel({ room }: { room: RoomState }) {
             return (
               <li key={m.id} className={styles.correct}>
                 <Badge tone="good">정답</Badge>
-                <b className={mine ? styles.me : undefined}>{m.nickname}</b>
+                <b className={mine ? styles.me : undefined}>
+                  <ParticipantName participant={m} />
+                </b>
                 <span>{m.text}</span>
               </li>
             );
           }
+          // 내 채팅은 오른쪽, 다른 사람 채팅은 왼쪽에 붙인다
           return (
-            <li key={m.id} className={styles.message}>
-              <span className={`${styles.who} ${mine ? styles.me : ""}`}>{m.nickname}</span>
-              {m.text}
+            <li key={m.id} className={`${styles.message} ${mine ? styles.mine : styles.others}`}>
+              <span className={`${styles.who} ${mine ? styles.me : ""}`}>
+                <ParticipantName participant={m} />
+              </span>
+              <span className={styles.text}>{m.text}</span>
             </li>
           );
         })}

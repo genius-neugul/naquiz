@@ -7,16 +7,12 @@ import static org.awaitility.Awaitility.await;
 import geniusneugul.project.core.room.domain.InviteCode;
 import geniusneugul.project.core.room.infra.RoomRepository;
 import geniusneugul.project.core.support.WebSocketTestSupport;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.stomp.StompFrameHandler;
-import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 
 class RoomStompControllerTest extends WebSocketTestSupport {
@@ -121,25 +117,4 @@ class RoomStompControllerTest extends WebSocketTestSupport {
         await().atMost(MESSAGE_TIMEOUT).until(() -> roomRepository.findByInviteCode(inviteCode).isEmpty());
     }
 
-    private BlockingQueue<Map<String, Object>> subscribe(StompSession session, String destination) {
-        BlockingQueue<Map<String, Object>> messages = new LinkedBlockingQueue<>();
-        session.subscribe(destination, new StompFrameHandler() {
-            @Override
-            public Type getPayloadType(StompHeaders headers) {
-                return jsonObject();
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public void handleFrame(StompHeaders headers, Object payload) {
-                messages.add((Map<String, Object>) payload);
-            }
-        });
-        return messages;
-    }
-
-    private Map<String, Object> awaitMessage(BlockingQueue<Map<String, Object>> messages) {
-        await().atMost(MESSAGE_TIMEOUT).until(() -> !messages.isEmpty());
-        return messages.poll();
-    }
 }
