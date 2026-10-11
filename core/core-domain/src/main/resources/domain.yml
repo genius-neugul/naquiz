@@ -9,3 +9,8 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+
+naquiz:
+  # 초기 데이터(sql/initial-data.sql). 앱이 시작할 때 song 테이블이 비어 있으면 넣는다(InitialDataLoader).
+  initial-data:
+    enabled: true
