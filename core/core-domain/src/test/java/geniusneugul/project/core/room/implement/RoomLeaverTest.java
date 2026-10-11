@@ -2,11 +2,13 @@ package geniusneugul.project.core.room.implement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import geniusneugul.project.core.common.infra.event.EventPublisher;
 import geniusneugul.project.core.room.domain.InviteCode;
 import geniusneugul.project.core.room.domain.Participant;
 import geniusneugul.project.core.room.domain.Room;
 import geniusneugul.project.core.room.fixture.RoomFixture;
 import geniusneugul.project.core.room.infra.MemoryRoomRepository;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +41,8 @@ class RoomLeaverTest {
     @BeforeEach
     void setUp() {
         roomRepository = new MemoryRoomRepository();
-        roomLeaver = new RoomLeaver(roomRepository, new RoomLock());
+        roomLeaver = new RoomLeaver(roomRepository, new RoomLock(), new EventPublisher(event -> {
+        }), Clock.systemDefaultZone());
     }
 
     @DisplayName("방장의 퇴장이 동시에 여러 번 들어와도 퇴장은 한 번만 처리되고 방이 사라진다.")
