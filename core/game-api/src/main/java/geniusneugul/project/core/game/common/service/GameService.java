@@ -69,6 +69,8 @@ public class GameService {
         return roundStarter.start(roomId, gameId, question, now)
                 .map(start -> {
                     game.startRound(start.questionId(), start.startedAt());
+                    log.info("[GameService.startNextRound] Round started. roomId={}, gameId={}, roundNo={}, answer={}, subAnswer={}",
+                            roomId, gameId, start.roundNo(), question.getAnswer(), question.getSubAnswer());
                     return RoundStartResult.from(start);
                 });
     }
