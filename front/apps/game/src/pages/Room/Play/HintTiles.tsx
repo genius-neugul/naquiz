@@ -51,12 +51,14 @@ function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
   const next = round.nextAnswerHint;
   const label = latest ? HINT_LABEL[latest.type] : "정답 힌트";
   const inProgress = round.status === "IN_PROGRESS";
+  // 노래·스틸컷은 1단계부터 투표로, 영화 스무고개는 차례 참가자가 연다
+  const votable = room.gameType !== "MOVIE_TWENTY_QUESTIONS";
 
   let control: ReactNode = null;
-  if (room.gameType === "SONG") {
+  if (votable) {
     control = <VoteControl room={room} round={round} target={next} buttonText={next ? `${HINT_LABEL[next]} 투표` : ""} />;
   } else if (inProgress && room.gameType === "MOVIE_TWENTY_QUESTIONS") {
-    if (round.clues.length < CLUES.length) control = <Wait text="모든 단서를 연 뒤 차례대로 열 수 있어요" />;
+    if (round.clues.length < CLUES.length) control = <Wait text="모든 단서를 연 뒤 차례대로 1단계부터 열 수 있어요" />;
     else if (next && round.turn?.participantId === room.meId)
       control = (
         <div className={styles.foot}>
@@ -66,12 +68,10 @@ function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
         </div>
       );
     else if (next) control = <Wait text="차례인 참가자가 열 수 있어요" />;
-  } else if (inProgress && room.gameType === "MOVIE_STILL_CUT" && !latest) {
-    control = <Wait text="모든 스틸컷이 나오고 10초 뒤 열려요" />;
   }
 
   return (
-    <Tile label={label} wide vote={room.gameType === "SONG" && next ? round.votes.find((v) => v.targetHintType === next) : undefined}>
+    <Tile label={label} wide vote={votable && next ? round.votes.find((v) => v.targetHintType === next) : undefined}>
       {latest ? (
         <div className={styles.value}>
           <span className={`${styles.text} ${styles.big}`}>{latest.content}</span>
