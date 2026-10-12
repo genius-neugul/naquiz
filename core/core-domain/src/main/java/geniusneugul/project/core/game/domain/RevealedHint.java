@@ -35,4 +35,16 @@ public class RevealedHint {
 
     @Column(nullable = false)
     private LocalDateTime revealedAt;
+
+    static RevealedHint of(Game game, int roundNo, HintType hintType, String revealedContent, int revealOrder,
+                           LocalDateTime revealedAt) {
+        RevealedHint hint = new RevealedHint();
+        hint.game = game;
+        hint.roundNo = roundNo;
+        hint.hintType = hintType;
+        hint.revealedContent = revealedContent;
+        hint.revealOrder = revealOrder;
+        hint.revealedAt = revealedAt;
+        return hint;
+    }
 }

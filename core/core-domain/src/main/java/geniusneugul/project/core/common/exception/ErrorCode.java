@@ -26,7 +26,10 @@ public enum ErrorCode {
     ROOM_ID_ALREADY_ASSIGNED(HttpStatus.INTERNAL_SERVER_ERROR, "방 ID는 한 번만 부여합니다."),
     ROOM_PARTICIPANT_ID_ALREADY_ASSIGNED(HttpStatus.INTERNAL_SERVER_ERROR, "참가자 ID는 한 번만 부여합니다."),
     ROOM_HOST_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "방장이 없는 방입니다."),
-    ROOM_INVITE_CODE_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "이미 쓰고 있는 초대 코드입니다.");
+    ROOM_INVITE_CODE_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "이미 쓰고 있는 초대 코드입니다."),
+
+    // game
+    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다.");
 
     private final HttpStatus status;
     private final String message;

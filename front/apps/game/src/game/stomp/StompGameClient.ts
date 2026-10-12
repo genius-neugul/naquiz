@@ -103,6 +103,7 @@ export class StompGameClient implements GameClient {
   openVote(): void {}
   approveVote(): void {}
   pickClue(): void {}
+  openAnswerHint(): void {}
   report(): void {}
 
   // 방 만들기·참가하기 공통: 보낸 뒤 /user/queue/room 응답(또는 에러 큐)을 기다린다.

@@ -58,14 +58,11 @@ export const REPORT_STATUS_LABEL: Record<ReportStatus, string> = {
 
 /** 투표·채팅 안내에 쓰는 힌트 이름 */
 export const HINT_LABEL: Record<HintType, string> = {
-  ANSWER_MASK: "정답 힌트 1단계",
-  ANSWER_SYMBOL: "정답 힌트 2단계",
-  ANSWER_PARTIAL: "정답 힌트 3단계",
+  ANSWER_MASK: "기본 힌트",
+  ANSWER_PARTIAL: "정답 힌트 1단계",
+  ANSWER_RANDOM_CHAR: "정답 힌트 2단계",
   ALBUM: "앨범 힌트",
   ARTIST: "가수 힌트",
   RELEASE_DATE: "발매일 힌트",
-  ANSWER_LENGTH: "정답 힌트 1단계 (글자 수)",
-  ANSWER_INITIAL: "정답 힌트 (초성)",
-  ANSWER_RANDOM_CHAR: "정답 힌트 (글자 하나 더)",
   STILL_CUT: "다음 스틸컷",
 };
