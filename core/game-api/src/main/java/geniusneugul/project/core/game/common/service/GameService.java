@@ -54,6 +54,8 @@ public class GameService {
 
         log.info("[GameService.start] Game started. roomId={}, gameId={}, gameType={}, targetScore={}",
                 start.roomId(), start.gameId(), start.gameType(), start.targetScore());
+        log.info("[GameService.start] Round started. roomId={}, gameId={}, roundNo={}, answer={}, subAnswer={}",
+                start.roomId(), start.gameId(), start.roundNo(), firstQuestion.getAnswer(), firstQuestion.getSubAnswer());
         return GameStartResult.from(start);
     }
 
