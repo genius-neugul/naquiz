@@ -46,7 +46,9 @@ public class StompExceptionHandler {
     @SendToUser(destinations = ERROR_QUEUE, broadcast = false)
     public ErrorResponse handleMessageConversion(MessageConversionException e) {
         ErrorCode errorCode = isInvalidGameType(e) ? ErrorCode.GAME_INVALID_TYPE : ErrorCode.COMMON_INVALID_REQUEST;
-        log.warn("[StompExceptionHandler.handleMessageConversion] code={}, message={}", errorCode.name(), e.getMessage());
+        // 변환 실패 문구에는 참가자가 보낸 값이 섞일 수 있어 원인 예외 이름만 남긴다(docs/LOG.md).
+        log.warn("[StompExceptionHandler.handleMessageConversion] code={}, cause={}", errorCode.name(),
+                rootCause(e).getClass().getSimpleName());
         return ErrorResponse.of(errorCode);
     }
 
@@ -64,5 +66,13 @@ public class StompExceptionHandler {
             }
         }
         return false;
+    }
+
+    private Throwable rootCause(Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }
