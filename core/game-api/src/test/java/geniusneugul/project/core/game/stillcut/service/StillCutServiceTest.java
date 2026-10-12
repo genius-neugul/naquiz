@@ -2,6 +2,7 @@ package geniusneugul.project.core.game.stillcut.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.service.GameService;
 import geniusneugul.project.core.game.common.service.GameStartResult;
 import geniusneugul.project.core.game.common.service.StartGameCommand;
@@ -74,6 +75,6 @@ class StillCutServiceTest extends IntegrationTestSupport {
     private GameStartResult startGame() {
         String hostToken = UUID.randomUUID().toString();
         roomService.create(new CreateRoomCommand("방장", hostToken));
-        return gameService.start(new StartGameCommand("MOVIE_STILL_CUT", 3, hostToken));
+        return gameService.start(new StartGameCommand(GameType.MOVIE_STILL_CUT, 3, hostToken));
     }
 }

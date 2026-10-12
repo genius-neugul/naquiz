@@ -1,5 +1,6 @@
 package geniusneugul.project.core.game.common.service;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.implement.GameStart;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 public record GameStartResult(
         Long roomId,
         Long gameId,
-        String gameType,
+        GameType gameType,
         int targetScore,
         int roundNo,
         Long questionId,
@@ -19,7 +20,7 @@ public record GameStartResult(
 ) {
 
     static GameStartResult from(GameStart start) {
-        return new GameStartResult(start.roomId(), start.gameId(), start.gameType().name(), start.targetScore(),
+        return new GameStartResult(start.roomId(), start.gameId(), start.gameType(), start.targetScore(),
                 start.roundNo(), start.questionId(), start.roundStartedAt(), ScoreResult.listOf(start.scores()));
     }
 }

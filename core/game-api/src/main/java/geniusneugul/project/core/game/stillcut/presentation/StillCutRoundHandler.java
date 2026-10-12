@@ -1,5 +1,6 @@
 package geniusneugul.project.core.game.stillcut.presentation;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.presentation.Countdown;
 import geniusneugul.project.core.game.common.presentation.CountdownKind;
 import geniusneugul.project.core.game.common.presentation.CountdownTimer;
@@ -21,8 +22,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class StillCutRoundHandler implements RoundStartedHandler {
 
-    private static final String GAME_TYPE = "MOVIE_STILL_CUT";
-
     private final StillCutService stillCutService;
     private final CountdownTimer countdownTimer;
     private final SimpMessagingTemplate messagingTemplate;
@@ -37,8 +36,8 @@ public class StillCutRoundHandler implements RoundStartedHandler {
     }
 
     @Override
-    public boolean supports(String gameType) {
-        return GAME_TYPE.equals(gameType);
+    public boolean supports(GameType gameType) {
+        return gameType == GameType.MOVIE_STILL_CUT;
     }
 
     @Override

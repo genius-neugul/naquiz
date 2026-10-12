@@ -82,6 +82,7 @@ throw new IllegalStateException(ErrorCode.ROOM_ID_ALREADY_ASSIGNED.getMessage() 
 - 에러는 메시지를 보낸 참가자에게만 개인 큐(`/user/queue/errors`)로 보낸다. 방 전체 브로드캐스트로 보내지 않는다.
 - 본문은 HTTP 에러 응답과 같은 형식(`code`, `message`)을 쓴다.
 - 로그 레벨과 중복 금지 규칙은 HTTP와 같다(`BusinessException`은 warn, 예상하지 못한 예외는 error로 한 번만).
+- 본문을 요청 DTO로 바꾸지 못하면(`MessageConversionException`) `COMMON_INVALID_REQUEST`로, 없는 게임 종류면 `GAME_INVALID_TYPE`으로 돌려준다. 로그는 warn이고, 요청 값이 섞일 수 있는 에러 문구 대신 원인 예외 이름만 남긴다.
 
 ## 예외를 던지는 위치
 
