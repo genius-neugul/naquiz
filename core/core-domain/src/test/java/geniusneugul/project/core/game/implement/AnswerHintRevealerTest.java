@@ -22,11 +22,11 @@ class AnswerHintRevealerTest {
     @DisplayName("더 열 정답 힌트 단계가 없으면 공개에 실패한다.")
     void reveal_noMoreAnswerHint() {
         // given
-        Game game = GameFixture.game(GameType.MOVIE_STILL_CUT);
-        revealer.reveal(game, 1, "부산행");
+        Game game = GameFixture.game(GameType.SONG);
+        revealer.reveal(game, 1, "1987");
 
         // when & then
-        assertThatThrownBy(() -> revealer.reveal(game, 1, "부산행"))
+        assertThatThrownBy(() -> revealer.reveal(game, 1, "1987"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GAME_NO_MORE_ANSWER_HINT);

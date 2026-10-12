@@ -35,13 +35,15 @@ public class AnswerHintRevealer {
     }
 
     /**
+     * 기본 힌트는 라운드 시작 때 호출해 연다. 그 뒤 호출마다 다음 단계를 연다.
+     *
      * @param answer 라운드 문제의 answer
      */
     public RevealedHint reveal(Game game, int roundNo, String answer) {
         AnswerHintContent previous = game.lastAnswerHint(roundNo)
                 .map(hint -> new AnswerHintContent(hint.getHintType(), hint.getRevealedContent()))
                 .orElse(null);
-        AnswerHintContent next = AnswerHint.next(game.getGameType(), answer, previous, random)
+        AnswerHintContent next = AnswerHint.next(answer, previous, random)
                 .orElseThrow(() -> new BusinessException(ErrorCode.GAME_NO_MORE_ANSWER_HINT));
         return game.revealHint(roundNo, next.type(), next.content(), LocalDateTime.now(clock));
     }
