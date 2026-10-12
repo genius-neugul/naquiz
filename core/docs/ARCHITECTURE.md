@@ -103,7 +103,7 @@ domain: presentation을 제외한 모든 레이어가 참조하는 핵심 모델
 3. 레이어를 건너뛰지 않는다. 예를 들어 service가 infra를 직접 참조하지 않는다.
 4. 동일 레이어 간 참조는 피한다. 단, implement는 협력 도구 성격이 강하므로 다른 implement를 참조할 수 있다.
 5. 다른 도메인이 필요하면 그 도메인의 implement(Reader 등)를 직접 주입받는다. 다른 도메인의 service·infra는 참조하지 않으며, 도메인 간 순환 참조는 금지한다.
-6. domain은 레이어 사이의 단계가 아니라 핵심 모델이다. service·implement·infra가 참조할 수 있고, **presentation은 참조하지 않는다**(service의 result 모델만 받는다). domain은 다른 레이어를 참조하지 않으며(domain -> infra 금지), 공통 매핑 상위 클래스도 domain에 둔다.
+6. domain은 레이어 사이의 단계가 아니라 핵심 모델이다. service·implement·infra가 참조할 수 있고, **presentation은 참조하지 않는다**(service의 result 모델만 받는다). 단, 여러 도메인이 함께 쓰는 값인 `common/domain`의 `GameType`은 presentation도 참조할 수 있다(요청·응답 DTO, 게임별 핸들러). domain은 다른 레이어를 참조하지 않으며(domain -> infra 금지), 공통 매핑 상위 클래스도 domain에 둔다.
 
 ## Service 작성 규칙
 

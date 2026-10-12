@@ -51,6 +51,21 @@ class GameStompControllerTest extends WebSocketTestSupport {
         assertThat(round).doesNotContainKey("answer");
     }
 
+    @DisplayName("없는 게임 종류로 시작하면 보낸 사람의 에러 큐로 게임 종류 오류가 온다.")
+    @Test
+    void start_invalidGameType() throws Exception {
+        // given
+        StompSession host = connect();
+        BlockingQueue<Map<String, Object>> errors = subscribe(host, "/user/queue/errors");
+        createRoomAndSubscribe(host);
+
+        // when
+        host.send("/app/games/start", Map.of("gameType", "QUIZ", "targetScore", 3));
+
+        // then
+        assertThat(awaitMessage(errors).get("code")).isEqualTo("GAME_INVALID_TYPE");
+    }
+
     @DisplayName("라운드 중 정답 채팅은 채팅 대신 정답자 확정으로 가고, 잠시 뒤 다음 라운드가 열린다.")
     @Test
     void submit() throws Exception {

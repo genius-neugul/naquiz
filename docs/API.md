@@ -177,7 +177,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 
 | code | 상황 |
 | --- | --- |
-| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다. 게임 종류가 없거나 목표 점수가 1~50이 아니다 |
+| `COMMON_INVALID_REQUEST` | 본문 JSON 형식이 잘못됐다. 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다. 게임 종류가 없거나 목표 점수가 1~50이 아니다 |
 | `ROOM_ALREADY_JOINED` | 이미 방에 들어가 있는 연결이 방을 또 만들거나 다른 방에 들어간다 |
 | `ROOM_INVITE_CODE_EXHAUSTED` | 겹치지 않는 초대 코드를 만들지 못했다 |
 | `ROOM_INVALID_INVITE_CODE` | 초대 코드가 숫자·영문 6자리가 아니다 |

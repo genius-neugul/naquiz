@@ -1,6 +1,5 @@
 package geniusneugul.project.core.game.common.service;
 
-import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.domain.Game;
 import geniusneugul.project.core.game.common.implement.GameAppender;
 import geniusneugul.project.core.game.common.implement.GameProgressRemover;
@@ -46,9 +45,8 @@ public class GameService {
     @Transactional
     public GameStartResult start(StartGameCommand command) {
         RoomMember starter = roomMemberReader.read(command.participantToken());
-        GameType gameType = GameType.from(command.gameType());
-        Question firstQuestion = questionSelector.select(gameType, List.of());
-        Game game = gameAppender.append(starter.roomId(), gameType, command.targetScore(), firstQuestion,
+        Question firstQuestion = questionSelector.select(command.gameType(), List.of());
+        Game game = gameAppender.append(starter.roomId(), command.gameType(), command.targetScore(), firstQuestion,
                 LocalDateTime.now(clock));
         GameStart start = gameStarter.start(command.participantToken(), game, firstQuestion);
 
