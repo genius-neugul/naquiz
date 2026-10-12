@@ -48,7 +48,7 @@ front/
 │   │       │   ├── mock/    MockGameClient(봇 시뮬레이션), fixtures
 │   │       │   └── stomp/   StompGameClient(게임 서버 STOMP 연결)
 │   │       ├── components/  Header, ReportPanel(문제 오류 신고), ParticipantName(닉네임#태그 표시), Countdown(서버 카운트다운 남은 시간·진행 막대)
-│   │       ├── hooks/       useNow(남은 시간 표시), useCountdown(마감 시각까지 남은 초·진행률)
+│   │       ├── hooks/       useNow(남은 시간 표시, "frame"이면 매 프레임 갱신), useCountdown(마감 시각까지 남은 초·진행률, smooth면 매 프레임 갱신)
 │   │       └── pages/       Home(방 만들기·참가), Room(대기실·게임 진행·채팅·결과)
 │   └── admin/           @naquiz/admin 백오피스 앱
 │       └── src/
