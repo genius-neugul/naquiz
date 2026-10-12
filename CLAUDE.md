@@ -12,7 +12,7 @@
 - `docs/DOMAIN.md`: 도메인 설계. 유비쿼터스 언어, 애그리거트, 정답 판정·마스킹·투표 규칙, 미정 사항
 - `docs/MUSIC_PARSING_RULE.md`: 노래 크롤링과 제목·가수 파싱 규칙
 - `docs/MUSIC_SELECTION_RULE.md`: 게임에서 Spotify 곡 정보 조회와 YouTube 영상 선택 규칙
-- `docs/API.md`: HTTP API 요청/응답 규격
+- `docs/API.md`: HTTP API와 실시간 메시지(STOMP) 요청/응답 규격
 - `core/CLAUDE.md`: 게임 서버 기술 스택, 빌드·테스트 명령, 서버 작업 규칙
 - `core/docs/`: 게임 서버 코드 컨벤션(아키텍처, 코드 스타일, 예외, 로그, 테스트)
 - `front/CLAUDE.md`: 프론트엔드(게임 앱·백오피스 앱) 기술 스택, 명령, 작업 규칙
@@ -20,7 +20,7 @@
 - `initial_crawler/README.md`: 크롤러 실행 방법(가상환경 포함)과 저장 경로
 - `initial_crawler/CLAUDE.md`: 크롤러 자주 쓰는 명령, 크롤링 결과 기록 규칙
 - `initial_crawler/records/`: 크롤링 결과 기록(`YYYY-MM-DD-<music|movie>.md`). 단계별 곡 수, 실패 회차, 통계
-- `.claude/README.md` (`docs/CLAUDE_CODE.md`는 이 파일의 심볼릭 링크): 팀 공용 스킬(/pre-pr, /sync-docs, /devlog), 에이전트, 훅 설명과 처음 설정·문제 해결
+- `.claude/README.md` (`docs/CLAUDE_CODE.md`는 이 파일의 심볼릭 링크): 팀 공용 스킬(/pre-pr, /sync-docs, /devlog, /explain), 에이전트, 훅 설명과 처음 설정·문제 해결
 - `docs/devlog/`: 날짜별 개발일지(`YYYY-MM-DD-<작성자>.md`). 무엇을 했고 왜 그렇게 정했는지, 다음 할 일
 - `docs/troubleshooting/`: 문제별 기록(`YYYY-MM-DD-<주제>.md`). 증상, 원인, 해결, 확인
 
@@ -31,8 +31,10 @@
 ├── README.md          스킬·에이전트·훅 사용 설명
 ├── settings.json      훅 등록 (세션 시작 브리핑, PR 게이트, 테스트 context 가드)
 ├── hooks/             pr-gate.sh, session-brief.sh, test-context-guard.py
-├── agents/            test-runner(Haiku), code-reviewer, docs-syncer
-└── skills/            /pre-pr, /sync-docs, /devlog
+├── agents/            test-runner(Haiku), code-reviewer, docs-syncer, explain-drafter
+└── skills/            /pre-pr, /sync-docs, /devlog, /explain
+compose.yml            로컬 개발용. 게임 서버(game-api)와 게임 웹(Vite 개발 서버)을 함께 컨테이너로 띄운다
+compose.game-web.yml   게임 웹만 띄운다. game-api를 IntelliJ·bootRun으로 실행하면 자동으로 함께 뜬다
 core/                  게임 서버 (Spring Boot, Gradle 멀티모듈)
 ├── CLAUDE.md          서버 기술 스택, 명령, 작업 규칙
 ├── docs/              서버 코드 컨벤션
@@ -64,12 +66,14 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 
 - 백엔드: Java 25, Spring Boot (`core/`). 상세는 `core/CLAUDE.md`
 - 프론트엔드: React 19, TypeScript, Vite, CSS Modules, npm workspaces (`front/`). 상세는 `front/CLAUDE.md`
-- 실시간 통신:
+- 실시간 통신: Spring WebSocket + STOMP (`core/game-api`). 규격은 `docs/API.md`
 - DB / 캐시: H2(로컬·테스트), MySQL(`local-dev` 프로필, docker-compose). 진행 중인 방·참가자는 서버 메모리. 상세는 `core/CLAUDE.md`
 - 데이터 수집: Python 3 (`initial_crawler/`)
 
 ## 자주 쓰는 명령
 
+- 게임 서버를 IntelliJ·bootRun으로 실행하면 게임 웹 컨테이너가 함께 뜨고 앱을 끄면 멈춘다(Docker 실행 필요, 상세는 `core/CLAUDE.md`)
+- 게임 서버 + 게임 웹 둘 다 컨테이너로 실행: 루트에서 `docker compose up --build` → 웹 http://localhost:5173, 서버 http://localhost:8080 (8080이 이미 쓰이면 `GAME_API_PORT=18080`을 앞에 붙인다)
 - 게임 서버 빌드·테스트·로컬 실행: `core/CLAUDE.md`
 - 프론트엔드 개발 서버·빌드·테스트: `front/CLAUDE.md`
 - 크롤러(노래·영화 목록): `initial_crawler/CLAUDE.md`
@@ -94,7 +98,7 @@ initial_crawler/       초기 데이터를 확보하기 위한 크롤러 (Python
 
 - 브랜치: `feat/<기능>`, `fix/<내용>`, `docs/<내용>` → PR → 팀원 1명 승인 후 머지. `main`에 직접 커밋하지 않는다(개발일지 포함).
 - 커밋 메시지: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:` 접두어 + 한국어 설명.
-- PR은 `/pre-pr` 로 만든다. 테스트(test-runner, `core/` 코드 변경 시) · 코드 리뷰(code-reviewer, `core/` 변경 시) · 문서 동기화(docs-syncer)를 한 번에 돌리고, 통과해야 `gh pr create` 가 허용된다(PR 게이트 훅). 점검 후 새 커밋이 생기면 다시 돌려야 한다.
+- PR은 `/pre-pr` 로 만든다. 테스트(test-runner, `core/` 코드 변경 시) · 코드 리뷰(code-reviewer, `core/` 변경 시) · 문서 동기화(docs-syncer)와, 원하면 변경을 그림으로 설명한 아티팩트 초안(explain-drafter, 매번 물어봄)을 한 번에 돌리고, 통과해야 `gh pr create` 가 허용된다(PR 게이트 훅). 점검 후 새 커밋이 생기면 다시 돌려야 한다.
 - `/pre-pr` 은 이번 작업과 무관한 워킹트리 변경을 묻지 않고 `git stash` 해두고, PR을 만든 뒤 `git stash pop` 으로 되돌린다.
 - 테스트는 메인 대화에서 직접 돌리지 않고 `test-runner` 에이전트에 맡긴다(Haiku, 실패만 요약).
 - Claude는 코드·명령·설정을 바꾸는 작업을 할 때마다 끝내기 전에 문서 동기화를 한다. 이 파일, 하위 디렉터리의 `CLAUDE.md`, `initial_crawler/README.md`, `front/README.md`, `.claude/README.md`, `docs/`, `core/docs/`에서 바뀐 내용과 어긋나는 곳을 찾는다. 사실을 기록한 부분은 바로 고치고, `docs/` 규칙과 어긋나면 아래 규칙대로 먼저 알린다.

@@ -5,6 +5,8 @@ export type ParticipantRole = "HOST" | "GUEST";
 export interface Participant {
   id: string;
   nickname: string;
+  /** 방 안에서 유일한 입장 순서 번호. 화면에는 "닉네임#태그"로 보여준다 */
+  tag: number;
   role: ParticipantRole;
   /** 현재 게임 누적 점수 */
   score: number;
@@ -14,8 +16,8 @@ export interface Participant {
 
 export type ChatMessage =
   | { id: string; kind: "system"; text: string }
-  | { id: string; kind: "chat"; participantId: string; nickname: string; text: string }
-  | { id: string; kind: "correct"; participantId: string; nickname: string; text: string };
+  | { id: string; kind: "chat"; participantId: string; nickname: string; tag: number; text: string }
+  | { id: string; kind: "correct"; participantId: string; nickname: string; tag: number; text: string };
 
 export type VoteType = "HINT" | "SKIP";
 

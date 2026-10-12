@@ -2,7 +2,8 @@ import { GAME_LABEL } from "@naquiz/shared";
 import { Button, Eyebrow, ProgressBar } from "@naquiz/ui";
 import { ReportDone, ReportPanel, useReport } from "../../components/ReportPanel";
 import { useGameClient } from "../../game/GameProvider";
-import { isHost } from "../../game/selectors";
+import { ParticipantName } from "../../components/ParticipantName";
+import { displayName, isHost } from "../../game/selectors";
 import type { GameResult, RoomState } from "../../game/types";
 import styles from "./ResultView.module.css";
 
@@ -18,7 +19,7 @@ export function ResultView({ room, result }: { room: RoomState; result: GameResu
         <Eyebrow>
           {GAME_LABEL[result.gameType]} · 목표 {result.targetScore}점 · {result.rounds.length}문제 · ROOM {room.inviteCode}
         </Eyebrow>
-        <h1 className={styles.winner}>{winner ? `${winner.nickname} 우승 · ${winner.score}점` : "승자 없이 끝났어요"}</h1>
+        <h1 className={styles.winner}>{winner ? `${displayName(winner)} 우승 · ${winner.score}점` : "승자 없이 끝났어요"}</h1>
       </div>
 
       <ol className={styles.ranking} aria-label="순위">
@@ -28,10 +29,10 @@ export function ResultView({ room, result }: { room: RoomState; result: GameResu
             <li key={p.id} className={[styles.rankRow, i === 0 && styles.first, mine && styles.mine].filter(Boolean).join(" ")}>
               <span className={styles.rank}>{i + 1}</span>
               <span className={styles.name}>
-                {p.nickname}
+                <ParticipantName participant={p} />
                 {mine && " (나)"}
               </span>
-              <ProgressBar value={top ? p.score / top : 0} thick tone={mine ? "accent" : "ink"} label={`${p.nickname} 점수`} />
+              <ProgressBar value={top ? p.score / top : 0} thick tone={mine ? "accent" : "ink"} label={`${displayName(p)} 점수`} />
               <span className={styles.score}>{p.score}</span>
             </li>
           );

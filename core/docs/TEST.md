@@ -177,7 +177,7 @@ Spring은 설정이 같은 테스트끼리 context를 캐시해 재사용한다.
 | 클래스 | 설정 | 용도 |
 | --- | --- | --- |
 | `IntegrationTestSupport` | `@SpringBootTest` (MOCK 환경) | Service·Repository·Integration 테스트 |
-| `WebSocketTestSupport` | `@SpringBootTest(webEnvironment = RANDOM_PORT)` | WebSocket 테스트. 첫 소켓 테스트를 만들 때 추가한다 |
+| `WebSocketTestSupport` | `@SpringBootTest(webEnvironment = RANDOM_PORT)` | WebSocket 테스트. 지금은 game-api에만 있다 |
 
 > 앞의 세 규칙(`@SpringBootTest` 직접 선언, `@DirtiesContext`, 테스트 클래스의 `@MockitoBean`)은 Claude가 Write/Edit로 테스트 코드를 쓸 때 `.claude/hooks/test-context-guard.py`가 쓰기 전에 막는다. 각 모듈의 `src/test/java/geniusneugul/project/core/support/` 아래 파일만 검사하지 않는다. Bash로 파일을 쓰면 훅을 거치지 않으므로 테스트 파일은 Write/Edit로만 쓴다.
 

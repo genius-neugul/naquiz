@@ -2,7 +2,7 @@ import { GAME_LABEL, TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType } from "@
 import { Button, Eyebrow, PulseDot } from "@naquiz/ui";
 import { useState } from "react";
 import { useGameClient } from "../../game/GameProvider";
-import { host, isHost } from "../../game/selectors";
+import { hostDisplayName, isHost } from "../../game/selectors";
 import type { RoomState } from "../../game/types";
 import styles from "./WaitingRoom.module.css";
 
@@ -15,7 +15,7 @@ const GAMES: { type: GameType; desc: string; tags: string }[] = [
 export function WaitingRoom({ room }: { room: RoomState }) {
   const client = useGameClient();
   const amHost = isHost(room);
-  const hostName = host(room)?.nickname ?? "방장";
+  const hostName = hostDisplayName(room);
 
   return (
     <div className={styles.root}>
