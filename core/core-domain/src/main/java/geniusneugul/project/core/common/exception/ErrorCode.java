@@ -35,6 +35,7 @@ public enum ErrorCode {
     GAME_ALREADY_PLAYING(HttpStatus.CONFLICT, "이미 게임이 진행 중입니다."),
     GAME_INVALID_TARGET_SCORE(HttpStatus.BAD_REQUEST, "목표 점수는 1~50점입니다."),
     GAME_QUESTION_NOT_FOUND(HttpStatus.CONFLICT, "출제할 문제가 없습니다."),
+    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다."),
 
     // game - 불변식 위반
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),

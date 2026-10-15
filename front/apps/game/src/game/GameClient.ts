@@ -24,5 +24,7 @@ export interface GameClient {
   openVote(type: VoteType, targetHintType?: HintType): void;
   approveVote(voteId: string): void;
   pickClue(clueType: ClueType): void;
+  /** 영화 스무고개에서 모든 단서가 열린 뒤 내 차례에 다음 단계 정답 힌트를 연다 */
+  openAnswerHint(): void;
   report(input: ReportInput): void;
 }
