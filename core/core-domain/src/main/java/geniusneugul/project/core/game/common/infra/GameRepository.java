@@ -1,7 +1,9 @@
 package geniusneugul.project.core.game.common.infra;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.domain.Game;
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -17,4 +19,10 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select g from Game g where g.id = :gameId")
     Optional<Game> findByIdForUpdate(@Param("gameId") Long gameId);
+
+    @Query("select g.gameType from Game g where g.id = :gameId")
+    Optional<GameType> findGameTypeById(@Param("gameId") Long gameId);
+
+    @Query("select r.questionId from Round r where r.game.id = :gameId")
+    List<Long> findAskedQuestionIds(@Param("gameId") Long gameId);
 }

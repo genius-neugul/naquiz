@@ -123,7 +123,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `GAME_STARTED` | 방장이 게임을 시작했다 | 아래 「게임」 |
 | `ROUND_STARTED` | 라운드가 열렸다 | 아래 「게임」 |
 | `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
-| `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
+| `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다. 다음 라운드 문제를 준비하지 못하면 승자 없이(`winnerId`가 `null`) 끝난다 | 아래 「게임」 |
 | `STILL_CUT_REVEALED` | 스틸컷 게임에서 다음 스틸컷을 보여준다 | 아래 「스틸컷 영화 맞추기」 |
 
 **채팅**
@@ -154,7 +154,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - `ROUND_STARTED`에는 정답이 없다. 정답은 라운드가 끝날 때 `ROUND_SOLVED`로 공개한다.
 - 라운드 진행 중 채팅은 모두 정답 판정 대상이다. 가장 먼저 맞힌 채팅은 `CHAT` 대신 `ROUND_SOLVED`로 모두에게 간다(`text`가 그 채팅이다). 오답과 라운드 사이 채팅은 `CHAT`으로 간다.
 - `scores`는 방에 있는 참가자 모두의 현재 게임 점수다.
-- 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
+- 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 서버는 정답 공개 직후부터 다음 문제를 준비하고(노래 게임은 음원 준비), 준비가 `nextRoundAt`보다 늦게 끝나면 그때 `ROUND_STARTED`가 온다. 다음 문제를 준비하지 못하면(노래 3곡 연속 실패) `nextRoundAt` 뒤에 `winnerId`가 `null`인 `GAME_FINISHED`가 오고 방은 WAITING으로 돌아간다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
 - 방장이 나가 방이 끝나면 게임도 승자 없이 끝난다. 게임 이벤트는 따로 없고 `ROOM_CLOSED`만 온다.
 - 시각(`startedAt`, `solvedAt`, `nextRoundAt`)은 서버 시각이다.
 
@@ -189,5 +189,6 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `GAME_NOT_HOST` | 방장이 아닌 참가자가 게임을 시작한다 |
 | `GAME_ALREADY_PLAYING` | 이미 게임이 진행 중인 방에서 게임을 시작한다 |
 | `GAME_QUESTION_NOT_FOUND` | 그 게임 종류로 출제할 수 있는(승인되고 활성인) 문제가 없다 |
+| `GAME_QUESTION_UNAVAILABLE` | 첫 문제를 준비하지 못했다(노래 게임에서 3곡 연속 음원 준비 실패). 잠시 뒤 다시 시작할 수 있다 |
 
 ---

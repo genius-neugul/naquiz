@@ -3,6 +3,9 @@ package geniusneugul.project.core.game.common.presentation;
 import geniusneugul.project.core.game.common.presentation.dto.StartGameRequest;
 import geniusneugul.project.core.game.common.service.GameService;
 import geniusneugul.project.core.game.common.service.GameStartResult;
+import geniusneugul.project.core.game.common.service.PreparedQuestion;
+import geniusneugul.project.core.game.common.service.RoundQuestionService;
+import geniusneugul.project.core.game.common.service.StartGameCommand;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +20,17 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class GameStompController {
 
+    private final RoundQuestionService roundQuestionService;
     private final GameService gameService;
     private final GameBroadcaster gameBroadcaster;
     private final RoundStartedHandlers roundStartedHandlers;
 
     @MessageMapping("/games/start")
     public void start(@Valid @Payload StartGameRequest request, Principal principal) {
-        GameStartResult result = gameService.start(request.toCommand(principal.getName()));
+        StartGameCommand command = request.toCommand(principal.getName());
+        // 노래 게임은 첫 곡의 음원을 준비하느라 외부 API를 기다릴 수 있다. 트랜잭션 밖에서 먼저 준비한다.
+        PreparedQuestion firstQuestion = roundQuestionService.prepareFirst(command);
+        GameStartResult result = gameService.start(command, firstQuestion);
         gameBroadcaster.broadcastStart(result);
         roundStartedHandlers.roundStarted(StartedRound.from(result));
     }

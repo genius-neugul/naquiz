@@ -14,6 +14,9 @@ naquiz:
   # 초기 데이터(sql/initial-data.sql). 앱이 시작할 때 song 테이블이 비어 있으면 넣는다(InitialDataLoader).
   initial-data:
     enabled: true
+  game:
+    # 출제할 문제의 준비(노래 음원 등)가 연속으로 이만큼 실패하면 출제하지 못한다.
+    max-prepare-failures: 3
   # 노래 정보(Spotify)·음원(YouTube) 조회. 규칙은 docs/MUSIC_SELECTION_RULE.md
   song:
     # 외부 호출 응답 대기 상한. Spotify 429의 retry-after가 이 시간을 넘으면 기다리지 않고 실패로 본다.

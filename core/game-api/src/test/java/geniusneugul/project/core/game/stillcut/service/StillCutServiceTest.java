@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.service.GameService;
 import geniusneugul.project.core.game.common.service.GameStartResult;
+import geniusneugul.project.core.game.common.service.RoundQuestionService;
 import geniusneugul.project.core.game.common.service.StartGameCommand;
 import geniusneugul.project.core.room.service.CreateRoomCommand;
 import geniusneugul.project.core.room.service.RoomService;
@@ -24,6 +25,9 @@ class StillCutServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private GameService gameService;
+
+    @Autowired
+    private RoundQuestionService roundQuestionService;
 
     @Autowired
     private RoomService roomService;
@@ -75,6 +79,7 @@ class StillCutServiceTest extends IntegrationTestSupport {
     private GameStartResult startGame() {
         String hostToken = UUID.randomUUID().toString();
         roomService.create(new CreateRoomCommand("방장", hostToken));
-        return gameService.start(new StartGameCommand(GameType.MOVIE_STILL_CUT, 3, hostToken));
+        StartGameCommand command = new StartGameCommand(GameType.MOVIE_STILL_CUT, 3, hostToken);
+        return gameService.start(command, roundQuestionService.prepareFirst(command));
     }
 }

@@ -20,6 +20,17 @@ public class RoomGameUpdater {
     private final RoomRepository roomRepository;
     private final RoomLock roomLock;
 
+    /**
+     * 게임을 시작할 수 있는지 미리 확인한다. 문제 준비(외부 API 호출) 전에 방장이 아닌 요청을 걸러 내려는 것이고,
+     * 준비하는 사이 상태가 바뀔 수 있으므로 시작할 때({@link #startGame}) 락 안에서 다시 확인한다.
+     */
+    public void validateStartGame(Long roomId, String participantToken) {
+        roomLock.withLock(roomId, () -> {
+            readRoom(roomId).validateStartGame(participantToken);
+            return null;
+        });
+    }
+
     /** 방장이 게임을 시작한다. 시작 직후(모두 0점) 점수 목록을 돌려준다 */
     public List<ParticipantScore> startGame(Long roomId, String participantToken) {
         return roomLock.withLock(roomId, () -> {
