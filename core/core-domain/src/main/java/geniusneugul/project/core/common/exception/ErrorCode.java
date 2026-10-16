@@ -44,6 +44,9 @@ public enum ErrorCode {
     // song
     SONG_LOOKUP_FAILED(HttpStatus.BAD_GATEWAY, "노래 정보를 불러오지 못했습니다."),
 
+    // song - 불변식 위반
+    SONG_AUDIO_WITHOUT_DURATION(HttpStatus.INTERNAL_SERVER_ERROR, "재생 시간이 없는 영상으로는 음원을 만들 수 없습니다."),
+
     // question - 불변식 위반
     QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");
 

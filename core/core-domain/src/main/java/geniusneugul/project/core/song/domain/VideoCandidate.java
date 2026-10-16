@@ -1,5 +1,7 @@
 package geniusneugul.project.core.song.domain;
 
+import java.util.OptionalInt;
+
 /**
  * YouTube 검색 결과에서 꺼낸 음원 후보 영상 하나(MUSIC_SELECTION_RULE 2-2). 값은 응답 원문 그대로다.
  *
@@ -10,4 +12,19 @@ package geniusneugul.project.core.song.domain;
  */
 public record VideoCandidate(String videoId, String title, String lengthText, String channelName,
                              String viewCountText, String publishedTimeText) {
+
+    public OptionalInt durationSeconds() {
+        return VideoDuration.parseSeconds(lengthText);
+    }
+
+    /**
+     * @return 조회수 원문에서 숫자만 남긴 값. 숫자가 없으면 null
+     */
+    public Long viewCount() {
+        if (viewCountText == null) {
+            return null;
+        }
+        String digits = viewCountText.replaceAll("\\D", "");
+        return digits.isEmpty() ? null : Long.parseLong(digits);
+    }
 }
