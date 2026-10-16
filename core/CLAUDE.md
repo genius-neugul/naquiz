@@ -22,6 +22,7 @@
 - Gradle 멀티모듈: `core-domain`(라이브러리), `game-api`, `admin-api`, `crawler-batch`(실행 앱). 역할은 `docs/ARCHITECTURE.md` 「모듈 구조」
 - 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`). 설정은 `core-domain`의 `domain.yml` 한 벌
 - 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
+- 외부 API: 노래 게임은 출제할 때 Spotify(곡 정보)·YouTube(음원 검색)를 `RestClient`로 호출한다(`core-domain` song/infra, 설정은 `domain.yml`의 `naquiz.song`). Spotify 키는 환경 변수 `SPOTIFY_CLIENT_ID`·`SPOTIFY_CLIENT_SECRET`로 받고(`.env.example`), 비어 있으면 앨범 이미지·발매일 없이 출제한다. YouTube는 키가 필요 없다. 규칙은 `../docs/MUSIC_SELECTION_RULE.md`
 - 캐시: 없음
 - Lombok
 - 인증: 없음. 참가자는 비회원 게스트이고, 실시간 연결마다 서버가 붙이는 Principal 이름을 참가자 토큰으로 쓴다
@@ -44,7 +45,7 @@
 ./gradlew :admin-api:bootRun         # 관리자 API (8081)
 ./gradlew :crawler-batch:bootRun     # 데일리 크롤링 (웹 없음)
 
-# MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정을 채운다
+# MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정(과 Spotify 키)을 채운다
 docker compose up -d
 set -a; source .env; set +a
 ./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
@@ -56,6 +57,7 @@ game-api를 IntelliJ나 `bootRun`으로 실행하면 Spring Boot Docker Compose 
 - 작업 디렉터리에서 위로 올라가며 `compose.game-web.yml`을 찾는다(`common/config/GameWebComposeFileEnvironmentPostProcessor`). 저장소 안 어디서 실행해도 되고, 못 찾으면 Docker Compose 지원을 끈다. 다른 파일을 쓰려면 `SPRING_DOCKER_COMPOSE_FILE`로 지정한다.
 - 8080이 아닌 포트로 실행하면 `GAME_API_PORT`도 같은 값으로 준다(예: `GAME_API_PORT=18081`, `--server.port=18081`).
 - 테스트와 실행 jar(컨테이너)에서는 이 기능이 동작하지 않는다.
+- 노래 게임에서 앨범 이미지·발매일을 보려면 실행 전에 `SPOTIFY_CLIENT_ID`·`SPOTIFY_CLIENT_SECRET`을 환경 변수로 준다(위 `source .env`). 컨테이너 실행(루트 `compose.yml`)은 셸 환경 변수나 루트 `.env`에서 받는다.
 
 ## 디렉터리 구조
 

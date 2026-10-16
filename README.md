@@ -51,6 +51,6 @@ docs/                 기획·도메인·API 문서, 개발일지, 트러블슈�
 
 - [기획](docs/기획.md): 게임 종류, 룰, 힌트·투표, 백오피스
 - [도메인](docs/DOMAIN.md): 유비쿼터스 언어, 애그리거트, 정답 판정·마스킹·투표 규칙
-- [API](docs/API.md): HTTP API 규격
+- [API](docs/API.md): HTTP API와 실시간 메시지(STOMP) 규격
 - [서버 컨벤션](core/docs/): 아키텍처, 코드 스타일, 예외, 로그, 테스트
 - [Claude Code 사용법](.claude/README.md): 팀 공용 스킬·에이전트·훅
