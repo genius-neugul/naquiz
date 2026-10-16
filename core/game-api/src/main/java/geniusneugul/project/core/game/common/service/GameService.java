@@ -1,6 +1,8 @@
 package geniusneugul.project.core.game.common.service;
 
 import geniusneugul.project.core.game.common.domain.Game;
+import geniusneugul.project.core.game.common.domain.RevealedHint;
+import geniusneugul.project.core.game.common.implement.AnswerHintRevealer;
 import geniusneugul.project.core.game.common.implement.GameAborter;
 import geniusneugul.project.core.game.common.implement.GameAppender;
 import geniusneugul.project.core.game.common.implement.GameProgressRemover;
@@ -38,6 +40,7 @@ public class GameService {
     private final RoundStarter roundStarter;
     private final GameProgressRemover gameProgressRemover;
     private final GameAborter gameAborter;
+    private final AnswerHintRevealer answerHintRevealer;
     private final Clock clock;
 
     /**
@@ -51,12 +54,13 @@ public class GameService {
         Game game = gameAppender.append(starter.roomId(), command.gameType(), command.targetScore(), firstQuestion,
                 LocalDateTime.now(clock));
         GameStart start = gameStarter.start(command.participantToken(), game, firstQuestion);
+        AnswerHintResult answerHint = revealBaseHint(game, start.roundNo(), firstQuestion);
 
         log.info("[GameService.start] Game started. roomId={}, gameId={}, gameType={}, targetScore={}",
                 start.roomId(), start.gameId(), start.gameType(), start.targetScore());
         log.info("[GameService.start] Round started. roomId={}, gameId={}, roundNo={}, answer={}, subAnswer={}",
                 start.roomId(), start.gameId(), start.roundNo(), firstQuestion.getAnswer(), firstQuestion.getSubAnswer());
-        return GameStartResult.from(start);
+        return GameStartResult.from(start, answerHint);
     }
 
     /** 정답자가 나온 뒤 다음 라운드를 연다. 그 사이 게임이 끝났으면 빈 값이다 */
@@ -71,10 +75,17 @@ public class GameService {
         return roundStarter.start(roomId, gameId, question, now)
                 .map(start -> {
                     game.startRound(start.questionId(), start.startedAt());
+                    AnswerHintResult answerHint = revealBaseHint(game, start.roundNo(), question);
                     log.info("[GameService.startNextRound] Round started. roomId={}, gameId={}, roundNo={}, answer={}, subAnswer={}",
                             roomId, gameId, start.roundNo(), question.getAnswer(), question.getSubAnswer());
-                    return RoundStartResult.from(start);
+                    return RoundStartResult.from(start, answerHint);
                 });
+    }
+
+    // 라운드가 열리면 기본 힌트(ANSWER_MASK)를 투표 없이 공개한다(docs/DOMAIN.md 정답 힌트).
+    private AnswerHintResult revealBaseHint(Game game, int roundNo, Question question) {
+        RevealedHint hint = answerHintRevealer.reveal(game, roundNo, question.getAnswer());
+        return AnswerHintResult.of(hint, answerHintRevealer.nextHintType(question.getAnswer(), hint));
     }
 
     /**

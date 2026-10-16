@@ -139,7 +139,11 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 
 ```json
 { "type": "GAME_STARTED", "gameId": 1, "gameType": "MOVIE_STILL_CUT", "targetScore": 5, "scores": [{ "participantId": 1, "score": 0 }] }
-{ "type": "ROUND_STARTED", "gameId": 1, "roundNo": 1, "startedAt": "2026-10-03T21:00:00" }
+{
+  "type": "ROUND_STARTED", "gameId": 1, "roundNo": 1, "startedAt": "2026-10-03T21:00:00",
+  "answerHint": { "hintType": "ANSWER_MASK", "content": "⚫⚫⚫ (3글자(특수문자 포함), 한글 O, 영어 X, 숫자 X, 특수문자 X)" },
+  "nextAnswerHint": "ANSWER_PARTIAL"
+}
 {
   "type": "ROUND_SOLVED", "gameId": 1, "roundNo": 1,
   "solverId": 2, "nickname": "감자", "tag": 2, "text": "기생충",
@@ -152,6 +156,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 
 - 게임을 시작하면 `GAME_STARTED` 다음에 1라운드 `ROUND_STARTED`가 온다. 방 상태는 PLAYING이 되고 모든 점수는 0이다.
 - `ROUND_STARTED`에는 정답이 없다. 정답은 라운드가 끝날 때 `ROUND_SOLVED`로 공개한다.
+- `ROUND_STARTED.answerHint`는 라운드 시작 때 투표 없이 공개되는 기본 힌트(`ANSWER_MASK`)다. `content`는 서버가 저장한 공개 내용 그대로이고, 가린 글자 뒤에 글자 수·문자 종류가 붙는다([정답 힌트](DOMAIN.md)). `nextAnswerHint`는 다음에 열 수 있는 정답 힌트 단계이고, 1단계에서 정답이 전부 드러나면 건너뛰므로 더 열 단계가 없으면 `null`이다.
 - 라운드 진행 중 채팅은 모두 정답 판정 대상이다. 가장 먼저 맞힌 채팅은 `CHAT` 대신 `ROUND_SOLVED`로 모두에게 간다(`text`가 그 채팅이다). 오답과 라운드 사이 채팅은 `CHAT`으로 간다.
 - `scores`는 방에 있는 참가자 모두의 현재 게임 점수다.
 - 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 서버는 정답 공개 직후부터 다음 문제를 준비하고(노래 게임은 음원 준비), 준비가 `nextRoundAt`보다 늦게 끝나면 그때 `ROUND_STARTED`가 온다. 다음 문제를 준비하지 못하면(노래 3곡 연속 실패) `nextRoundAt` 뒤에 `winnerId`가 `null`인 `GAME_FINISHED`가 오고 방은 WAITING으로 돌아간다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.

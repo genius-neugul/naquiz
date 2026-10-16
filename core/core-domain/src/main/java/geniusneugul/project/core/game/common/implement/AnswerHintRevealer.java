@@ -5,10 +5,12 @@ import geniusneugul.project.core.common.exception.ErrorCode;
 import geniusneugul.project.core.game.common.domain.AnswerHint;
 import geniusneugul.project.core.game.common.domain.AnswerHintContent;
 import geniusneugul.project.core.game.common.domain.Game;
+import geniusneugul.project.core.game.common.domain.HintType;
 import geniusneugul.project.core.game.common.domain.RevealedHint;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.random.RandomGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -46,5 +48,13 @@ public class AnswerHintRevealer {
         AnswerHintContent next = AnswerHint.next(answer, previous, random)
                 .orElseThrow(() -> new BusinessException(ErrorCode.GAME_NO_MORE_ANSWER_HINT));
         return game.revealHint(roundNo, next.type(), next.content(), LocalDateTime.now(clock));
+    }
+
+    /**
+     * 방금 공개한 정답 힌트 다음에 열 수 있는 단계. 정답이 전부 드러나는 단계는 건너뛰므로 더 열 단계가 없으면 빈 값이다.
+     */
+    public Optional<HintType> nextHintType(String answer, RevealedHint last) {
+        return AnswerHint.next(answer, new AnswerHintContent(last.getHintType(), last.getRevealedContent()), random)
+                .map(AnswerHintContent::type);
     }
 }

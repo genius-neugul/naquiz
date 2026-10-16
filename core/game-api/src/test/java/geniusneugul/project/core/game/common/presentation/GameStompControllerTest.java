@@ -33,7 +33,7 @@ class GameStompControllerTest extends WebSocketTestSupport {
                 """, GAME_TYPE, ANSWER, GAME_TYPE);
     }
 
-    @DisplayName("방장이 게임을 시작하면 모두에게 게임 시작과 1라운드 시작이 간다.")
+    @DisplayName("방장이 게임을 시작하면 모두에게 게임 시작과, 기본 힌트를 담은 1라운드 시작이 간다.")
     @Test
     void start() throws Exception {
         // given
@@ -49,6 +49,11 @@ class GameStompControllerTest extends WebSocketTestSupport {
         Map<String, Object> round = awaitEvent(events, "ROUND_STARTED");
         assertThat(round.get("roundNo")).isEqualTo(1);
         assertThat(round).doesNotContainKey("answer");
+        assertThat(round.get("answerHint")).isInstanceOfSatisfying(Map.class, hint -> {
+            assertThat(hint.get("hintType")).isEqualTo("ANSWER_MASK");
+            assertThat(hint.get("content")).isNotNull();
+        });
+        assertThat(round.get("nextAnswerHint")).isEqualTo("ANSWER_PARTIAL");
     }
 
     @DisplayName("없는 게임 종류로 시작하면 보낸 사람의 에러 큐로 게임 종류 오류가 온다.")

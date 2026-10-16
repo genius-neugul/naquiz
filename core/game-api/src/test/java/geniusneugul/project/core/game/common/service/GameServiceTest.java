@@ -61,6 +61,45 @@ class GameServiceTest extends IntegrationTestSupport {
         assertThat(roundQuestionId(result.gameId(), 1)).isEqualTo(approvedId);
     }
 
+    @DisplayName("게임을 시작하면 1라운드 기본 힌트가 첫 번째로 공개되고 시작 결과에 담긴다.")
+    @Test
+    void start_revealsBaseHint() {
+        // given
+        insertQuestion("기생충", "APPROVED", true);
+        String hostToken = createRoom().hostToken();
+
+        // when
+        GameStartResult result = startGame(new StartGameCommand(GAME_TYPE, 3, hostToken));
+
+        // then
+        assertThat(revealedHintRow(result.gameId(), 1))
+                .containsEntry("HINT_TYPE", "ANSWER_MASK")
+                .containsEntry("REVEAL_ORDER", 1)
+                .containsEntry("REVEALED_CONTENT", result.answerHint().content());
+        assertThat(result.answerHint().hintType()).isEqualTo("ANSWER_MASK");
+        assertThat(result.answerHint().nextHintType()).isEqualTo("ANSWER_PARTIAL");
+    }
+
+    @DisplayName("다음 라운드가 열리면 그 라운드의 기본 힌트도 공개된다.")
+    @Test
+    void startNextRound_revealsBaseHint() {
+        // given
+        insertQuestion("기생충", "APPROVED", true);
+        insertQuestion("괴물", "APPROVED", true);
+        TestRoom room = createRoom();
+        GameStartResult start = startGame(new StartGameCommand(GAME_TYPE, 10, room.hostToken()));
+        solveCurrentRound(room, start.gameId(), 1);
+
+        // when
+        RoundStartResult second = startNextRound(room.roomId(), start.gameId()).orElseThrow();
+
+        // then
+        assertThat(revealedHintRow(start.gameId(), 2))
+                .containsEntry("HINT_TYPE", "ANSWER_MASK")
+                .containsEntry("REVEAL_ORDER", 1)
+                .containsEntry("REVEALED_CONTENT", second.answerHint().content());
+    }
+
     @DisplayName("출제할 문제가 없으면 게임을 시작할 수 없고 방은 대기 상태로 남는다.")
     @Test
     void start_noQuestion() {
@@ -166,6 +205,12 @@ class GameServiceTest extends IntegrationTestSupport {
     private Map<String, Object> roundRow(Long gameId, int roundNo) {
         return jdbcTemplate.queryForMap(
                 "SELECT status, solver_participant_id FROM game_round WHERE game_id = ? AND round_no = ?", gameId, roundNo);
+    }
+
+    private Map<String, Object> revealedHintRow(Long gameId, int roundNo) {
+        return jdbcTemplate.queryForMap(
+                "SELECT hint_type, reveal_order, revealed_content FROM revealed_hint WHERE game_id = ? AND round_no = ?",
+                gameId, roundNo);
     }
 
     private Long roundQuestionId(Long gameId, int roundNo) {
