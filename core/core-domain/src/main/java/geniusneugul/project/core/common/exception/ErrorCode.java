@@ -41,6 +41,9 @@ public enum ErrorCode {
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
     GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
 
+    // song
+    SONG_LOOKUP_FAILED(HttpStatus.BAD_GATEWAY, "노래 정보를 불러오지 못했습니다."),
+
     // question - 불변식 위반
     QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");
 

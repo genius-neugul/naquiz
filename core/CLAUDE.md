@@ -65,7 +65,7 @@ core/
 ├── settings.gradle    모듈 목록
 ├── build.gradle       모듈 공통 설정 (Java 25, Boot BOM, Lombok, 테스트)
 ├── docker-compose.yml local-dev 프로필용 MySQL
-├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
+├── .env.example       docker-compose·local-dev 계정, Spotify 키(SPOTIFY_CLIENT_ID/SECRET) 예시 (.env 는 커밋하지 않는다)
 ├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
 │   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL), sql/initial-data.sql(초기 데이터)
 ├── game-api/          실행 앱. room·chat·game·vote·report presentation·service, 에러 응답·예외 핸들러, STOMP 설정, Dockerfile(루트 compose.yml에서 씀)

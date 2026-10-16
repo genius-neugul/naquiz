@@ -6,6 +6,8 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     // ErrorCode가 HttpStatus를 가진다. 웹 서버는 앱 모듈만 넣는다.
     api 'org.springframework:spring-web'
+    // Spotify·YouTube 응답(JSON)을 읽는다(song/infra).
+    implementation 'tools.jackson.core:jackson-databind'
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'com.mysql:mysql-connector-j'
 }
