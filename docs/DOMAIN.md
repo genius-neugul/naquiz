@@ -325,7 +325,7 @@
 | 방송 수 | playCount | Integer | O | 모든 라디오에서 이 곡이 나온 방송 수입니다. 출제 확률에는 반영하지 않습니다(완전 무작위). |
 | 앨범명 | albumName | String | X | 정답 노출 위험이 있어 힌트로 사용하지 않습니다. |
 | 앨범 이미지 URL | albumImageUrl | String | X | 초기 데이터는 비어 있고 출제할 때 채웁니다. |
-| 발매일 | releaseDate | Date | X | 초기 데이터는 비어 있고 출제할 때 채웁니다. Spotify가 연도나 연·월까지만 주면 빠진 월·일을 1로 채워 저장하므로, 화면(발매일 힌트, 정답 공개)에는 연도만 보여줍니다. |
+| 발매일 | releaseDate | Date | X | 초기 데이터는 비어 있고 출제할 때 채웁니다. Spotify가 연도나 연·월까지만 주면 빠진 월·일을 1로 채워 저장하므로, 발매일 힌트에는 연도만 보여줍니다. |
 | Spotify ID | spotifyId | String | X | 메타데이터 보강용입니다. 초기 데이터는 비어 있고 출제할 때 채웁니다. |
 | 수집 출처 | sourceProgram | Enum | O | 대표 표기가 나온 가장 최근 방송의 프로그램입니다. MUSIC_PARTY(정오의 희망곡 김신영입니다), STARNIGHT(김이나의 별이 빛나는 밤에), BRUNCH_CAFE(이석훈의 브런치카페) |
 | 방송 회차·날짜 | sourceSeq, sourceDate | Integer, Date | O | 위 방송의 선곡표 seqID와 방송일입니다. |

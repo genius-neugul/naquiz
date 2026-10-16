@@ -18,6 +18,8 @@ naquiz:
   song:
     # 외부 호출 응답 대기 상한. Spotify 429의 retry-after가 이 시간을 넘으면 기다리지 않고 실패로 본다.
     request-timeout: 5s
+    # 출제할 때 YouTube 검색 시도 횟수. 모두 실패하면 다음 곡을 출제한다. Spotify는 한 번만 조회한다.
+    youtube-max-attempts: 3
     spotify:
       # 키는 커밋하지 않고 환경 변수로 받는다. 비어 있으면 Spotify 조회가 실패한다.
       client-id: ${SPOTIFY_CLIENT_ID:}

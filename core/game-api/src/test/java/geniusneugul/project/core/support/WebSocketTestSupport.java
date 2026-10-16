@@ -2,6 +2,8 @@ package geniusneugul.project.core.support;
 
 import static org.awaitility.Awaitility.await;
 
+import geniusneugul.project.core.song.infra.SpotifyApiClient;
+import geniusneugul.project.core.song.infra.YouTubeSearchClient;
 import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.Map;
@@ -15,6 +17,7 @@ import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
@@ -29,6 +32,13 @@ public abstract class WebSocketTestSupport {
 
     /** 메시지 도착을 기다리는 상한. 한곳에서만 조정한다 */
     protected static final Duration MESSAGE_TIMEOUT = Duration.ofSeconds(5);
+
+    // 실제 Spotify·YouTube를 부르지 않는다. 각 테스트는 given 절에서 응답만 정한다.
+    @MockitoBean
+    protected SpotifyApiClient spotifyApiClient;
+
+    @MockitoBean
+    protected YouTubeSearchClient youTubeSearchClient;
 
     @LocalServerPort
     private int port;
