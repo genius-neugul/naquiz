@@ -1,8 +1,10 @@
 package geniusneugul.project.core.game.common.implement;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.common.exception.ErrorCode;
 import geniusneugul.project.core.game.common.domain.Game;
 import geniusneugul.project.core.game.common.infra.GameRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,5 +18,15 @@ public class GameReader {
     public Game readForUpdate(Long gameId) {
         return gameRepository.findByIdForUpdate(gameId)
                 .orElseThrow(() -> new IllegalStateException(ErrorCode.GAME_NOT_FOUND.getMessage() + " gameId=" + gameId));
+    }
+
+    /** 다음 문제를 고르기 위해 게임 종류와 지금까지 낸 문제를 읽는다. 트랜잭션 밖에서 읽을 수 있다 */
+    public AskedQuestions readAskedQuestions(Long gameId) {
+        GameType gameType = gameRepository.findGameTypeById(gameId)
+                .orElseThrow(() -> new IllegalStateException(ErrorCode.GAME_NOT_FOUND.getMessage() + " gameId=" + gameId));
+        return new AskedQuestions(gameType, gameRepository.findAskedQuestionIds(gameId));
+    }
+
+    public record AskedQuestions(GameType gameType, List<Long> questionIds) {
     }
 }

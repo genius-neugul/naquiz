@@ -1,10 +1,13 @@
 package geniusneugul.project.core.support;
 
+import geniusneugul.project.core.song.infra.SpotifyApiClient;
+import geniusneugul.project.core.song.infra.YouTubeSearchClient;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 통합 테스트 공통 상위 클래스. 모든 통합 테스트가 같은 설정을 공유해야 Spring context가 한 번만 뜬다.
@@ -14,6 +17,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 @SpringBootTest(properties = "naquiz.initial-data.enabled=false")
 public abstract class IntegrationTestSupport {
+
+    // 실제 Spotify·YouTube를 부르지 않는다. 각 테스트는 given 절에서 응답만 정한다.
+    @MockitoBean
+    protected SpotifyApiClient spotifyApiClient;
+
+    @MockitoBean
+    protected YouTubeSearchClient youTubeSearchClient;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;

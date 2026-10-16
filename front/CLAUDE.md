@@ -13,9 +13,9 @@
 
 - npm workspaces 모노레포, Node 22.12 이상
 - Vite 8, React 19, TypeScript 6 (strict), CSS Modules, react-router 7
-- 테스트: Vitest 4 (`packages/shared` 순수 함수)
+- 테스트: Vitest 4 (`packages/shared` 순수 함수, 게임 앱의 순수 함수 `apps/game/src/game/audio.ts`)
 - 린트: ESLint 10 + typescript-eslint + react-hooks
-- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·게임 종료, 스틸컷 공개를 서버로 처리하고(힌트·투표·스무고개 단서·신고는 아직 없음), 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
+- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행(기본 힌트 포함)·게임 종료, 스틸컷 공개, 노래 재생(YouTube IFrame Player API를 스크립트로 직접 불러온다)과 정답 공개 정보를 서버로 처리하고(힌트 투표·스킵 투표·스무고개 단서·신고는 아직 없음. 투표 버튼은 `GameClient.supportsVotes`로 숨긴다), 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
 - `.npmrc`의 `legacy-peer-deps=true`는 npm 10.9의 peer 해석 버그(vite 8 → `@vitejs/devtools` → vitest 순환에서 `edgesOut` 오류)를 피하려고 둔다. 필요한 peer는 `package.json`에 직접 적는다
 
 ## 자주 쓰는 명령
@@ -44,11 +44,11 @@ front/
 ├── apps/
 │   ├── game/            @naquiz/game 게임 앱
 │   │   └── src/
-│   │       ├── game/        GameClient 인터페이스, 상태 타입, GameProvider(useRoom), selectors
+│   │       ├── game/        GameClient 인터페이스, 상태 타입, GameProvider(useRoom), selectors, audio(노래 재생 위치 계산)
 │   │       │   ├── mock/    MockGameClient(봇 시뮬레이션), fixtures
 │   │       │   └── stomp/   StompGameClient(게임 서버 STOMP 연결)
 │   │       ├── components/  Header, ReportPanel(문제 오류 신고), ParticipantName(닉네임#태그 표시), Countdown(서버 카운트다운 남은 시간·진행 막대)
-│   │       ├── hooks/       useNow(남은 시간 표시, "frame"이면 매 프레임 갱신), useCountdown(마감 시각까지 남은 초·진행률, smooth면 매 프레임 갱신)
+│   │       ├── hooks/       useNow(남은 시간 표시, "frame"이면 매 프레임 갱신), useCountdown(마감 시각까지 남은 초·진행률, smooth면 매 프레임 갱신), useYouTubePlayer(숨긴 YouTube 플레이어로 서버 기준 위치 재생)
 │   │       └── pages/       Home(방 만들기·참가), Room(대기실·게임 진행·채팅·결과)
 │   └── admin/           @naquiz/admin 백오피스 앱
 │       └── src/

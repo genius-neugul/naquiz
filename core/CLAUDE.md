@@ -22,6 +22,7 @@
 - Gradle 멀티모듈: `core-domain`(라이브러리), `game-api`, `admin-api`, `crawler-batch`(실행 앱). 역할은 `docs/ARCHITECTURE.md` 「모듈 구조」
 - 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`). 설정은 `core-domain`의 `domain.yml` 한 벌
 - 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
+- 외부 API: 노래 게임은 출제할 때 Spotify(곡 정보)·YouTube(음원 검색)를 `RestClient`로 호출한다(`core-domain` song/infra, 설정은 `domain.yml`의 `naquiz.song`). Spotify 키는 환경 변수 `SPOTIFY_CLIENT_ID`·`SPOTIFY_CLIENT_SECRET`로 받고(`.env.example`), 비어 있으면 앨범 이미지·발매일 없이 출제한다. YouTube는 키가 필요 없다. 규칙은 `../docs/MUSIC_SELECTION_RULE.md`
 - 캐시: 없음
 - Lombok
 - 인증: 없음. 참가자는 비회원 게스트이고, 실시간 연결마다 서버가 붙이는 Principal 이름을 참가자 토큰으로 쓴다
@@ -44,7 +45,7 @@
 ./gradlew :admin-api:bootRun         # 관리자 API (8081)
 ./gradlew :crawler-batch:bootRun     # 데일리 크롤링 (웹 없음)
 
-# MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정을 채운다
+# MySQL로 실행 (local-dev). .env.example 을 .env 로 복사해 계정(과 Spotify 키)을 채운다
 docker compose up -d
 set -a; source .env; set +a
 ./gradlew :game-api:bootRun --args='--spring.profiles.active=local-dev'
@@ -56,6 +57,7 @@ game-api를 IntelliJ나 `bootRun`으로 실행하면 Spring Boot Docker Compose 
 - 작업 디렉터리에서 위로 올라가며 `compose.game-web.yml`을 찾는다(`common/config/GameWebComposeFileEnvironmentPostProcessor`). 저장소 안 어디서 실행해도 되고, 못 찾으면 Docker Compose 지원을 끈다. 다른 파일을 쓰려면 `SPRING_DOCKER_COMPOSE_FILE`로 지정한다.
 - 8080이 아닌 포트로 실행하면 `GAME_API_PORT`도 같은 값으로 준다(예: `GAME_API_PORT=18081`, `--server.port=18081`).
 - 테스트와 실행 jar(컨테이너)에서는 이 기능이 동작하지 않는다.
+- 노래 게임에서 앨범 이미지·발매일을 보려면 실행 전에 `SPOTIFY_CLIENT_ID`·`SPOTIFY_CLIENT_SECRET`을 환경 변수로 준다(위 `source .env`). 컨테이너 실행(루트 `compose.yml`)은 셸 환경 변수나 루트 `.env`에서 받는다.
 
 ## 디렉터리 구조
 
@@ -65,7 +67,7 @@ core/
 ├── settings.gradle    모듈 목록
 ├── build.gradle       모듈 공통 설정 (Java 25, Boot BOM, Lombok, 테스트)
 ├── docker-compose.yml local-dev 프로필용 MySQL
-├── .env.example       docker-compose·local-dev 계정 예시 (.env 는 커밋하지 않는다)
+├── .env.example       docker-compose·local-dev 계정, Spotify 키(SPOTIFY_CLIENT_ID/SECRET) 예시 (.env 는 커밋하지 않는다)
 ├── core-domain/       라이브러리. 도메인별 domain·implement·infra, common(ErrorCode, 이벤트)
 │   └── src/main/resources/   domain.yml(H2), domain-local-dev.yml(MySQL), sql/initial-data.sql(초기 데이터)
 ├── game-api/          실행 앱. room·chat·game·vote·report presentation·service, 에러 응답·예외 핸들러, STOMP 설정, Dockerfile(루트 compose.yml에서 씀)
@@ -81,7 +83,7 @@ core/
 
 - 게임 규칙(정답 판정, 마스킹, 투표)은 순수 함수로 분리하고 단위 테스트를 먼저 작성한다. 규칙을 바꾸면 테스트도 함께 바꾼다.
 - 게임 상태(점수, 현재 문제, 투표 현황, 타이머)는 서버가 단일 진실 원천이다. 클라이언트는 표시만 한다.
-- 타이머(다음 라운드 3초, 10초 패스, 스틸컷 10초 교체, 시간 경과 힌트)는 서버 기준으로 돌린다. 게임 타이머는 game-api의 `CountdownTimer`(`game/common/presentation`, 방·종류마다 하나, `gameTaskScheduler` 사용)로 돌린다. 간격은 `app.game.next-round-delay`(다음 라운드), `app.game.still-cut-interval`(스틸컷 교체)이고, 테스트는 `src/test/resources/config/application.yml`에서 짧게 덮는다. 현재 시각은 주입받은 `Clock` 빈에서 읽는다(`docs/TEST.md` 「시간 제어」).
+- 타이머(다음 라운드 3초, 10초 패스, 스틸컷 10초 교체, 시간 경과 힌트)는 서버 기준으로 돌린다. 게임 타이머는 game-api의 `CountdownTimer`(`game/common/presentation`, 방·종류마다 하나, `gameTaskScheduler` 사용)로 돌린다. 다음 라운드 문제 준비(노래 음원 등 외부 API)는 타이머 풀과 나눈 `questionPrepareExecutor`에서 정답 공개 직후 시작한다(`NextRoundScheduler`). 간격은 `app.game.next-round-delay`(다음 라운드), `app.game.still-cut-interval`(스틸컷 교체)이고, 테스트는 `src/test/resources/config/application.yml`에서 짧게 덮는다. 현재 시각은 주입받은 `Clock` 빈에서 읽는다(`docs/TEST.md` 「시간 제어」).
 - 테스트는 `docs/TEST.md` 「무엇을 테스트할까」 기준으로 필수만 쓴다. 단순 CRUD·위임·프레임워크 동작은 테스트하지 않는다.
 - **테스트를 쓰기 전에 검증할 행위 목록과 각각을 테스트하는 이유를 사용자에게 먼저 제시하고 확인받는다.**
 - 통합 테스트는 `support/`의 공통 상위 클래스를 상속해 Spring context를 재사용한다(`docs/TEST.md` 「Spring Context 재사용」). `@DirtiesContext`, 직접 붙인 `@SpringBootTest`, 테스트 클래스의 `@MockitoBean`은 훅이 쓰기 전에 막는다.

@@ -88,6 +88,13 @@ public class Room {
      * 혼자 있어도 시작할 수 있다.
      */
     public void startGame(String participantToken) {
+        validateStartGame(participantToken);
+        status = RoomStatus.PLAYING;
+        participants.forEach(Participant::resetScore);
+    }
+
+    /** 방장이고 대기 중인 방이어야 게임을 시작할 수 있다 */
+    public void validateStartGame(String participantToken) {
         Participant starter = findParticipant(participantToken)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_JOINED));
         if (!starter.isHost()) {
@@ -96,8 +103,6 @@ public class Room {
         if (status == RoomStatus.PLAYING) {
             throw new BusinessException(ErrorCode.GAME_ALREADY_PLAYING);
         }
-        status = RoomStatus.PLAYING;
-        participants.forEach(Participant::resetScore);
     }
 
     /** 정답자에게 1점을 주고 누적 점수를 돌려준다 */

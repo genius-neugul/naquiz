@@ -16,6 +16,7 @@ import geniusneugul.project.core.room.service.RoomResult;
 import geniusneugul.project.core.room.service.RoomService;
 import geniusneugul.project.core.support.IntegrationTestSupport;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class GameServiceTest extends IntegrationTestSupport {
 
     @Autowired
     private GameService gameService;
+
+    @Autowired
+    private RoundQuestionService roundQuestionService;
 
     @Autowired
     private RoomService roomService;
@@ -49,12 +53,51 @@ class GameServiceTest extends IntegrationTestSupport {
         String hostToken = createRoom().hostToken();
 
         // when
-        GameStartResult result = gameService.start(new StartGameCommand(GAME_TYPE, 3, hostToken));
+        GameStartResult result = startGame(new StartGameCommand(GAME_TYPE, 3, hostToken));
 
         // then
         assertThat(result.roundNo()).isEqualTo(1);
         assertThat(gameStatus(result.gameId())).isEqualTo("IN_PROGRESS");
         assertThat(roundQuestionId(result.gameId(), 1)).isEqualTo(approvedId);
+    }
+
+    @DisplayName("게임을 시작하면 1라운드 기본 힌트가 첫 번째로 공개되고 시작 결과에 담긴다.")
+    @Test
+    void start_revealsBaseHint() {
+        // given
+        insertQuestion("기생충", "APPROVED", true);
+        String hostToken = createRoom().hostToken();
+
+        // when
+        GameStartResult result = startGame(new StartGameCommand(GAME_TYPE, 3, hostToken));
+
+        // then
+        assertThat(revealedHintRow(result.gameId(), 1))
+                .containsEntry("HINT_TYPE", "ANSWER_MASK")
+                .containsEntry("REVEAL_ORDER", 1)
+                .containsEntry("REVEALED_CONTENT", result.answerHint().content());
+        assertThat(result.answerHint().hintType()).isEqualTo("ANSWER_MASK");
+        assertThat(result.answerHint().nextHintType()).isEqualTo("ANSWER_PARTIAL");
+    }
+
+    @DisplayName("다음 라운드가 열리면 그 라운드의 기본 힌트도 공개된다.")
+    @Test
+    void startNextRound_revealsBaseHint() {
+        // given
+        insertQuestion("기생충", "APPROVED", true);
+        insertQuestion("괴물", "APPROVED", true);
+        TestRoom room = createRoom();
+        GameStartResult start = startGame(new StartGameCommand(GAME_TYPE, 10, room.hostToken()));
+        solveCurrentRound(room, start.gameId(), 1);
+
+        // when
+        RoundStartResult second = startNextRound(room.roomId(), start.gameId()).orElseThrow();
+
+        // then
+        assertThat(revealedHintRow(start.gameId(), 2))
+                .containsEntry("HINT_TYPE", "ANSWER_MASK")
+                .containsEntry("REVEAL_ORDER", 1)
+                .containsEntry("REVEALED_CONTENT", second.answerHint().content());
     }
 
     @DisplayName("출제할 문제가 없으면 게임을 시작할 수 없고 방은 대기 상태로 남는다.")
@@ -64,7 +107,7 @@ class GameServiceTest extends IntegrationTestSupport {
         TestRoom room = createRoom();
 
         // when & then
-        assertThatThrownBy(() -> gameService.start(new StartGameCommand(GAME_TYPE, 3, room.hostToken())))
+        assertThatThrownBy(() -> startGame(new StartGameCommand(GAME_TYPE, 3, room.hostToken())))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(GAME_QUESTION_NOT_FOUND.getMessage());
         // 게임 중인 방이면 들어올 수 없으므로, 들어올 수 있으면 대기 상태다.
@@ -78,13 +121,13 @@ class GameServiceTest extends IntegrationTestSupport {
         Long firstId = insertQuestion("기생충", "APPROVED", true);
         Long secondId = insertQuestion("괴물", "APPROVED", true);
         TestRoom room = createRoom();
-        GameStartResult start = gameService.start(new StartGameCommand(GAME_TYPE, 10, room.hostToken()));
+        GameStartResult start = startGame(new StartGameCommand(GAME_TYPE, 10, room.hostToken()));
         solveCurrentRound(room, start.gameId(), 1);
 
         // when
-        RoundStartResult second = gameService.startNextRound(room.roomId(), start.gameId()).orElseThrow();
+        RoundStartResult second = startNextRound(room.roomId(), start.gameId()).orElseThrow();
         solveCurrentRound(room, start.gameId(), 2);
-        RoundStartResult third = gameService.startNextRound(room.roomId(), start.gameId()).orElseThrow();
+        RoundStartResult third = startNextRound(room.roomId(), start.gameId()).orElseThrow();
 
         // then
         assertThat(second.roundNo()).isEqualTo(2);
@@ -100,7 +143,7 @@ class GameServiceTest extends IntegrationTestSupport {
         // given
         insertQuestion("기생충", "APPROVED", true);
         TestRoom room = createRoom();
-        GameStartResult start = gameService.start(new StartGameCommand(GAME_TYPE, 1, room.hostToken()));
+        GameStartResult start = startGame(new StartGameCommand(GAME_TYPE, 1, room.hostToken()));
 
         // when
         SendChatResult result = chatService.send(new SendChatCommand("기 생 충", room.hostToken()));
@@ -119,13 +162,22 @@ class GameServiceTest extends IntegrationTestSupport {
         // given
         insertQuestion("기생충", "APPROVED", true);
         TestRoom room = createRoom();
-        GameStartResult start = gameService.start(new StartGameCommand(GAME_TYPE, 3, room.hostToken()));
+        GameStartResult start = startGame(new StartGameCommand(GAME_TYPE, 3, room.hostToken()));
 
         // when
         roomService.leave(room.hostToken());
 
         // then
         assertThat(gameRow(start.gameId())).containsEntry("STATUS", "FINISHED").containsEntry("WINNER_ID", null);
+    }
+
+    // 실제 흐름처럼 트랜잭션 밖에서 문제를 준비한 뒤 라운드를 연다.
+    private GameStartResult startGame(StartGameCommand command) {
+        return gameService.start(command, roundQuestionService.prepareFirst(command));
+    }
+
+    private Optional<RoundStartResult> startNextRound(Long roomId, Long gameId) {
+        return gameService.startNextRound(roomId, gameId, roundQuestionService.prepareNext(gameId));
     }
 
     private void solveCurrentRound(TestRoom room, Long gameId, int roundNo) {
@@ -153,6 +205,12 @@ class GameServiceTest extends IntegrationTestSupport {
     private Map<String, Object> roundRow(Long gameId, int roundNo) {
         return jdbcTemplate.queryForMap(
                 "SELECT status, solver_participant_id FROM game_round WHERE game_id = ? AND round_no = ?", gameId, roundNo);
+    }
+
+    private Map<String, Object> revealedHintRow(Long gameId, int roundNo) {
+        return jdbcTemplate.queryForMap(
+                "SELECT hint_type, reveal_order, revealed_content FROM revealed_hint WHERE game_id = ? AND round_no = ?",
+                gameId, roundNo);
     }
 
     private Long roundQuestionId(Long gameId, int roundNo) {

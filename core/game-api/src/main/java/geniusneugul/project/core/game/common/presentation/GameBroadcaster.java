@@ -4,6 +4,7 @@ import geniusneugul.project.core.game.common.presentation.dto.GameFinishedRespon
 import geniusneugul.project.core.game.common.presentation.dto.GameStartedResponse;
 import geniusneugul.project.core.game.common.presentation.dto.RoundSolvedResponse;
 import geniusneugul.project.core.game.common.presentation.dto.RoundStartedResponse;
+import geniusneugul.project.core.game.common.service.GameAbortResult;
 import geniusneugul.project.core.game.common.service.GameStartResult;
 import geniusneugul.project.core.game.common.service.RoundStartResult;
 import java.time.LocalDateTime;
@@ -35,6 +36,11 @@ public class GameBroadcaster {
     }
 
     public void broadcastFinish(SolvedRound result) {
+        messagingTemplate.convertAndSend(topic(result.roomId()), GameFinishedResponse.from(result));
+    }
+
+    /** 다음 라운드 문제를 준비하지 못해 승자 없이 끝났다 */
+    public void broadcastAbort(GameAbortResult result) {
         messagingTemplate.convertAndSend(topic(result.roomId()), GameFinishedResponse.from(result));
     }
 

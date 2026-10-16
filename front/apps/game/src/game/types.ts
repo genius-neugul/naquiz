@@ -1,4 +1,5 @@
-import type { ClueType, GameType, HintType, ReportType } from "@naquiz/shared";
+import type { AnswerHintType, ClueType, GameType, HintType, ReportType } from "@naquiz/shared";
+import type { RoundAudio } from "./audio";
 
 export type ParticipantRole = "HOST" | "GUEST";
 
@@ -63,8 +64,10 @@ export type RoundStatus = "IN_PROGRESS" | "SOLVED" | "SKIPPED";
 export interface RoundAnswer {
   answer: string;
   subAnswer: string;
-  /** 정답 아래 한 줄 설명. 노래는 가수 · 발매일, 영화는 감독 · 개봉일 */
+  /** 정답 아래 한 줄 설명. 노래는 가수, 영화는 감독 · 개봉일 */
   detail: string;
+  /** 노래 앨범 이미지. 없으면 null */
+  albumImageUrl: string | null;
   solverId: string | null;
   solverNickname: string | null;
   solvedSeconds: number | null;
@@ -79,13 +82,13 @@ export interface Round {
   /** 정답 글자 수·문자 종류 요약 */
   answerMeta: string;
   hints: RevealedHint[];
-  /** 다음에 투표로 열 수 있는 정답 힌트 단계. 열 수 없으면 null */
-  nextAnswerHint: HintType | null;
+  /** 다음에 열 수 있는 정답 힌트 단계. 노래는 투표로, 영화 스무고개는 모든 단서가 열린 뒤 차례 참가자가 연다. 열 수 없으면 null */
+  nextAnswerHint: AnswerHintType | null;
   clues: RevealedClue[];
   turn: Turn | null;
   stillCut: StillCutView | null;
-  /** 노래 음원 재생 시간(초) */
-  audioSeconds: number | null;
+  /** 노래 음원. 서버가 보내기 전이거나 노래 게임이 아니면 null */
+  audio: RoundAudio | null;
   votes: Vote[];
   result: RoundAnswer | null;
 }

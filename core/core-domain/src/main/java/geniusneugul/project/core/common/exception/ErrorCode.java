@@ -35,10 +35,19 @@ public enum ErrorCode {
     GAME_ALREADY_PLAYING(HttpStatus.CONFLICT, "이미 게임이 진행 중입니다."),
     GAME_INVALID_TARGET_SCORE(HttpStatus.BAD_REQUEST, "목표 점수는 1~50점입니다."),
     GAME_QUESTION_NOT_FOUND(HttpStatus.CONFLICT, "출제할 문제가 없습니다."),
+    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다."),
+    GAME_QUESTION_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "문제를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요."),
 
     // game - 불변식 위반
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
     GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
+
+    // song
+    SONG_LOOKUP_FAILED(HttpStatus.BAD_GATEWAY, "노래 정보를 불러오지 못했습니다."),
+
+    // song - 불변식 위반
+    SONG_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "노래가 없습니다."),
+    SONG_AUDIO_WITHOUT_DURATION(HttpStatus.INTERNAL_SERVER_ERROR, "재생 시간이 없는 영상으로는 음원을 만들 수 없습니다."),
 
     // question - 불변식 위반
     QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");

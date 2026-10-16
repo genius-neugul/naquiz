@@ -82,4 +82,29 @@ public class Song {
         return new Song(title, subtitle, artists, rawTitle, rawArtist, playCount, sourceProgram, sourceSeq,
                 sourceDate);
     }
+
+    /**
+     * Spotify에서 고른 트랙으로 앨범·발매일 정보를 채운다(MUSIC_SELECTION_RULE 1-3).
+     */
+    public void enrich(SpotifyTrack track) {
+        this.albumName = track.albumName();
+        this.albumImageUrl = track.albumImageUrl();
+        this.releaseDate = track.releaseDate();
+        this.spotifyId = track.id();
+    }
+
+    public void attachAudio(Audio audio) {
+        this.audio = audio;
+    }
+
+    public boolean isEnriched() {
+        return spotifyId != null;
+    }
+
+    /**
+     * 음원이 있어야 출제할 수 있다. Spotify 정보는 없어도 된다.
+     */
+    public boolean isPlayable() {
+        return audio != null;
+    }
 }

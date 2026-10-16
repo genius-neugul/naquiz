@@ -9,8 +9,10 @@ import geniusneugul.project.core.common.exception.BusinessException;
 import geniusneugul.project.core.common.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -109,6 +111,19 @@ public class Game {
     /** 이 게임에서 출제한 문제 ID */
     public List<Long> getAskedQuestionIds() {
         return rounds.stream().map(Round::getQuestionId).toList();
+    }
+
+    public RevealedHint revealHint(int roundNo, HintType hintType, String revealedContent, LocalDateTime revealedAt) {
+        int revealOrder = (int) revealedHints.stream().filter(hint -> hint.getRoundNo() == roundNo).count() + 1;
+        RevealedHint hint = RevealedHint.of(this, roundNo, hintType, revealedContent, revealOrder, revealedAt);
+        revealedHints.add(hint);
+        return hint;
+    }
+
+    public Optional<RevealedHint> lastAnswerHint(int roundNo) {
+        return revealedHints.stream()
+                .filter(hint -> hint.getRoundNo() == roundNo && hint.getHintType().isAnswerHint())
+                .max(Comparator.comparingInt(RevealedHint::getRevealOrder));
     }
 
     private Round findRound(int roundNo) {

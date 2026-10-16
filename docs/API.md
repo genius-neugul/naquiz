@@ -123,7 +123,9 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `GAME_STARTED` | 방장이 게임을 시작했다 | 아래 「게임」 |
 | `ROUND_STARTED` | 라운드가 열렸다 | 아래 「게임」 |
 | `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
-| `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
+| `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다. 다음 라운드 문제를 준비하지 못하면 승자 없이(`winnerId`가 `null`) 끝난다 | 아래 「게임」 |
+| `SONG_AUDIO` | 노래 게임 라운드에서 재생할 음원 | 아래 「노래 맞추기」 |
+| `SONG_ANSWER_REVEALED` | 노래 게임 라운드가 끝나 가수·앨범 이미지를 공개한다 | 아래 「노래 맞추기」 |
 | `STILL_CUT_REVEALED` | 스틸컷 게임에서 다음 스틸컷을 보여준다 | 아래 「스틸컷 영화 맞추기」 |
 
 **채팅**
@@ -139,7 +141,11 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 
 ```json
 { "type": "GAME_STARTED", "gameId": 1, "gameType": "MOVIE_STILL_CUT", "targetScore": 5, "scores": [{ "participantId": 1, "score": 0 }] }
-{ "type": "ROUND_STARTED", "gameId": 1, "roundNo": 1, "startedAt": "2026-10-03T21:00:00" }
+{
+  "type": "ROUND_STARTED", "gameId": 1, "roundNo": 1, "startedAt": "2026-10-03T21:00:00",
+  "answerHint": { "hintType": "ANSWER_MASK", "content": "⚫⚫⚫ (3글자(특수문자 포함), 한글 O, 영어 X, 숫자 X, 특수문자 X)" },
+  "nextAnswerHint": "ANSWER_PARTIAL"
+}
 {
   "type": "ROUND_SOLVED", "gameId": 1, "roundNo": 1,
   "solverId": 2, "nickname": "감자", "tag": 2, "text": "기생충",
@@ -152,11 +158,25 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 
 - 게임을 시작하면 `GAME_STARTED` 다음에 1라운드 `ROUND_STARTED`가 온다. 방 상태는 PLAYING이 되고 모든 점수는 0이다.
 - `ROUND_STARTED`에는 정답이 없다. 정답은 라운드가 끝날 때 `ROUND_SOLVED`로 공개한다.
+- `ROUND_STARTED.answerHint`는 라운드 시작 때 투표 없이 공개되는 기본 힌트(`ANSWER_MASK`)다. `content`는 서버가 저장한 공개 내용 그대로이고, 가린 글자 뒤에 글자 수·문자 종류가 붙는다([정답 힌트](DOMAIN.md)). `nextAnswerHint`는 다음에 열 수 있는 정답 힌트 단계이고, 1단계에서 정답이 전부 드러나면 건너뛰므로 더 열 단계가 없으면 `null`이다.
 - 라운드 진행 중 채팅은 모두 정답 판정 대상이다. 가장 먼저 맞힌 채팅은 `CHAT` 대신 `ROUND_SOLVED`로 모두에게 간다(`text`가 그 채팅이다). 오답과 라운드 사이 채팅은 `CHAT`으로 간다.
 - `scores`는 방에 있는 참가자 모두의 현재 게임 점수다.
-- 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
+- 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 서버는 정답 공개 직후부터 다음 문제를 준비하고(노래 게임은 음원 준비), 준비가 `nextRoundAt`보다 늦게 끝나면 그때 `ROUND_STARTED`가 온다. 다음 문제를 준비하지 못하면(노래 3곡 연속 실패) `nextRoundAt` 뒤에 `winnerId`가 `null`인 `GAME_FINISHED`가 오고 방은 WAITING으로 돌아간다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
 - 방장이 나가 방이 끝나면 게임도 승자 없이 끝난다. 게임 이벤트는 따로 없고 `ROOM_CLOSED`만 온다.
 - 시각(`startedAt`, `solvedAt`, `nextRoundAt`)은 서버 시각이다.
+
+**노래 맞추기**
+
+```json
+{ "type": "SONG_AUDIO", "gameId": 1, "roundNo": 1, "videoId": "11cta61wi0g", "durationSeconds": 254,
+  "startedAt": "2026-10-16T21:00:00", "serverTime": "2026-10-16T21:00:00.120" }
+{ "type": "SONG_ANSWER_REVEALED", "gameId": 1, "roundNo": 1, "artists": ["아이유"], "albumImageUrl": "https://i.scdn.co/image/..." }
+```
+
+- 노래 게임(`SONG`) 라운드가 열리면 `ROUND_STARTED` 바로 뒤에 `SONG_AUDIO`가 온다. `videoId`는 YouTube 영상 ID, `durationSeconds`는 재생 시간(초)이다.
+- 노래는 라운드 시작(`startedAt`, `ROUND_STARTED`와 같은 값)부터 처음부터 재생하고, 끝나면 처음부터 반복한다고 본다. 모든 참가자는 `(서버 기준 지금 − startedAt) mod durationSeconds`초 위치를 듣는다. `serverTime`은 서버가 보낸 시각이고, 클라이언트는 받은 시각과 비교해 서버 시계와의 차이를 구한다.
+- 정답자가 나오면 `ROUND_SOLVED` 바로 뒤에 `SONG_ANSWER_REVEALED`가 온다. 게임이 끝나는 라운드면 `GAME_FINISHED`보다 먼저 온다. 정답 공개 화면은 노래 제목(`ROUND_SOLVED.answer`), 가수(`artists`, 한글 이름), 앨범 이미지(`albumImageUrl`)를 보여준다. 발매일은 보여주지 않는다.
+- `albumImageUrl`은 Spotify 곡 정보가 없으면 `null`이다([노래 정보 조회 규칙](MUSIC_SELECTION_RULE.md)).
 
 **스틸컷 영화 맞추기**
 
@@ -189,5 +209,6 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `GAME_NOT_HOST` | 방장이 아닌 참가자가 게임을 시작한다 |
 | `GAME_ALREADY_PLAYING` | 이미 게임이 진행 중인 방에서 게임을 시작한다 |
 | `GAME_QUESTION_NOT_FOUND` | 그 게임 종류로 출제할 수 있는(승인되고 활성인) 문제가 없다 |
+| `GAME_QUESTION_UNAVAILABLE` | 첫 문제를 준비하지 못했다(노래 게임에서 3곡 연속 음원 준비 실패). 잠시 뒤 다시 시작할 수 있다 |
 
 ---

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 게임이 시작되고 첫 라운드가 열렸다. 정답은 담지 않는다. questionId는 게임별 처리(스틸컷 등)용이고 화면에 보내지 않는다.
+ * 게임이 시작되고 첫 라운드가 열렸다. 정답은 담지 않고, 자동 공개된 기본 힌트를 담는다. questionId는 게임별 처리(스틸컷 등)용이고 화면에 보내지 않는다.
  */
 public record GameStartResult(
         Long roomId,
@@ -16,11 +16,13 @@ public record GameStartResult(
         int roundNo,
         Long questionId,
         LocalDateTime roundStartedAt,
-        List<ScoreResult> scores
+        List<ScoreResult> scores,
+        AnswerHintResult answerHint
 ) {
 
-    static GameStartResult from(GameStart start) {
+    static GameStartResult from(GameStart start, AnswerHintResult answerHint) {
         return new GameStartResult(start.roomId(), start.gameId(), start.gameType(), start.targetScore(),
-                start.roundNo(), start.questionId(), start.roundStartedAt(), ScoreResult.listOf(start.scores()));
+                start.roundNo(), start.questionId(), start.roundStartedAt(), ScoreResult.listOf(start.scores()),
+                answerHint);
     }
 }

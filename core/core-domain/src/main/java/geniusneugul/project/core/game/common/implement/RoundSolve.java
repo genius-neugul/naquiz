@@ -1,5 +1,6 @@
 package geniusneugul.project.core.game.common.implement;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.question.domain.Answer;
 import geniusneugul.project.core.room.implement.ParticipantScore;
 import java.time.LocalDateTime;
@@ -11,7 +12,9 @@ import java.util.List;
 public record RoundSolve(
         Long roomId,
         Long gameId,
+        GameType gameType,
         int roundNo,
+        Long questionId,
         Long solverId,
         String solverNickname,
         int solverTag,

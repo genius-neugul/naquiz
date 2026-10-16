@@ -14,6 +14,10 @@ public interface RoundStartedHandler {
     /** 라운드가 열려 ROUND_STARTED를 보낸 직후 */
     void onRoundStarted(StartedRound round);
 
+    /** 라운드가 끝나 정답(ROUND_SOLVED)을 보낸 직후. 게임이 끝나는 라운드면 GAME_FINISHED보다 먼저 부른다 */
+    default void onRoundEnded(EndedRound round) {
+    }
+
     /** 승자가 나와 게임이 끝났다. 게임별 진행 상태를 정리한다 */
     void onGameFinished(Long roomId);
 }

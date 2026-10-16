@@ -1,5 +1,6 @@
 package geniusneugul.project.core.chat.service;
 
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.game.common.implement.RoundSolve;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +11,9 @@ import java.util.List;
 public record AnswerSolvedResult(
         Long roomId,
         Long gameId,
+        GameType gameType,
         int roundNo,
+        Long questionId,
         Long solverId,
         String nickname,
         int tag,
@@ -26,7 +29,8 @@ public record AnswerSolvedResult(
         List<Score> scores = solve.scores().stream()
                 .map(score -> new Score(score.participantId(), score.score()))
                 .toList();
-        return new AnswerSolvedResult(solve.roomId(), solve.gameId(), solve.roundNo(), solve.solverId(),
+        return new AnswerSolvedResult(solve.roomId(), solve.gameId(), solve.gameType(), solve.roundNo(), solve.questionId(),
+                solve.solverId(),
                 solve.solverNickname(), solve.solverTag(), solve.text(), solve.answer().answer(),
                 solve.answer().subAnswer(), solve.solvedAt(), scores, solve.gameFinished());
     }

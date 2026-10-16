@@ -38,9 +38,11 @@ export function Play({ room, round }: { room: RoomState; round: Round }) {
             <Icon name="flag" size={14} />
             {reported ? "신고 완료" : "문제 오류 신고"}
           </Button>
-          <Button size="sm" disabled={!inProgress || !!skipVote} onClick={() => client.openVote("SKIP")}>
-            스킵 투표
-          </Button>
+          {client.supportsVotes && (
+            <Button size="sm" disabled={!inProgress || !!skipVote} onClick={() => client.openVote("SKIP")}>
+              스킵 투표
+            </Button>
+          )}
         </div>
       </div>
 
@@ -50,7 +52,7 @@ export function Play({ room, round }: { room: RoomState; round: Round }) {
       {skipVote && inProgress && <SkipVoteBanner vote={skipVote} room={room} />}
       {round.result && <SolvedCard room={room} round={round} />}
 
-      {room.gameType === "SONG" && inProgress && round.audioSeconds !== null && <AudioPlayer key={round.roundNo} seconds={round.audioSeconds} />}
+      {room.gameType === "SONG" && inProgress && round.audio && <AudioPlayer key={round.roundNo} audio={round.audio} />}
       {room.gameType === "MOVIE_STILL_CUT" && round.stillCut && <StillCutViewer still={round.stillCut} hintOpened={round.hints.length > 0} />}
       {room.gameType === "MOVIE_TWENTY_QUESTIONS" && <ClueGrid room={room} round={round} />}
 
@@ -97,8 +99,9 @@ function SolvedCard({ room, round }: { room: RoomState; round: Round }) {
   return (
     <div className={styles.solved} role="status">
       <div className={styles.solvedHead}>{head}</div>
+      {room.gameType === "SONG" && <AlbumCover url={r.albumImageUrl} />}
       <p className={styles.answer}>{r.answer}</p>
-      <div className={styles.detail}>{r.detail}</div>
+      {r.detail && <div className={styles.detail}>{r.detail}</div>}
       <div className={styles.chips}>
         <span className={styles.chip}>
           <span className={styles.chipLabel}>정답 </span>
@@ -114,4 +117,9 @@ function SolvedCard({ room, round }: { room: RoomState; round: Round }) {
       <div className={styles.next}>{finishing ? `${left}초 뒤 결과 발표` : `다음 문제까지 ${left}초`}</div>
     </div>
   );
+}
+
+/** 노래 정답 공개의 앨범 이미지. Spotify 정보가 없으면 자리만 둔다 */
+function AlbumCover({ url }: { url: string | null }) {
+  return url ? <img className={styles.album} src={url} alt="앨범 이미지" /> : <div className={styles.album} aria-hidden="true" />;
 }
