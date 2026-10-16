@@ -48,6 +48,7 @@ function shuffle<T>(list: readonly T[]): T[] {
  * 봇 참가자가 입장·잡담·정답·투표·단서 선택을 하고, 게임 규칙은 `@naquiz/shared` 순수 함수로 판정한다.
  */
 export class MockGameClient implements GameClient {
+  readonly supportsVotes = true;
   private state: RoomState | null = null;
   private listeners = new Set<() => void>();
   private roomTimers = new Set<ReturnType<typeof setTimeout>>();
@@ -272,7 +273,8 @@ export class MockGameClient implements GameClient {
       clues: [],
       turn: null,
       stillCut: game === "MOVIE_STILL_CUT" ? { index: 0, total: stillTotal, imageUrl: null, shownAt: now, nextAt: now + STILL_CUT_SECONDS * 1000 } : null,
-      audioSeconds: this.item.kind === "song" ? this.item.song.audioSeconds : null,
+      // Mock은 실제 영상이 없어 소리 없이 재생 위치만 보여준다
+      audio: this.item.kind === "song" ? { videoId: null, durationSeconds: this.item.song.audioSeconds, startedAtMs: now, serverOffsetMs: 0 } : null,
       votes: [],
       result: null,
     };
@@ -297,7 +299,9 @@ export class MockGameClient implements GameClient {
     const solver = solverId ? s.participants.find((p) => p.id === solverId) ?? null : null;
     const seconds = solver ? Math.round((Date.now() - round.startedAt) / 100) / 10 : null;
     const it = this.item!;
-    const detail = it.kind === "song" ? `${it.song.artists.join(", ")} · ${it.song.releaseDate}` : `${it.movie.clues.DIRECTOR} · ${it.movie.clues.RELEASE_DATE}`;
+    // 노래 정답 공개는 제목·가수·앨범 이미지만 보여준다(발매일은 보여주지 않는다)
+    const detail = it.kind === "song" ? it.song.artists.join(", ") : `${it.movie.clues.DIRECTOR} · ${it.movie.clues.RELEASE_DATE}`;
+    const albumImageUrl = it.kind === "song" ? it.song.albumImageUrl : null;
     const log: RoundLog = {
       roundNo: round.roundNo,
       answer: subAnswer ? `${answer} (${subAnswer})` : answer,
@@ -320,7 +324,7 @@ export class MockGameClient implements GameClient {
         turn: null,
         nextAnswerHint: null,
         stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
-        result: { answer, subAnswer, detail, solverId: solver?.id ?? null, solverNickname: (solver ? displayName(solver) : null), solvedSeconds: seconds, nextAt },
+        result: { answer, subAnswer, detail, albumImageUrl, solverId: solver?.id ?? null, solverNickname: (solver ? displayName(solver) : null), solvedSeconds: seconds, nextAt },
       },
     }));
     if (solver) {
@@ -526,7 +530,8 @@ export class MockGameClient implements GameClient {
         content = it.kind === "song" ? it.song.artists.join(", ") : "";
         break;
       case "RELEASE_DATE":
-        content = it.kind === "song" ? it.song.releaseDate : "";
+        // 발매일 힌트는 연도만 보여준다(docs/DOMAIN.md)
+        content = it.kind === "song" ? it.song.releaseDate.slice(0, 4) : "";
         break;
       case "STILL_CUT":
         return;

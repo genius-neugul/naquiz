@@ -1,5 +1,6 @@
 import { Client, type IMessage } from "@stomp/stompjs";
-import { TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType } from "@naquiz/shared";
+import { TARGET_SCORE_MAX, TARGET_SCORE_MIN, type AnswerHintType, type GameType } from "@naquiz/shared";
+import { parseServerTime } from "../audio";
 import type { GameClient } from "../GameClient";
 import { displayName } from "../selectors";
 import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus, Round, RoundLog } from "../types";
@@ -29,7 +30,9 @@ type RoomEvent =
   | RoundStartedResponse
   | RoundSolvedResponse
   | GameFinishedResponse
-  | StillCutRevealedResponse;
+  | StillCutRevealedResponse
+  | SongAudioResponse
+  | SongAnswerRevealedResponse;
 
 interface ScoreResponse {
   participantId: number;
@@ -44,11 +47,34 @@ interface GameStartedResponse {
   scores: ScoreResponse[];
 }
 
+/** answerHint는 라운드 시작 때 자동 공개된 기본 힌트다. content는 서버가 저장한 문자열 그대로(가린 글자 + 글자 수·문자 종류) */
 interface RoundStartedResponse {
   type: "ROUND_STARTED";
   gameId: number;
   roundNo: number;
   startedAt: string;
+  answerHint: { hintType: AnswerHintType; content: string };
+  nextAnswerHint: AnswerHintType | null;
+}
+
+/** 노래 게임. 모두가 (서버 기준 지금 - startedAt) mod durationSeconds 위치를 듣는다. serverTime은 서버가 보낸 시각이다 */
+interface SongAudioResponse {
+  type: "SONG_AUDIO";
+  gameId: number;
+  roundNo: number;
+  videoId: string;
+  durationSeconds: number;
+  startedAt: string;
+  serverTime: string;
+}
+
+/** 노래 게임. ROUND_SOLVED 직후에 온다. Spotify 정보가 없으면 albumImageUrl이 null이다 */
+interface SongAnswerRevealedResponse {
+  type: "SONG_ANSWER_REVEALED";
+  gameId: number;
+  roundNo: number;
+  artists: string[];
+  albumImageUrl: string | null;
 }
 
 /** 정답 채팅은 CHAT 대신 이 이벤트로 온다. 게임이 끝났으면 nextRoundAt이 null이다 */
@@ -79,10 +105,11 @@ interface StillCutRevealedResponse {
   nextAt: string | null;
 }
 
+/** 다음 라운드 문제를 준비하지 못해 끝나면 winnerId가 null이다 */
 interface GameFinishedResponse {
   type: "GAME_FINISHED";
   gameId: number;
-  winnerId: number;
+  winnerId: number | null;
   scores: ScoreResponse[];
 }
 
@@ -115,8 +142,8 @@ function defaultBrokerUrl(): string {
 }
 
 /**
- * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·스틸컷 공개를
- * 서버로 처리한다. 게임 상태는 서버 이벤트로만 바꾼다.
+ * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행(기본 힌트 포함)·
+ * 스틸컷 공개·노래 재생과 정답 공개 정보를 서버로 처리한다. 게임 상태는 서버 이벤트로만 바꾼다.
  * 서버는 연결 하나를 참가자 한 명으로 보므로 방을 나가면 연결도 닫는다(재접속 없음).
  */
 export class StompGameClient implements GameClient {
@@ -125,6 +152,8 @@ export class StompGameClient implements GameClient {
   private client: Client | null = null;
   private pending: Pending | null = null;
   private messageSeq = 0;
+  // 투표는 아직 서버에 없다. 화면은 투표 버튼을 숨긴다.
+  readonly supportsVotes = false;
 
   constructor(private readonly brokerUrl: string = defaultBrokerUrl()) {}
 
@@ -280,6 +309,12 @@ export class StompGameClient implements GameClient {
       case "STILL_CUT_REVEALED":
         this.onStillCutRevealed(event);
         return;
+      case "SONG_AUDIO":
+        this.onSongAudio(event);
+        return;
+      case "SONG_ANSWER_REVEALED":
+        this.onSongAnswerRevealed(event);
+        return;
     }
     // 게임 중에 들어오고 나가도 남은 참가자의 점수는 그대로 둔다.
     const participants = event.participants.map(toParticipant).map((p) => {
@@ -331,13 +366,14 @@ export class StompGameClient implements GameClient {
       roundNo: event.roundNo,
       startedAt: Date.parse(event.startedAt),
       status: "IN_PROGRESS",
+      // 기본 힌트 내용에 글자 수·문자 종류가 함께 있어 따로 보여주지 않는다
       answerMeta: "",
-      hints: [],
-      nextAnswerHint: null,
+      hints: [{ type: event.answerHint.hintType, content: event.answerHint.content }],
+      nextAnswerHint: event.nextAnswerHint,
       clues: [],
       turn: null,
       stillCut: null,
-      audioSeconds: null,
+      audio: null,
       votes: [],
       result: null,
     };
@@ -375,7 +411,9 @@ export class StompGameClient implements GameClient {
         result: {
           answer: event.answer,
           subAnswer: event.subAnswer ?? "",
+          // 노래는 SONG_ANSWER_REVEALED로 가수·앨범 이미지를 채운다
           detail: "",
+          albumImageUrl: null,
           solverId,
           solverNickname: solverName,
           solvedSeconds,
@@ -424,6 +462,34 @@ export class StompGameClient implements GameClient {
       },
     });
     if (winner) this.system(`${displayName(winner)}님이 목표 ${state.targetScore}점에 도달했어요 · 게임이 끝났어요`);
+    else if (event.winnerId === null) this.system("다음 문제를 준비하지 못해 게임을 끝냈어요");
+  }
+
+  private onSongAudio(event: SongAudioResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    const receivedAt = Date.now();
+    this.setState({
+      ...this.state,
+      round: {
+        ...round,
+        audio: {
+          videoId: event.videoId,
+          durationSeconds: event.durationSeconds,
+          startedAtMs: parseServerTime(event.startedAt),
+          serverOffsetMs: parseServerTime(event.serverTime) - receivedAt,
+        },
+      },
+    });
+  }
+
+  private onSongAnswerRevealed(event: SongAnswerRevealedResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round?.result || round.roundNo !== event.roundNo) return;
+    this.setState({
+      ...this.state,
+      round: { ...round, result: { ...round.result, detail: event.artists.join(", "), albumImageUrl: event.albumImageUrl } },
+    });
   }
 
   private onError(message: IMessage): void {

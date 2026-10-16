@@ -39,6 +39,17 @@
   color: var(--muted);
 }
 
+/* 플레이어는 화면 밖에 둔다. display:none이면 재생하지 않는 브라우저가 있다 */
+.hidden {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .note {
   font-size: 12px;
   color: var(--muted);

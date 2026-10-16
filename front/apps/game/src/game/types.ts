@@ -1,4 +1,5 @@
 import type { AnswerHintType, ClueType, GameType, HintType, ReportType } from "@naquiz/shared";
+import type { RoundAudio } from "./audio";
 
 export type ParticipantRole = "HOST" | "GUEST";
 
@@ -63,8 +64,10 @@ export type RoundStatus = "IN_PROGRESS" | "SOLVED" | "SKIPPED";
 export interface RoundAnswer {
   answer: string;
   subAnswer: string;
-  /** 정답 아래 한 줄 설명. 노래는 가수 · 발매일, 영화는 감독 · 개봉일 */
+  /** 정답 아래 한 줄 설명. 노래는 가수, 영화는 감독 · 개봉일 */
   detail: string;
+  /** 노래 앨범 이미지. 없으면 null */
+  albumImageUrl: string | null;
   solverId: string | null;
   solverNickname: string | null;
   solvedSeconds: number | null;
@@ -84,8 +87,8 @@ export interface Round {
   clues: RevealedClue[];
   turn: Turn | null;
   stillCut: StillCutView | null;
-  /** 노래 음원 재생 시간(초) */
-  audioSeconds: number | null;
+  /** 노래 음원. 서버가 보내기 전이거나 노래 게임이 아니면 null */
+  audio: RoundAudio | null;
   votes: Vote[];
   result: RoundAnswer | null;
 }

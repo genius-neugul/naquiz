@@ -6,6 +6,9 @@ import type { ReportInput, RoomState, VoteType } from "./types";
  * 지금은 MockGameClient가 구현하고, 서버 실시간 API가 생기면 그 구현으로 바꾼다.
  */
 export interface GameClient {
+  /** 힌트·스킵 투표를 처리하는지. 처리하지 않으면 화면은 투표 버튼을 숨긴다 */
+  readonly supportsVotes: boolean;
+
   getState(): RoomState | null;
   subscribe(listener: () => void): () => void;
 

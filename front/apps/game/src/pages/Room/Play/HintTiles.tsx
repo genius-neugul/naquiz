@@ -75,7 +75,7 @@ function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
       {latest ? (
         <div className={styles.value}>
           <span className={`${styles.text} ${styles.big}`}>{latest.content}</span>
-          <span className={styles.sub}>{round.answerMeta}</span>
+          {round.answerMeta && <span className={styles.sub}>{round.answerMeta}</span>}
         </div>
       ) : (
         <Locked />
@@ -113,7 +113,7 @@ function Locked() {
 /** 대상 힌트의 공개 투표 버튼 또는 진행 중인 투표 현황 */
 function VoteControl({ room, round, target, buttonText }: { room: RoomState; round: Round; target: HintType | null; buttonText: string }) {
   const client = useGameClient();
-  if (round.status !== "IN_PROGRESS" || !target) return null;
+  if (!client.supportsVotes || round.status !== "IN_PROGRESS" || !target) return null;
   const vote = round.votes.find((v) => v.type === "HINT" && v.targetHintType === target);
   const n = room.participants.length;
 

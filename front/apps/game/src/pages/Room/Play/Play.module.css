@@ -103,6 +103,15 @@
   color: var(--muted);
 }
 
+.album {
+  width: 96px;
+  height: 96px;
+  border-radius: calc(var(--r) / 2);
+  border: 1px solid var(--line);
+  background: var(--tile);
+  object-fit: cover;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;
