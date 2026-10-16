@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 import geniusneugul.project.core.song.domain.ArtistName;
 import geniusneugul.project.core.song.domain.Song;
 import geniusneugul.project.core.song.domain.SourceProgram;
+import geniusneugul.project.core.song.domain.SpotifyArtist;
+import geniusneugul.project.core.song.domain.SpotifyTrack;
 import geniusneugul.project.core.song.domain.VideoCandidate;
 import geniusneugul.project.core.song.infra.SongRepository;
 import geniusneugul.project.core.support.WebSocketTestSupport;
@@ -30,6 +32,7 @@ class SongStompTest extends WebSocketTestSupport {
     private static final String ANSWER = "밤편지";
     private static final VideoCandidate VIDEO = new VideoCandidate("video-1", "밤편지 가사", "4:14", null, null, null);
     private static final Duration SLOW_PREPARE = Duration.ofMillis(800);
+    private static final String ALBUM_IMAGE_URL = "https://i.scdn.co/image/palette";
 
     @Autowired
     private SongRepository songRepository;
@@ -50,6 +53,70 @@ class SongStompTest extends WebSocketTestSupport {
                     VALUES ('SONG', ?, ?, NULL, TRUE, 'APPROVED')
                     """, song.getId(), ANSWER);
         }
+    }
+
+    @DisplayName("노래 라운드가 열리면 라운드 시작 다음에 재생할 음원과 라운드 시작 시각, 서버 시각이 간다.")
+    @Test
+    void start_sendsSongAudio() throws Exception {
+        // given
+        given(youTubeSearchClient.search(anyString())).willReturn(List.of(VIDEO));
+        StompSession host = connect();
+        BlockingQueue<Map<String, Object>> events = createRoomAndSubscribe(host);
+
+        // when
+        host.send("/app/games/start", Map.of("gameType", "SONG", "targetScore", 3));
+
+        // then
+        Map<String, Object> round = awaitEvent(events, "ROUND_STARTED");
+        Map<String, Object> audio = awaitMessage(events);
+        assertThat(audio.get("type")).isEqualTo("SONG_AUDIO");
+        assertThat(audio.get("roundNo")).isEqualTo(1);
+        assertThat(audio.get("videoId")).isEqualTo("video-1");
+        assertThat(audio.get("durationSeconds")).isEqualTo(254);
+        assertThat(audio.get("startedAt")).isEqualTo(round.get("startedAt"));
+        assertThat(audio.get("serverTime")).isNotNull();
+    }
+
+    @DisplayName("정답이 나오면 정답자 확정 다음에 가수와 앨범 이미지가 가고, 발매일은 가지 않는다.")
+    @Test
+    void submit_sendsAnswerRevealed() throws Exception {
+        // given
+        givenPlayableWithAlbum();
+        StompSession host = connect();
+        BlockingQueue<Map<String, Object>> events = createRoomAndSubscribe(host);
+        host.send("/app/games/start", Map.of("gameType", "SONG", "targetScore", 3));
+        awaitEvent(events, "ROUND_STARTED");
+
+        // when
+        host.send("/app/rooms/chat", Map.of("text", ANSWER));
+
+        // then
+        awaitEvent(events, "ROUND_SOLVED");
+        Map<String, Object> revealed = awaitMessage(events);
+        assertThat(revealed.get("type")).isEqualTo("SONG_ANSWER_REVEALED");
+        assertThat(revealed.get("roundNo")).isEqualTo(1);
+        assertThat(revealed.get("artists")).isEqualTo(List.of("가수"));
+        assertThat(revealed.get("albumImageUrl")).isEqualTo(ALBUM_IMAGE_URL);
+        assertThat(revealed).doesNotContainKey("releaseDate");
+    }
+
+    @DisplayName("목표 점수에 도달해 게임이 끝나는 라운드에서도 노래 정보가 게임 종료보다 먼저 간다.")
+    @Test
+    void submit_reachTargetScore_sendsAnswerRevealedBeforeFinish() throws Exception {
+        // given
+        givenPlayableWithAlbum();
+        StompSession host = connect();
+        BlockingQueue<Map<String, Object>> events = createRoomAndSubscribe(host);
+        host.send("/app/games/start", Map.of("gameType", "SONG", "targetScore", 1));
+        awaitEvent(events, "ROUND_STARTED");
+
+        // when
+        host.send("/app/rooms/chat", Map.of("text", ANSWER));
+
+        // then
+        awaitEvent(events, "ROUND_SOLVED");
+        assertThat(awaitMessage(events).get("type")).isEqualTo("SONG_ANSWER_REVEALED");
+        assertThat(awaitMessage(events).get("type")).isEqualTo("GAME_FINISHED");
     }
 
     @DisplayName("다음 라운드 노래를 3곡 연속 준비하지 못하면 다음 라운드 시각 뒤에 승자 없이 게임이 끝나고 방은 대기 상태로 돌아간다.")
@@ -111,6 +178,13 @@ class SongStompTest extends WebSocketTestSupport {
         assertThat(round.get("roundNo")).isEqualTo(2);
         // 다음 라운드 시각(100ms)보다 준비(800ms)가 길다. 준비가 정답 공개와 함께 시작했으므로 그 차이만큼 늦게 열린다.
         assertThat(Duration.between(nextRoundAt, startedAt)).isGreaterThan(Duration.ofMillis(500));
+    }
+
+    private void givenPlayableWithAlbum() {
+        given(youTubeSearchClient.search(anyString())).willReturn(List.of(VIDEO));
+        given(spotifyApiClient.searchArtists(anyString())).willReturn(List.of(new SpotifyArtist("artist-1", "가수")));
+        given(spotifyApiClient.searchTracks(anyString())).willReturn(List.of(new SpotifyTrack("track-1", ANSWER,
+                "Palette", ALBUM_IMAGE_URL, "artist-1", LocalDate.of(2017, 3, 24))));
     }
 
     private BlockingQueue<Map<String, Object>> createRoomAndSubscribe(StompSession host) {

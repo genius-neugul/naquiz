@@ -19,6 +19,12 @@ public class RoundStartedHandlers {
                 .forEach(handler -> handler.onRoundStarted(round));
     }
 
+    public void roundEnded(EndedRound round) {
+        handlers.stream()
+                .filter(handler -> handler.supports(round.gameType()))
+                .forEach(handler -> handler.onRoundEnded(round));
+    }
+
     public void gameFinished(Long roomId) {
         handlers.forEach(handler -> handler.onGameFinished(roomId));
     }

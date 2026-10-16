@@ -45,7 +45,8 @@ public class AnswerSubmitter {
             roomGameUpdater.endGame(progress.getRoomId(), solver.participantId());
             gameProgressRepository.deleteByRoomId(progress.getRoomId());
         }
-        return new RoundSolve(progress.getRoomId(), progress.getGameId(), progress.getRoundNo(),
+        return new RoundSolve(progress.getRoomId(), progress.getGameId(), progress.getGameType(), progress.getRoundNo(),
+                progress.getQuestionId(),
                 solver.participantId(), solver.nickname(), solver.tag(), text, progress.getAnswer(),
                 LocalDateTime.now(clock), roomGameUpdater.readScores(progress.getRoomId()), gameFinished);
     }

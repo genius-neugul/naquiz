@@ -34,7 +34,8 @@ public class ChatStompController {
     }
 
     private SolvedRound toSolvedRound(AnswerSolvedResult solved) {
-        return new SolvedRound(solved.roomId(), solved.gameId(), solved.roundNo(), solved.solverId(), solved.nickname(),
+        return new SolvedRound(solved.roomId(), solved.gameId(), solved.gameType(), solved.roundNo(), solved.questionId(),
+                solved.solverId(), solved.nickname(),
                 solved.tag(), solved.text(), solved.answer(), solved.subAnswer(), solved.solvedAt(),
                 solved.scores().stream().map(score -> new SolvedRound.Score(score.participantId(), score.score())).toList(),
                 solved.gameFinished());
