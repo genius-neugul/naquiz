@@ -90,7 +90,8 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | SEND | `/app/rooms/create` | `{ "nickname": "방장" }` | 방을 만들고 초대 코드를 발급한다. 닉네임은 앞뒤 공백을 빼고 1~10자 |
 | SEND | `/app/rooms/join` | `{ "inviteCode": "A1B2C3", "nickname": "감자" }` | 초대 코드로 방에 들어간다. 초대 코드는 앞뒤 공백을 빼고 대문자로 바꿔 받는다. 닉네임 규칙은 방 만들기와 같고, 같은 방에서 겹쳐도 된다 |
 | SEND | `/app/rooms/leave` | 없음 | 방을 나간다. 들어간 방이 없으면 무시한다 |
-| SEND | `/app/rooms/chat` | `{ "text": "안녕하세요" }` | 들어가 있는 방에 채팅을 보낸다. 앞뒤 공백을 빼고 1~100자 |
+| SEND | `/app/rooms/chat` | `{ "text": "안녕하세요" }` | 들어가 있는 방에 채팅을 보낸다. 앞뒤 공백을 빼고 1~100자. 라운드 진행 중이면 정답 제출을 겸한다(「게임」) |
+| SEND | `/app/games/start` | `{ "gameType": "MOVIE_STILL_CUT", "targetScore": 5 }` | 방장이 게임을 시작한다. `gameType`은 `SONG`, `MOVIE_TWENTY_QUESTIONS`, `MOVIE_STILL_CUT`, `targetScore`는 1~50. 혼자 있어도 시작할 수 있다 |
 | SUBSCRIBE | `/user/queue/room` | 방 상태 | 방 만들기·참가하기 응답. 보낸 연결에만 온다 |
 | SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다. 채팅도 이 토픽으로 온다(보낸 사람 포함) |
 | SUBSCRIBE | `/user/queue/errors` | 에러 응답 | 메시지 처리 실패. 보낸 연결에만 온다 |
@@ -119,6 +120,10 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `PARTICIPANT_LEFT` | 게스트가 나갔다 | `{ "type": "PARTICIPANT_LEFT", "participantId": 2, "participants": [...] }` (남은 참가자) |
 | `ROOM_CLOSED` | 방장이 나가 방이 끝났다 | `{ "type": "ROOM_CLOSED", "participantId": 1 }` |
 | `CHAT` | 참가자가 채팅을 보냈다 | 아래 「채팅」 |
+| `GAME_STARTED` | 방장이 게임을 시작했다 | 아래 「게임」 |
+| `ROUND_STARTED` | 라운드가 열렸다 | 아래 「게임」 |
+| `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
+| `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
 
 **채팅**
 
@@ -129,19 +134,46 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - 채팅은 저장하지 않는다. 방에 들어온 뒤 구독한 채팅만 받는다.
 - `sentAt`은 서버가 받은 시각이다.
 
+**게임**
+
+```json
+{ "type": "GAME_STARTED", "gameId": 1, "gameType": "MOVIE_STILL_CUT", "targetScore": 5, "scores": [{ "participantId": 1, "score": 0 }] }
+{ "type": "ROUND_STARTED", "gameId": 1, "roundNo": 1, "startedAt": "2026-10-03T21:00:00" }
+{
+  "type": "ROUND_SOLVED", "gameId": 1, "roundNo": 1,
+  "solverId": 2, "nickname": "감자", "tag": 2, "text": "기생충",
+  "answer": "기생충", "subAnswer": "Parasite", "solvedAt": "2026-10-03T21:00:12",
+  "scores": [{ "participantId": 1, "score": 0 }, { "participantId": 2, "score": 1 }],
+  "nextRoundAt": "2026-10-03T21:00:15"
+}
+{ "type": "GAME_FINISHED", "gameId": 1, "winnerId": 2, "scores": [...] }
+```
+
+- 게임을 시작하면 `GAME_STARTED` 다음에 1라운드 `ROUND_STARTED`가 온다. 방 상태는 PLAYING이 되고 모든 점수는 0이다.
+- `ROUND_STARTED`에는 정답이 없다. 정답은 라운드가 끝날 때 `ROUND_SOLVED`로 공개한다.
+- 라운드 진행 중 채팅은 모두 정답 판정 대상이다. 가장 먼저 맞힌 채팅은 `CHAT` 대신 `ROUND_SOLVED`로 모두에게 간다(`text`가 그 채팅이다). 오답과 라운드 사이 채팅은 `CHAT`으로 간다.
+- `scores`는 방에 있는 참가자 모두의 현재 게임 점수다.
+- 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
+- 방장이 나가 방이 끝나면 게임도 승자 없이 끝난다. 게임 이벤트는 따로 없고 `ROOM_CLOSED`만 온다.
+- 시각(`startedAt`, `solvedAt`, `nextRoundAt`)은 서버 시각이다.
+
 **에러**
 
-본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅 관련 코드:
+본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅·게임 관련 코드:
 
 | code | 상황 |
 | --- | --- |
-| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다 |
+| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다. 게임 종류가 없거나 목표 점수가 1~50이 아니다 |
 | `ROOM_ALREADY_JOINED` | 이미 방에 들어가 있는 연결이 방을 또 만들거나 다른 방에 들어간다 |
 | `ROOM_INVITE_CODE_EXHAUSTED` | 겹치지 않는 초대 코드를 만들지 못했다 |
 | `ROOM_INVALID_INVITE_CODE` | 초대 코드가 숫자·영문 6자리가 아니다 |
 | `ROOM_NOT_FOUND` | 그 초대 코드의 방이 없다(방장이 나가 닫힌 방 포함) |
 | `ROOM_FULL` | 방 인원(10명)이 가득 찼다 |
 | `ROOM_ALREADY_PLAYING` | 게임이 진행 중인 방이다 |
-| `ROOM_NOT_JOINED` | 방에 들어가 있지 않은 연결이 채팅을 보낸다 |
+| `ROOM_NOT_JOINED` | 방에 들어가 있지 않은 연결이 채팅을 보내거나 게임을 시작한다 |
+| `GAME_INVALID_TYPE` | 게임 종류 코드가 올바르지 않다 |
+| `GAME_NOT_HOST` | 방장이 아닌 참가자가 게임을 시작한다 |
+| `GAME_ALREADY_PLAYING` | 이미 게임이 진행 중인 방에서 게임을 시작한다 |
+| `GAME_QUESTION_NOT_FOUND` | 그 게임 종류로 출제할 수 있는(승인되고 활성인) 문제가 없다 |
 
 ---

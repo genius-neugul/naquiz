@@ -11,3 +11,6 @@ app:
   websocket:
     # 게임 앱 개발 서버. Vite 프록시로 붙으면 같은 출처라 필요 없지만 직접 붙는 경우를 위해 둔다.
     allowed-origins: http://localhost:5173
+  game:
+    # 정답자가 나온 뒤 정답을 보여주고 다음 라운드를 열기까지 기다리는 시간
+    next-round-delay: 3s
