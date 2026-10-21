@@ -124,6 +124,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `ROUND_STARTED` | 라운드가 열렸다 | 아래 「게임」 |
 | `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
 | `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
+| `STILL_CUT_REVEALED` | 스틸컷 게임에서 다음 스틸컷을 보여준다 | 아래 「스틸컷 영화 맞추기」 |
 
 **채팅**
 
@@ -156,6 +157,19 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - 게임이 계속되면 `nextRoundAt`(정답자 확정 3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 정답자가 목표 점수에 도달하면 `nextRoundAt`은 `null`이고 바로 `GAME_FINISHED`가 오며, 방은 WAITING으로 돌아간다.
 - 방장이 나가 방이 끝나면 게임도 승자 없이 끝난다. 게임 이벤트는 따로 없고 `ROOM_CLOSED`만 온다.
 - 시각(`startedAt`, `solvedAt`, `nextRoundAt`)은 서버 시각이다.
+
+**스틸컷 영화 맞추기**
+
+```json
+{ "type": "STILL_CUT_REVEALED", "gameId": 1, "roundNo": 1, "order": 2, "total": 5,
+  "imageUrl": "https://www.kobis.or.kr/common/mast/movie/...jpg",
+  "revealedAt": "2026-10-04T21:00:10", "nextAt": "2026-10-04T21:00:20" }
+```
+
+- 스틸컷 게임(`MOVIE_STILL_CUT`) 라운드가 열리면 `ROUND_STARTED` 바로 뒤에 1번 스틸컷이 오고, 10초마다 다음 스틸컷이 온다. 새 스틸컷은 이전 스틸컷을 대체한다.
+- `order`는 1부터 센 공개 순서(영화 스틸컷의 노출 순서), `total`은 그 영화의 스틸컷 수다.
+- `nextAt`은 다음 스틸컷이 오는 시각이다. 마지막 스틸컷이면 `null`이다.
+- 정답자가 나오면(`ROUND_SOLVED`) 그 라운드의 스틸컷은 더 오지 않는다.
 
 **에러**
 

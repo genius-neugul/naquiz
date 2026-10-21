@@ -4,3 +4,4 @@ app:
   game:
     # 다음 라운드를 실제 3초씩 기다리지 않는다
     next-round-delay: 100ms
+    still-cut-interval: 300ms

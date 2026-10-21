@@ -38,7 +38,10 @@ public enum ErrorCode {
 
     // game - 불변식 위반
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
-    GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다.");
+    GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
+
+    // question - 불변식 위반
+    QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -74,13 +74,14 @@ core/
 ```
 
 - 모든 모듈의 Java 패키지는 `geniusneugul.project.core` 아래 도메인별(room, chat, game, question, vote, song, movie, report, admin, crawl, statistics)이다.
+- `game`은 공통(`game/common`)과 게임별(`game/stillcut`, 이후 노래·스무고개) 패키지로 한 번 더 나눈다(`docs/ARCHITECTURE.md` 「기본 패키지 구조」).
 - 앱 모듈의 `src/test/java/geniusneugul/project/core/support/`에 통합 테스트 공통 상위 클래스·설정을 둔다(목록은 docs/TEST.md 「Spring Context 재사용」).
 
 ## 작업 규칙
 
 - 게임 규칙(정답 판정, 마스킹, 투표)은 순수 함수로 분리하고 단위 테스트를 먼저 작성한다. 규칙을 바꾸면 테스트도 함께 바꾼다.
 - 게임 상태(점수, 현재 문제, 투표 현황, 타이머)는 서버가 단일 진실 원천이다. 클라이언트는 표시만 한다.
-- 타이머(다음 라운드 3초, 10초 패스, 스틸컷 10초 교체, 시간 경과 힌트)는 서버 기준으로 돌린다. 게임 타이머는 game-api의 `gameTaskScheduler`(`common/config/GameSchedulerConfig`)로 돌리고, 다음 라운드 간격은 `app.game.next-round-delay`(테스트는 `src/test/resources/config/application.yml`에서 짧게 덮는다)다. 현재 시각은 주입받은 `Clock` 빈에서 읽는다(`docs/TEST.md` 「시간 제어」).
+- 타이머(다음 라운드 3초, 10초 패스, 스틸컷 10초 교체, 시간 경과 힌트)는 서버 기준으로 돌린다. 게임 타이머는 game-api의 `CountdownTimer`(`game/common/presentation`, 방·종류마다 하나, `gameTaskScheduler` 사용)로 돌린다. 간격은 `app.game.next-round-delay`(다음 라운드), `app.game.still-cut-interval`(스틸컷 교체)이고, 테스트는 `src/test/resources/config/application.yml`에서 짧게 덮는다. 현재 시각은 주입받은 `Clock` 빈에서 읽는다(`docs/TEST.md` 「시간 제어」).
 - 테스트는 `docs/TEST.md` 「무엇을 테스트할까」 기준으로 필수만 쓴다. 단순 CRUD·위임·프레임워크 동작은 테스트하지 않는다.
 - **테스트를 쓰기 전에 검증할 행위 목록과 각각을 테스트하는 이유를 사용자에게 먼저 제시하고 확인받는다.**
 - 통합 테스트는 `support/`의 공통 상위 클래스를 상속해 Spring context를 재사용한다(`docs/TEST.md` 「Spring Context 재사용」). `@DirtiesContext`, 직접 붙인 `@SpringBootTest`, 테스트 클래스의 `@MockitoBean`은 훅이 쓰기 전에 막는다.

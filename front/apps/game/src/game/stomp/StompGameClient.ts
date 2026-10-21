@@ -28,7 +28,8 @@ type RoomEvent =
   | GameStartedResponse
   | RoundStartedResponse
   | RoundSolvedResponse
-  | GameFinishedResponse;
+  | GameFinishedResponse
+  | StillCutRevealedResponse;
 
 interface ScoreResponse {
   participantId: number;
@@ -64,6 +65,18 @@ interface RoundSolvedResponse {
   solvedAt: string;
   scores: ScoreResponse[];
   nextRoundAt: string | null;
+}
+
+/** 스틸컷 게임. 새 스틸컷은 이전 것을 대체한다. 마지막 컷이면 nextAt이 null이다 */
+interface StillCutRevealedResponse {
+  type: "STILL_CUT_REVEALED";
+  gameId: number;
+  roundNo: number;
+  order: number;
+  total: number;
+  imageUrl: string;
+  revealedAt: string;
+  nextAt: string | null;
 }
 
 interface GameFinishedResponse {
@@ -102,7 +115,7 @@ function defaultBrokerUrl(): string {
 }
 
 /**
- * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행을
+ * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·스틸컷 공개를
  * 서버로 처리한다. 게임 상태는 서버 이벤트로만 바꾼다.
  * 서버는 연결 하나를 참가자 한 명으로 보므로 방을 나가면 연결도 닫는다(재접속 없음).
  */
@@ -263,6 +276,9 @@ export class StompGameClient implements GameClient {
       case "GAME_FINISHED":
         this.onGameFinished(event);
         return;
+      case "STILL_CUT_REVEALED":
+        this.onStillCutRevealed(event);
+        return;
     }
     // 게임 중에 들어오고 나가도 남은 참가자의 점수는 그대로 둔다.
     const participants = event.participants.map(toParticipant).map((p) => {
@@ -354,6 +370,7 @@ export class StompGameClient implements GameClient {
         ...round,
         status: "SOLVED",
         votes: [],
+        stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
         result: {
           answer: event.answer,
           subAnswer: event.subAnswer ?? "",
@@ -367,6 +384,24 @@ export class StompGameClient implements GameClient {
     });
     this.post({ id: `chat-${++this.messageSeq}`, kind: "correct", participantId: solverId, nickname: event.nickname, tag: event.tag, text: event.text });
     this.system(`정답은 ${answer}`);
+  }
+
+  private onStillCutRevealed(event: StillCutRevealedResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    this.setState({
+      ...this.state,
+      round: {
+        ...round,
+        stillCut: {
+          index: event.order - 1,
+          total: event.total,
+          imageUrl: event.imageUrl,
+          shownAt: Date.parse(event.revealedAt),
+          nextAt: event.nextAt ? Date.parse(event.nextAt) : null,
+        },
+      },
+    });
   }
 
   private onGameFinished(event: GameFinishedResponse): void {

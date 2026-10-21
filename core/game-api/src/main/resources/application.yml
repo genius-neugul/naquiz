@@ -14,3 +14,5 @@ app:
   game:
     # 정답자가 나온 뒤 정답을 보여주고 다음 라운드를 열기까지 기다리는 시간
     next-round-delay: 3s
+    # 스틸컷 게임에서 다음 스틸컷으로 넘어가는 간격
+    still-cut-interval: 10s

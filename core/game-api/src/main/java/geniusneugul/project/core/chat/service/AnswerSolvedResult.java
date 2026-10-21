@@ -1,6 +1,6 @@
 package geniusneugul.project.core.chat.service;
 
-import geniusneugul.project.core.game.implement.RoundSolve;
+import geniusneugul.project.core.game.common.implement.RoundSolve;
 import java.time.LocalDateTime;
 import java.util.List;
 

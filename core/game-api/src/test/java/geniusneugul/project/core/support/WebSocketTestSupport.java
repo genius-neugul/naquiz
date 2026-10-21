@@ -21,8 +21,10 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 /**
  * WebSocket(STOMP) 테스트 공통 상위 클래스. 실제 포트로 서버를 띄우고 STOMP 클라이언트로 붙는다(docs/TEST.md 「WebSocket 테스트」).
  * 모든 소켓 테스트가 이 설정을 공유해야 context가 한 번만 뜬다.
+ * 테스트가 필요한 문제·콘텐츠를 직접 넣으므로 초기 데이터 SQL은 실행하지 않는다.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "naquiz.initial-data.enabled=false")
 public abstract class WebSocketTestSupport {
 
     /** 메시지 도착을 기다리는 상한. 한곳에서만 조정한다 */
