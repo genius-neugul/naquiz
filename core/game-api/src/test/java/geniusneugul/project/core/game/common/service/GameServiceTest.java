@@ -8,6 +8,7 @@ import geniusneugul.project.core.chat.service.AnswerSolvedResult;
 import geniusneugul.project.core.chat.service.ChatService;
 import geniusneugul.project.core.chat.service.SendChatCommand;
 import geniusneugul.project.core.chat.service.SendChatResult;
+import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.common.exception.BusinessException;
 import geniusneugul.project.core.room.service.CreateRoomCommand;
 import geniusneugul.project.core.room.service.JoinRoomCommand;
@@ -23,7 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 class GameServiceTest extends IntegrationTestSupport {
 
-    private static final String GAME_TYPE = "MOVIE_STILL_CUT";
+    private static final GameType GAME_TYPE = GameType.MOVIE_STILL_CUT;
 
     @Autowired
     private GameService gameService;
@@ -137,7 +138,7 @@ class GameServiceTest extends IntegrationTestSupport {
     private Long insertQuestion(String answer, String reviewStatus, boolean active) {
         jdbcTemplate.update(
                 "INSERT INTO question (game_type, content_id, answer, sub_answer, active, review_status) VALUES (?, 1, ?, NULL, ?, ?)",
-                GAME_TYPE, answer, active, reviewStatus);
+                GAME_TYPE.name(), answer, active, reviewStatus);
         return jdbcTemplate.queryForObject("SELECT id FROM question WHERE answer = ?", Long.class, answer);
     }
 

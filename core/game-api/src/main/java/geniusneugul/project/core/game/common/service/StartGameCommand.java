@@ -1,4 +1,6 @@
 package geniusneugul.project.core.game.common.service;
 
-public record StartGameCommand(String gameType, int targetScore, String participantToken) {
+import geniusneugul.project.core.common.domain.GameType;
+
+public record StartGameCommand(GameType gameType, int targetScore, String participantToken) {
 }
