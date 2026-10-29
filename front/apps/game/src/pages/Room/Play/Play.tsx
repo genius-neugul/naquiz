@@ -61,7 +61,7 @@ export function Play({ room, round }: { room: RoomState; round: Round }) {
 
 function SkipVoteBanner({ vote, room }: { vote: Vote; room: RoomState }) {
   const client = useGameClient();
-  const need = required(room);
+  const total = room.participants.length;
   const voted = vote.approvals.includes(room.meId);
   return (
     <div className={styles.skip}>
@@ -69,10 +69,10 @@ function SkipVoteBanner({ vote, room }: { vote: Vote; room: RoomState }) {
         <div>
           <b>{vote.initiatorNickname}</b>님이 <b>스킵</b> 투표를 열었어요
         </div>
-        <ProgressBar value={vote.approvals.length / need} label="스킵 투표 찬성" />
+        <ProgressBar value={vote.approvals.length / total} marker={required(room) / total} thick label="스킵 투표 찬성" />
       </div>
       <span className={styles.count}>
-        {vote.approvals.length} / {need}
+        {vote.approvals.length} / {total}
       </span>
       {voted ? (
         <span className={styles.voted}>투표함</span>
