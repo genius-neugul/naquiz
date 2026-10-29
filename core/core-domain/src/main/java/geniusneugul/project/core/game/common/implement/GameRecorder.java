@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 방 락 안에서 확정한 정답자를 게임·라운드 기록으로 DB에 남긴다.
+ * 방 락 안에서 확정한 정답자·스킵을 게임·라운드 기록으로 DB에 남긴다.
  * 판정은 메모리에서 이미 끝났으므로 기록이 실패해도 게임은 계속돼야 한다. 그래서 정답 제출 흐름과 분리된
  * 독립 트랜잭션으로 쓰고, 실패는 호출한 쪽이 로그로 남기고 넘어간다.
  */
@@ -23,5 +23,10 @@ public class GameRecorder {
         if (solve.gameFinished()) {
             game.finish(solve.solverId(), solve.solvedAt());
         }
+    }
+
+    @Transactional
+    public void recordSkip(RoundSkip skip) {
+        gameReader.readForUpdate(skip.gameId()).skipRound(skip.roundNo(), skip.skippedAt());
     }
 }

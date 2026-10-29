@@ -1,6 +1,8 @@
 package geniusneugul.project.core.room.presentation;
 
+import geniusneugul.project.core.room.service.LeaveResult;
 import geniusneugul.project.core.room.service.RoomService;
+import geniusneugul.project.core.vote.presentation.VoteRejudger;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -16,6 +18,7 @@ public class RoomDisconnectListener {
 
     private final RoomService roomService;
     private final RoomBroadcaster roomBroadcaster;
+    private final VoteRejudger voteRejudger;
 
     @EventListener
     public void onDisconnect(SessionDisconnectEvent event) {
@@ -23,6 +26,14 @@ public class RoomDisconnectListener {
         if (principal == null) {
             return;
         }
-        roomService.leave(principal.getName()).ifPresent(roomBroadcaster::broadcastLeave);
+        roomService.leave(principal.getName()).ifPresent(this::announceLeave);
+    }
+
+    // 게스트가 나가 인원이 줄면 진행 중인 투표를 다시 판정한다. 퇴장을 먼저 알린다.
+    private void announceLeave(LeaveResult result) {
+        roomBroadcaster.broadcastLeave(result);
+        if (!result.closed()) {
+            voteRejudger.rejudge(result.roomId());
+        }
     }
 }

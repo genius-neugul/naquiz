@@ -40,6 +40,12 @@ public enum ErrorCode {
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
     GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
 
+    // vote
+    VOTE_INVALID_TYPE(HttpStatus.BAD_REQUEST, "투표 종류가 올바르지 않습니다."),
+    VOTE_ROUND_NOT_IN_PROGRESS(HttpStatus.CONFLICT, "진행 중인 라운드가 없습니다."),
+    VOTE_UNSUPPORTED_TYPE(HttpStatus.BAD_REQUEST, "아직 열 수 없는 투표 종류입니다."),
+    VOTE_INVALID_TARGET(HttpStatus.BAD_REQUEST, "투표 대상이 올바르지 않습니다."),
+
     // question - 불변식 위반
     QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");
 

@@ -2,8 +2,10 @@ package geniusneugul.project.core.room.implement;
 
 import geniusneugul.project.core.common.exception.BusinessException;
 import geniusneugul.project.core.common.exception.ErrorCode;
+import geniusneugul.project.core.room.domain.Participant;
 import geniusneugul.project.core.room.domain.Room;
 import geniusneugul.project.core.room.infra.RoomRepository;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -30,6 +32,19 @@ public class RoomMemberReader {
         return roomRepository.findByParticipantToken(participantToken)
                 .flatMap(room -> roomLock.withLock(room.getId(), () -> findMember(room, participantToken)))
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_JOINED));
+    }
+
+    /**
+     * 방에 접속 중인 참가자 ID. 투표 판정처럼 판정 시점의 인원이 필요할 때 방 락 안에서 쓴다.
+     * 방이 닫혀 지워졌으면 비어 있다.
+     */
+    public List<Long> readParticipantIds(Long roomId) {
+        return roomRepository.findById(roomId)
+                .filter(room -> !room.isClosed())
+                .map(room -> roomLock.withLock(roomId, () -> room.getParticipants().stream()
+                        .map(Participant::getId)
+                        .toList()))
+                .orElse(List.of());
     }
 
     // 조회한 뒤에 나갔을 수 있어 방에서 다시 찾는다.
