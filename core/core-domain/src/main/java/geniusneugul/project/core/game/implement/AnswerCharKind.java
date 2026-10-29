@@ -1,4 +1,4 @@
-package geniusneugul.project.core.game.domain;
+package geniusneugul.project.core.game.implement;
 
 /**
  * 정답 힌트를 만들 때 쓰는 글자 분류. 한글은 완성형 음절(가~힣)만 해당하고, 자모만 있는 글자는 특수문자로 본다.

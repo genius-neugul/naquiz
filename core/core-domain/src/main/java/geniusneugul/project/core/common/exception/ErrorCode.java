@@ -29,7 +29,11 @@ public enum ErrorCode {
     ROOM_INVITE_CODE_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "이미 쓰고 있는 초대 코드입니다."),
 
     // game
-    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다.");
+    GAME_NO_MORE_ANSWER_HINT(HttpStatus.CONFLICT, "더 공개할 정답 힌트가 없습니다."),
+
+    // game - 불변식 위반. 응답에는 쓰지 않고 IllegalStateException·IllegalArgumentException 메시지로만 쓴다(docs/EXCEPTION.md 「불변식 위반」)
+    GAME_NOT_ANSWER_HINT_STAGE(HttpStatus.INTERNAL_SERVER_ERROR, "정답 힌트 단계가 아닙니다."),
+    GAME_ANSWER_HINT_LENGTH_MISMATCH(HttpStatus.INTERNAL_SERVER_ERROR, "직전 공개 내용과 정답의 글자 수가 다릅니다.");
 
     private final HttpStatus status;
     private final String message;

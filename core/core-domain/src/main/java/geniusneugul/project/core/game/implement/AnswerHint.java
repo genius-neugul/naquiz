@@ -1,5 +1,7 @@
-package geniusneugul.project.core.game.domain;
+package geniusneugul.project.core.game.implement;
 
+import geniusneugul.project.core.common.exception.ErrorCode;
+import geniusneugul.project.core.game.domain.HintType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.stream.Collectors;
 public final class AnswerHint {
 
     // 2단계에서 직전 공개 내용과 자리별로 비교하려면 마스킹 문자가 코드 포인트 하나여야 한다(⚫️처럼 이모지 선택자를 붙이지 않는다).
-    public static final int MASK = 0x26AB;
+    private static final int MASK = 0x26AB;
 
     private static final String CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
     private static final int SYLLABLES_PER_CHOSEONG = 588;
@@ -52,7 +54,7 @@ public final class AnswerHint {
                 case ANSWER_MASK -> Optional.of(mask(answer));
                 case ANSWER_PARTIAL -> Optional.of(revealPartial(answer, random));
                 case ANSWER_RANDOM_CHAR -> revealBase == null ? Optional.empty() : revealRandomChar(answer, revealBase, random);
-                default -> throw new IllegalStateException("정답 힌트 단계가 아닙니다: " + stage);
+                default -> throw new IllegalStateException(ErrorCode.GAME_NOT_ANSWER_HINT_STAGE.getMessage() + " stage=" + stage);
             };
             if (content.isPresent() && !content.get().equals(answer)) {
                 return Optional.of(new AnswerHintContent(stage, content.get()));
@@ -65,7 +67,7 @@ public final class AnswerHint {
      * 기본 힌트(ANSWER_MASK). 띄어쓰기를 빼고 한글·영문·숫자는 가리고 특수문자는 보여준 뒤, 글자 수와 문자 종류 포함 여부를 붙인다.
      * 예: {@code ⚫⚫⚫⚫,⚫⚫ (7글자(특수문자 포함), 한글 O, 영어 X, 숫자 X, 특수문자 O)}
      */
-    public static String mask(String answer) {
+    static String mask(String answer) {
         List<AnswerCharKind> kinds = answer.codePoints().mapToObj(AnswerCharKind::of)
                 .filter(kind -> kind != AnswerCharKind.SPACE)
                 .toList();
@@ -83,7 +85,7 @@ public final class AnswerHint {
     /**
      * 1단계(ANSWER_PARTIAL). 띄어쓰기·숫자·특수문자를 보여주고, 한글은 초성을, 영문은 단어마다 일부 글자를 무작위로 보여준다.
      */
-    public static String revealPartial(String answer, RandomGenerator random) {
+    static String revealPartial(String answer, RandomGenerator random) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = Arrays.stream(answerChars)
                 .map(c -> switch (AnswerCharKind.of(c)) {
@@ -92,23 +94,24 @@ public final class AnswerHint {
                     default -> c;
                 })
                 .toArray();
-        for (List<Integer> word : englishWords(answerChars)) {
-            for (int index : pickIndices(word, partialRevealCount(word.size()), random)) {
+        for (EnglishWord word : englishWords(answerChars)) {
+            for (int index : pickIndices(word.indices(), partialRevealCount(word.length()), random)) {
                 revealed[index] = answerChars[index];
             }
         }
-        return toString(revealed);
+        return fromCodePoints(revealed);
     }
 
     /**
      * 2단계(ANSWER_RANDOM_CHAR). 직전 공개 내용에서 원래 글자가 보이지 않는 자리 하나를 무작위로 원래 글자로 바꾼다.
      * 공개한 뒤에도 그런 자리가 하나 이상 남아야 하므로, 1개 이하만 남았으면 빈 값이다.
      */
-    public static Optional<String> revealRandomChar(String answer, String previousContent, RandomGenerator random) {
+    static Optional<String> revealRandomChar(String answer, String previousContent, RandomGenerator random) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = previousContent.codePoints().toArray();
         if (answerChars.length != revealed.length) {
-            throw new IllegalArgumentException("직전 공개 내용과 정답의 글자 수가 다릅니다.");
+            throw new IllegalArgumentException(ErrorCode.GAME_ANSWER_HINT_LENGTH_MISMATCH.getMessage()
+                    + " answerLength=" + answerChars.length + " previousLength=" + revealed.length);
         }
         List<Integer> hidden = new ArrayList<>();
         for (int i = 0; i < answerChars.length; i++) {
@@ -121,7 +124,7 @@ public final class AnswerHint {
         }
         int index = hidden.get(random.nextInt(hidden.size()));
         revealed[index] = answerChars[index];
-        return Optional.of(toString(revealed));
+        return Optional.of(fromCodePoints(revealed));
     }
 
     /**
@@ -142,19 +145,19 @@ public final class AnswerHint {
         return CHOSEONG.charAt((syllable - AnswerCharKind.HANGUL_FIRST) / SYLLABLES_PER_CHOSEONG);
     }
 
-    private static List<List<Integer>> englishWords(int[] chars) {
-        List<List<Integer>> words = new ArrayList<>();
+    private static List<EnglishWord> englishWords(int[] chars) {
+        List<EnglishWord> words = new ArrayList<>();
         List<Integer> current = new ArrayList<>();
         for (int i = 0; i < chars.length; i++) {
             if (AnswerCharKind.of(chars[i]) == AnswerCharKind.ENGLISH) {
                 current.add(i);
             } else if (!current.isEmpty()) {
-                words.add(current);
+                words.add(new EnglishWord(current));
                 current = new ArrayList<>();
             }
         }
         if (!current.isEmpty()) {
-            words.add(current);
+            words.add(new EnglishWord(current));
         }
         return words;
     }
@@ -168,9 +171,19 @@ public final class AnswerHint {
         return picked;
     }
 
-    private static String toString(int[] codePoints) {
+    private static String fromCodePoints(int[] codePoints) {
         return Arrays.stream(codePoints)
                 .mapToObj(Character::toString)
                 .collect(Collectors.joining());
+    }
+
+    /**
+     * 정답에서 영문 단어 하나가 차지하는 자리(코드 포인트 인덱스).
+     */
+    private record EnglishWord(List<Integer> indices) {
+
+        int length() {
+            return indices.size();
+        }
     }
 }

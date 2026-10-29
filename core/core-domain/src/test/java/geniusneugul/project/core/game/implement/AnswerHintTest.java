@@ -1,7 +1,8 @@
-package geniusneugul.project.core.game.domain;
+package geniusneugul.project.core.game.implement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import geniusneugul.project.core.game.domain.HintType;
 import java.util.Optional;
 import java.util.random.RandomGenerator;
 import org.junit.jupiter.api.DisplayName;

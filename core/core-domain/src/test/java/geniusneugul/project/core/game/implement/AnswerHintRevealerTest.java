@@ -2,11 +2,10 @@ package geniusneugul.project.core.game.implement;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import geniusneugul.project.core.common.domain.GameType;
 import geniusneugul.project.core.common.exception.BusinessException;
 import geniusneugul.project.core.common.exception.ErrorCode;
-import geniusneugul.project.core.game.domain.Game;
-import geniusneugul.project.core.game.fixture.GameFixture;
+import geniusneugul.project.core.game.domain.Round;
+import geniusneugul.project.core.game.fixture.RoundFixture;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -22,11 +21,11 @@ class AnswerHintRevealerTest {
     @DisplayName("더 열 정답 힌트 단계가 없으면 공개에 실패한다.")
     void reveal_noMoreAnswerHint() {
         // given
-        Game game = GameFixture.game(GameType.SONG);
-        revealer.reveal(game, 1, "1987");
+        Round round = RoundFixture.round();
+        revealer.reveal(round, "1987");
 
         // when & then
-        assertThatThrownBy(() -> revealer.reveal(game, 1, "1987"))
+        assertThatThrownBy(() -> revealer.reveal(round, "1987"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.GAME_NO_MORE_ANSWER_HINT);

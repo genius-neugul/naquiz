@@ -16,11 +16,8 @@ public class RevealedHint {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "game_id")
-    private Game game;
-
-    @Column(nullable = false)
-    private int roundNo;
+    @JoinColumn(name = "round_id")
+    private Round round;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -36,11 +33,10 @@ public class RevealedHint {
     @Column(nullable = false)
     private LocalDateTime revealedAt;
 
-    static RevealedHint of(Game game, int roundNo, HintType hintType, String revealedContent, int revealOrder,
+    static RevealedHint of(Round round, HintType hintType, String revealedContent, int revealOrder,
                            LocalDateTime revealedAt) {
         RevealedHint hint = new RevealedHint();
-        hint.game = game;
-        hint.roundNo = roundNo;
+        hint.round = round;
         hint.hintType = hintType;
         hint.revealedContent = revealedContent;
         hint.revealOrder = revealOrder;
