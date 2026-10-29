@@ -21,7 +21,7 @@
 - 실시간 통신: Spring WebSocket + STOMP(simple broker), `game-api`의 `/ws`. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
 - Gradle 멀티모듈: `core-domain`(라이브러리), `game-api`, `admin-api`, `crawler-batch`(실행 앱). 역할은 `docs/ARCHITECTURE.md` 「모듈 구조」
 - 영속성: Spring Data JPA. 기본(로컬)·테스트는 H2 인메모리, `local-dev` 프로필은 MySQL 8(`docker-compose.yml`). 설정은 `core-domain`의 `domain.yml` 한 벌
-- 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
+- 저장 위치: 통계에 쓰이거나 원래 영속 데이터인 모델(게임·라운드·공개된 힌트·공개된 단서·끝난 투표·문제·콘텐츠·오류 신고·관리자·크롤링 실행)은 DB, 방·참가자와 진행 중인(OPEN) 투표는 서버 메모리(`docs/ARCHITECTURE.md` 「Infra 작성 규칙」)
 - 캐시: 없음
 - Lombok
 - 인증: 없음. 참가자는 비회원 게스트이고, 실시간 연결마다 서버가 붙이는 Principal 이름을 참가자 토큰으로 쓴다
