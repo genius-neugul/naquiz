@@ -15,7 +15,7 @@
 - Vite 8, React 19, TypeScript 6 (strict), CSS Modules, react-router 7
 - 테스트: Vitest 4 (`packages/shared` 순수 함수)
 - 린트: ESLint 10 + typescript-eslint + react-hooks
-- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 지금은 방 만들기·참가하기·나가기와 채팅만 서버로 처리하고, 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
+- 실시간 통신: `@stomp/stompjs`로 게임 서버(`core/game-api`)의 `/ws`에 붙는다(`StompGameClient`). 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·게임 종료, 스틸컷 공개를 서버로 처리하고(힌트·투표·스무고개 단서·신고는 아직 없음), 기본 실행은 Mock 클라이언트(`MockGameClient`, `MockAdminClient`)다. 규격은 `../docs/API.md` 「실시간 메시지(STOMP) 규격」
 - `.npmrc`의 `legacy-peer-deps=true`는 npm 10.9의 peer 해석 버그(vite 8 → `@vitejs/devtools` → vitest 순환에서 `edgesOut` 오류)를 피하려고 둔다. 필요한 peer는 `package.json`에 직접 적는다
 
 ## 자주 쓰는 명령
@@ -47,8 +47,8 @@ front/
 │   │       ├── game/        GameClient 인터페이스, 상태 타입, GameProvider(useRoom), selectors
 │   │       │   ├── mock/    MockGameClient(봇 시뮬레이션), fixtures
 │   │       │   └── stomp/   StompGameClient(게임 서버 STOMP 연결)
-│   │       ├── components/  Header, ReportPanel(문제 오류 신고), ParticipantName(닉네임#태그 표시)
-│   │       ├── hooks/       useNow(남은 시간 표시)
+│   │       ├── components/  Header, ReportPanel(문제 오류 신고), ParticipantName(닉네임#태그 표시), Countdown(서버 카운트다운 남은 시간·진행 막대)
+│   │       ├── hooks/       useNow(남은 시간 표시, "frame"이면 매 프레임 갱신), useCountdown(마감 시각까지 남은 초·진행률, smooth면 매 프레임 갱신)
 │   │       └── pages/       Home(방 만들기·참가), Room(대기실·게임 진행·채팅·결과)
 │   └── admin/           @naquiz/admin 백오피스 앱
 │       └── src/
@@ -66,7 +66,7 @@ front/
 - 두 앱이 함께 쓰는 코드는 앱에 복사하지 않고 `packages/ui`(시각 요소) 또는 `packages/shared`(타입·상수·순수 함수)에 둔다. 앱끼리 서로 import하지 않는다.
 - 색·반경·간격·폰트는 `packages/ui/src/tokens.css`의 CSS 변수만 쓴다. 색을 하드코딩하지 않는다. 다크 모드는 토큰 재정의로만 처리한다.
 - 스타일은 컴포넌트 옆 `*.module.css`에 둔다. inline style은 진행률 width처럼 런타임에 계산되는 값에만 쓴다.
-- 게임 상태는 `GameClient` 인터페이스로만 읽고 바꾼다. 컴포넌트에서 게임 타이머·봇 로직을 돌리지 않는다(남은 시간 표시용 `useNow`는 예외). 서버가 생기면 게임 상태의 단일 진실 원천은 서버이고(`../core/CLAUDE.md`), 프론트는 표시만 한다. Mock 구현은 서버가 붙을 때까지의 임시 구현이다.
+- 게임 상태는 `GameClient` 인터페이스로만 읽고 바꾼다. 컴포넌트에서 게임 타이머·봇 로직을 돌리지 않는다(남은 시간 표시용 `useNow`는 예외). 서버 카운트다운(스틸컷 교체, 스무고개 차례 등)은 서버가 보낸 마감 시각으로 `Countdown`/`useCountdown`을 써서 그린다. 서버가 생기면 게임 상태의 단일 진실 원천은 서버이고(`../core/CLAUDE.md`), 프론트는 표시만 한다. Mock 구현은 서버가 붙을 때까지의 임시 구현이다.
 - 열거형 값(게임 종류, 힌트·단서 종류, 신고 유형·상태)은 `../docs/DOMAIN.md`의 코드명(`SONG`, `ANSWER_MASK` 등)을 그대로 쓴다.
 - `packages/shared`의 정답 판정·마스킹·투표 함수는 `../docs/DOMAIN.md` 규칙을 따른다. 규칙을 바꾸면 테스트도 함께 바꾼다.
 - 실제 `<button>`, `<label>`+`<input>`을 쓰고, 아이콘만 있는 버튼에는 `aria-label`을 단다. 아이콘은 `@naquiz/ui`의 `Icon`(인라인 stroke SVG)을 쓰고 이모지는 쓰지 않는다.

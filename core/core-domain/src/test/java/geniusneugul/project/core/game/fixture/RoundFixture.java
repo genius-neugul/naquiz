@@ -1,14 +1,14 @@
 package geniusneugul.project.core.game.fixture;
 
-import geniusneugul.project.core.game.domain.Round;
-import org.springframework.beans.BeanUtils;
+import geniusneugul.project.core.common.domain.GameType;
+import geniusneugul.project.core.game.common.domain.Game;
+import geniusneugul.project.core.game.common.domain.Round;
+import java.time.LocalDateTime;
 
-/**
- * 라운드 시작 로직이 아직 없어 Round를 만들 생성자가 없다. 기본 생성자로만 만든다.
- */
 public class RoundFixture {
 
     public static Round round() {
-        return BeanUtils.instantiateClass(Round.class);
+        LocalDateTime now = LocalDateTime.of(2026, 10, 3, 9, 0);
+        return Game.start(1L, GameType.MOVIE_TWENTY_QUESTIONS, Game.MIN_TARGET_SCORE, now).startRound(1L, now);
     }
 }

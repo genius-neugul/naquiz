@@ -5,6 +5,7 @@ import geniusneugul.project.core.common.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.Getter;
 
@@ -82,6 +83,40 @@ public class Room {
         return leaving;
     }
 
+    /**
+     * 방장이 게임을 시작한다. 대기 중인 방에서만 시작할 수 있고, 모든 참가자의 점수를 0으로 되돌린다.
+     * 혼자 있어도 시작할 수 있다.
+     */
+    public void startGame(String participantToken) {
+        Participant starter = findParticipant(participantToken)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_JOINED));
+        if (!starter.isHost()) {
+            throw new BusinessException(ErrorCode.GAME_NOT_HOST);
+        }
+        if (status == RoomStatus.PLAYING) {
+            throw new BusinessException(ErrorCode.GAME_ALREADY_PLAYING);
+        }
+        status = RoomStatus.PLAYING;
+        participants.forEach(Participant::resetScore);
+    }
+
+    /** 정답자에게 1점을 주고 누적 점수를 돌려준다 */
+    public int addScore(Long participantId) {
+        return findParticipant(participantId)
+                .orElseThrow(() -> new IllegalStateException(
+                        ErrorCode.ROOM_PARTICIPANT_NOT_FOUND.getMessage() + " roomId=" + id + ", participantId=" + participantId))
+                .addScore();
+    }
+
+    /** 승자가 나와 게임이 끝났다. 방은 대기 상태로 돌아가고 승자의 승리 횟수가 늘어난다 */
+    public void endGame(Long winnerId) {
+        if (isClosed()) {
+            return;
+        }
+        status = RoomStatus.WAITING;
+        findParticipant(winnerId).ifPresent(Participant::winGame);
+    }
+
     public boolean hasParticipant(String participantToken) {
         return findParticipant(participantToken).isPresent();
     }
@@ -93,6 +128,12 @@ public class Room {
         }
         return participants.stream()
                 .filter(participant -> participant.hasToken(participantToken))
+                .findFirst();
+    }
+
+    private Optional<Participant> findParticipant(Long participantId) {
+        return participants.stream()
+                .filter(participant -> Objects.equals(participant.getId(), participantId))
                 .findFirst();
     }
 

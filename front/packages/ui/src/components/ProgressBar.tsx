@@ -8,11 +8,13 @@ export interface ProgressBarProps {
   thick?: boolean;
   tone?: "accent" | "ink";
   label?: string;
+  /** 값이 바뀔 때 막대 길이를 전환 효과로 움직인다. 매 프레임 값을 바꾸는 곳에서는 끈다 */
+  animated?: boolean;
 }
 
 const pct = (v: number) => `${Math.max(0, Math.min(1, v)) * 100}%`;
 
-export function ProgressBar({ value, marker, thick = false, tone = "accent", label }: ProgressBarProps) {
+export function ProgressBar({ value, marker, thick = false, tone = "accent", label, animated = true }: ProgressBarProps) {
   return (
     <div
       className={[styles.track, thick && styles.thick, tone === "ink" && styles.ink].filter(Boolean).join(" ")}
@@ -22,7 +24,7 @@ export function ProgressBar({ value, marker, thick = false, tone = "accent", lab
       aria-valuemax={100}
       aria-valuenow={Math.round(Math.max(0, Math.min(1, value)) * 100)}
     >
-      <div className={styles.bar} style={{ width: pct(value) }} />
+      <div className={[styles.bar, animated && styles.animated].filter(Boolean).join(" ")} style={{ width: pct(value) }} />
       {marker !== undefined && <div className={styles.marker} style={{ left: pct(Math.min(marker, 0.99)) }} />}
     </div>
   );
