@@ -118,8 +118,12 @@ public class Vote {
 
     /** 같은 라운드의 같은 대상 투표다. 같은 대상의 투표는 하나만 열린다 */
     public boolean isSameTarget(Long gameId, int roundNo, VoteType voteType, HintType targetHintType) {
-        return this.gameId.equals(gameId) && this.roundNo == roundNo && this.voteType == voteType
-                && this.targetHintType == targetHintType;
+        return isOfRound(gameId, roundNo) && this.voteType == voteType && this.targetHintType == targetHintType;
+    }
+
+    /** 그 게임의 그 라운드에서 연 투표다 */
+    public boolean isOfRound(Long gameId, int roundNo) {
+        return this.gameId.equals(gameId) && this.roundNo == roundNo;
     }
 
     private boolean hasApproved(Long participantId) {

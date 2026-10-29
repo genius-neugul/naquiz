@@ -85,6 +85,8 @@ public class VoteCaster {
             LocalDateTime now = LocalDateTime.now(clock);
             return findPlaying(roomId)
                     .map(progress -> openVoteRepository.findByRoomId(roomId).stream()
+                            // 지난 라운드 투표가 (만료가 실패해) 남아 있어도 현재 라운드를 건드리지 않게 현재 라운드 것만 본다.
+                            .filter(vote -> vote.isOfRound(progress.getGameId(), progress.getRoundNo()))
                             // 판정은 하나씩 차례로 한다. 앞선 통과로 라운드가 끝나 함께 만료된 투표는 건너뛴다.
                             .filter(Vote::isOpen)
                             .map(vote -> judge(roomId, progress, vote, now))

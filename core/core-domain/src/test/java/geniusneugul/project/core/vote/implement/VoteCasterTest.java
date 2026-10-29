@@ -156,6 +156,25 @@ class VoteCasterTest {
         assertThat(casts).singleElement().satisfies(cast -> assertThat(cast.pass()).isInstanceOf(RoundSkipPass.class));
     }
 
+    @DisplayName("지난 라운드의 투표가 만료되지 않고 남아 있어도 다시 판정할 때 현재 라운드를 스킵하지 않는다.")
+    @Test
+    void rejudge_staleVoteOfPreviousRound() {
+        // given 1라운드에 방장이 연 스킵 투표가 만료되지 않은 채 2라운드가 열렸다
+        GameProgress progress = startRound();
+        voteCaster.open(HOST_TOKEN, VoteType.SKIP, null);
+        progress.submit("기생충");
+        progress.startRound(2, 11L, new Answer("괴물", "The Host"));
+        room.leave(OTHER_GUEST_TOKEN);
+        room.leave(GUEST_TOKEN);
+
+        // when 방장 혼자 남아 지난 투표라면 통과 기준을 채운다
+        List<VoteCast> casts = voteCaster.rejudge(room.getId());
+
+        // then
+        assertThat(casts).isEmpty();
+        assertThat(progress.isRoundSolved()).isFalse();
+    }
+
     private GameProgress startRound() {
         GameProgress progress = new GameProgress(room.getId(), 1L, GameType.MOVIE_STILL_CUT, 3, 1, 10L,
                 new Answer("기생충", "Parasite"));
