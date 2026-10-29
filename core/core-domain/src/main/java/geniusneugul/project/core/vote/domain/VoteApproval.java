@@ -26,4 +26,10 @@ public class VoteApproval {
 
     @Column(nullable = false)
     private LocalDateTime approvedAt;
+
+    VoteApproval(Vote vote, Long participantId, LocalDateTime approvedAt) {
+        this.vote = vote;
+        this.participantId = participantId;
+        this.approvedAt = approvedAt;
+    }
 }

@@ -92,6 +92,8 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | SEND | `/app/rooms/leave` | 없음 | 방을 나간다. 들어간 방이 없으면 무시한다 |
 | SEND | `/app/rooms/chat` | `{ "text": "안녕하세요" }` | 들어가 있는 방에 채팅을 보낸다. 앞뒤 공백을 빼고 1~100자. 라운드 진행 중이면 정답 제출을 겸한다(「게임」) |
 | SEND | `/app/games/start` | `{ "gameType": "MOVIE_STILL_CUT", "targetScore": 5 }` | 방장이 게임을 시작한다. `gameType`은 `SONG`, `MOVIE_TWENTY_QUESTIONS`, `MOVIE_STILL_CUT`, `targetScore`는 1~50. 혼자 있어도 시작할 수 있다 |
+| SEND | `/app/votes/open` | `{ "voteType": "SKIP" }` | 투표를 연다. 연 사람은 자동으로 찬성한다. 같은 라운드에 같은 대상의 투표가 열려 있으면 그 투표에 찬성한 것으로 처리한다. `voteType`은 `HINT`, `SKIP`이고 `HINT`는 `targetHintType`(힌트 종류)이 필요하다. 지금은 `SKIP`만 열 수 있다(「투표」) |
+| SEND | `/app/votes/approve` | `{ "voteType": "SKIP" }` | 열린 투표에 찬성한다. 본문은 투표 열기와 같다. 열린 투표가 없으면(이미 통과했거나 라운드가 끝났으면) 무시한다 |
 | SUBSCRIBE | `/user/queue/room` | 방 상태 | 방 만들기·참가하기 응답. 보낸 연결에만 온다 |
 | SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다. 채팅도 이 토픽으로 온다(보낸 사람 포함) |
 | SUBSCRIBE | `/user/queue/errors` | 에러 응답 | 메시지 처리 실패. 보낸 연결에만 온다 |
@@ -125,6 +127,8 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
 | `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
 | `STILL_CUT_REVEALED` | 스틸컷 게임에서 다음 스틸컷을 보여준다 | 아래 「스틸컷 영화 맞추기」 |
+| `VOTE_UPDATED` | 투표가 열렸거나 찬성 현황이 바뀌었다(아직 통과 전) | 아래 「투표」 |
+| `ROUND_SKIPPED` | 스킵 투표가 통과해 라운드가 정답자 없이 끝났다 | 아래 「투표」 |
 
 **채팅**
 
@@ -171,23 +175,47 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - `nextAt`은 다음 스틸컷이 오는 시각이다. 마지막 스틸컷이면 `null`이다.
 - 정답자가 나오면(`ROUND_SOLVED`) 그 라운드의 스틸컷은 더 오지 않는다.
 
+**투표**
+
+```json
+{
+  "type": "VOTE_UPDATED", "gameId": 1, "roundNo": 2, "voteType": "SKIP", "targetHintType": null,
+  "initiatorId": 1, "approverIds": [1], "requiredApprovals": 2, "participantCount": 3
+}
+{
+  "type": "ROUND_SKIPPED", "gameId": 1, "roundNo": 2, "answer": "기생충", "subAnswer": "Parasite",
+  "skippedAt": "2026-10-03T21:01:00", "nextRoundAt": "2026-10-03T21:01:03"
+}
+```
+
+- 투표는 라운드 진행 중에만 열 수 있다. 통과 기준은 `docs/DOMAIN.md` 3-4 「통과 기준」이다(2명 이하 전원 찬성, 3명 이상 과반수 찬성). 반대 표시와 시간 제한은 없다.
+- 투표를 열거나 찬성했는데 아직 통과 기준을 채우지 못했으면 `VOTE_UPDATED`가 온다. 게스트가 나가면 줄어든 인원으로 다시 판정해, 통과하지 않았으면 `VOTE_UPDATED`(`PARTICIPANT_LEFT` 뒤)가 온다.
+- `approverIds`는 찬성한 참가자 중 방에 남아 있는 참가자, `requiredApprovals`는 통과에 필요한 찬성 수, `participantCount`는 판정할 때 방에 있던 인원이다. 한 라운드에 같은 종류·대상의 투표는 하나뿐이므로 `voteType`과 `targetHintType`으로 투표를 구분한다.
+- 스킵 투표가 통과하면 `VOTE_UPDATED` 대신 `ROUND_SKIPPED`가 온다. 정답을 공개하고, 점수는 바뀌지 않으며, `nextRoundAt`(3초 뒤)에 다음 라운드 `ROUND_STARTED`가 온다. 스틸컷은 더 오지 않는다.
+- 정답자가 나오거나(`ROUND_SOLVED`) 방장이 나가면 통과하지 못한 투표는 끝난다. 따로 이벤트는 없다.
+- 투표 결과는 알림(과 다음 라운드 예약)을 보낸 뒤 마지막에 저장한다. 저장하다 서버 오류가 나면 알림과 다음 라운드는 그대로 진행되고, 보낸 사람의 에러 큐로 `COMMON_INTERNAL_ERROR`가 온다.
+
 **에러**
 
-본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅·게임 관련 코드:
+본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅·게임·투표 관련 코드:
 
 | code | 상황 |
 | --- | --- |
-| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다. 게임 종류가 없거나 목표 점수가 1~50이 아니다 |
+| `COMMON_INVALID_REQUEST` | 닉네임이 비었거나 10자를 넘는다. 채팅이 비었거나 100자를 넘는다. 게임 종류가 없거나 목표 점수가 1~50이 아니다. 투표 종류가 없다 |
 | `ROOM_ALREADY_JOINED` | 이미 방에 들어가 있는 연결이 방을 또 만들거나 다른 방에 들어간다 |
 | `ROOM_INVITE_CODE_EXHAUSTED` | 겹치지 않는 초대 코드를 만들지 못했다 |
 | `ROOM_INVALID_INVITE_CODE` | 초대 코드가 숫자·영문 6자리가 아니다 |
 | `ROOM_NOT_FOUND` | 그 초대 코드의 방이 없다(방장이 나가 닫힌 방 포함) |
 | `ROOM_FULL` | 방 인원(10명)이 가득 찼다 |
 | `ROOM_ALREADY_PLAYING` | 게임이 진행 중인 방이다 |
-| `ROOM_NOT_JOINED` | 방에 들어가 있지 않은 연결이 채팅을 보내거나 게임을 시작한다 |
+| `ROOM_NOT_JOINED` | 방에 들어가 있지 않은 연결이 채팅을 보내거나 게임을 시작하거나 투표한다 |
 | `GAME_INVALID_TYPE` | 게임 종류 코드가 올바르지 않다 |
 | `GAME_NOT_HOST` | 방장이 아닌 참가자가 게임을 시작한다 |
 | `GAME_ALREADY_PLAYING` | 이미 게임이 진행 중인 방에서 게임을 시작한다 |
 | `GAME_QUESTION_NOT_FOUND` | 그 게임 종류로 출제할 수 있는(승인되고 활성인) 문제가 없다 |
+| `VOTE_INVALID_TYPE` | 투표 종류 코드가 올바르지 않다 |
+| `VOTE_INVALID_TARGET` | 힌트 종류 코드가 올바르지 않거나, 스킵 투표에 대상 힌트가 있거나, 힌트 투표에 대상 힌트가 없다 |
+| `VOTE_UNSUPPORTED_TYPE` | 아직 열 수 없는 투표 종류(힌트)다 |
+| `VOTE_ROUND_NOT_IN_PROGRESS` | 진행 중인 라운드가 없을 때(게임 전, 정답 공개 중) 투표를 연다 |
 
 ---

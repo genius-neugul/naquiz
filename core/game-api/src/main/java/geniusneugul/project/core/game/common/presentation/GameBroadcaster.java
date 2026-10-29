@@ -2,6 +2,7 @@ package geniusneugul.project.core.game.common.presentation;
 
 import geniusneugul.project.core.game.common.presentation.dto.GameFinishedResponse;
 import geniusneugul.project.core.game.common.presentation.dto.GameStartedResponse;
+import geniusneugul.project.core.game.common.presentation.dto.RoundSkippedResponse;
 import geniusneugul.project.core.game.common.presentation.dto.RoundSolvedResponse;
 import geniusneugul.project.core.game.common.presentation.dto.RoundStartedResponse;
 import geniusneugul.project.core.game.common.service.GameStartResult;
@@ -32,6 +33,10 @@ public class GameBroadcaster {
     /** nextRoundAt은 게임이 끝났으면 null이다 */
     public void broadcastSolved(SolvedRound result, LocalDateTime nextRoundAt) {
         messagingTemplate.convertAndSend(topic(result.roomId()), RoundSolvedResponse.of(result, nextRoundAt));
+    }
+
+    public void broadcastSkipped(SkippedRound result, LocalDateTime nextRoundAt) {
+        messagingTemplate.convertAndSend(topic(result.roomId()), RoundSkippedResponse.of(result, nextRoundAt));
     }
 
     public void broadcastFinish(SolvedRound result) {

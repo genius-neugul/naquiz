@@ -49,6 +49,14 @@ public class GameProgress {
         return true;
     }
 
+    /**
+     * 스킵 투표가 통과해 라운드를 정답자 없이 끝낸다. 풀린 라운드와 똑같이 이후 제출은 정답으로 인정하지 않고,
+     * 다음 라운드를 열 수 있다(roundSolved는 "라운드가 끝났다"는 뜻으로 쓴다).
+     */
+    public void skipRound() {
+        roundSolved = true;
+    }
+
     /** 그 게임의 그 라운드가 아직 풀리지 않고 진행 중이다. 늦게 도착한 타이머가 끝난 라운드를 건드리지 않게 확인한다 */
     public boolean isPlaying(Long gameId, int roundNo) {
         return this.gameId.equals(gameId) && this.roundNo == roundNo && !roundSolved;

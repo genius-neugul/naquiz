@@ -89,6 +89,11 @@ public class Game {
         findRound(roundNo).solve(solverParticipantId, now);
     }
 
+    /** 스킵 투표가 통과해 정답자 없이 끝났다 */
+    public void skipRound(int roundNo, LocalDateTime now) {
+        findRound(roundNo).skip(now);
+    }
+
     /** 승자가 목표 점수에 도달해 끝났다 */
     public void finish(Long winnerId, LocalDateTime now) {
         this.status = GameStatus.FINISHED;

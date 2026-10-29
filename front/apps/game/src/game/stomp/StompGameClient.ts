@@ -1,8 +1,8 @@
 import { Client, type IMessage } from "@stomp/stompjs";
-import { TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType } from "@naquiz/shared";
+import { HINT_LABEL, TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType, type HintType } from "@naquiz/shared";
 import type { GameClient } from "../GameClient";
 import { displayName } from "../selectors";
-import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus, Round, RoundLog } from "../types";
+import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus, Round, RoundLog, Vote, VoteType } from "../types";
 
 /** 서버 규격: docs/API.md 「실시간 메시지(STOMP) 규격」 */
 interface ParticipantResponse {
@@ -29,7 +29,9 @@ type RoomEvent =
   | RoundStartedResponse
   | RoundSolvedResponse
   | GameFinishedResponse
-  | StillCutRevealedResponse;
+  | StillCutRevealedResponse
+  | VoteUpdatedResponse
+  | RoundSkippedResponse;
 
 interface ScoreResponse {
   participantId: number;
@@ -65,6 +67,30 @@ interface RoundSolvedResponse {
   solvedAt: string;
   scores: ScoreResponse[];
   nextRoundAt: string | null;
+}
+
+/** 아직 통과하지 않은 투표의 현황. approverIds는 접속 중인 참가자의 찬성만 담는다 */
+interface VoteUpdatedResponse {
+  type: "VOTE_UPDATED";
+  gameId: number;
+  roundNo: number;
+  voteType: VoteType;
+  targetHintType: HintType | null;
+  initiatorId: number;
+  approverIds: number[];
+  requiredApprovals: number;
+  participantCount: number;
+}
+
+/** 스킵 투표가 통과해 정답자 없이 끝난 라운드. 정답을 공개하고 nextRoundAt에 다음 라운드가 열린다 */
+interface RoundSkippedResponse {
+  type: "ROUND_SKIPPED";
+  gameId: number;
+  roundNo: number;
+  answer: string;
+  subAnswer: string | null;
+  skippedAt: string;
+  nextRoundAt: string;
 }
 
 /** 스틸컷 게임. 새 스틸컷은 이전 것을 대체한다. 마지막 컷이면 nextAt이 null이다 */
@@ -115,7 +141,7 @@ function defaultBrokerUrl(): string {
 }
 
 /**
- * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·스틸컷 공개를
+ * 게임 서버(game-api)에 STOMP로 붙는 GameClient. 방 만들기·참가하기·나가기, 채팅(정답 제출 겸), 게임 시작·라운드 진행·스틸컷 공개·투표를
  * 서버로 처리한다. 게임 상태는 서버 이벤트로만 바꾼다.
  * 서버는 연결 하나를 참가자 한 명으로 보므로 방을 나가면 연결도 닫는다(재접속 없음).
  */
@@ -180,9 +206,19 @@ export class StompGameClient implements GameClient {
     this.setState({ ...this.state, result: null });
   }
 
-  // 투표·스무고개 단서·오류 신고는 아직 서버에 없다. 서버 규격이 생기면 채운다.
-  openVote(): void {}
-  approveVote(): void {}
+  // 서버가 받지 않는 종류(통과 처리가 없는 투표)는 에러 큐로 VOTE_UNSUPPORTED_TYPE이 온다.
+  openVote(type: VoteType, targetHintType?: HintType): void {
+    if (!this.client?.connected) return;
+    this.client.publish({ destination: "/app/votes/open", body: JSON.stringify({ voteType: type, targetHintType: targetHintType ?? null }) });
+  }
+
+  approveVote(voteId: string): void {
+    const vote = this.state?.round?.votes.find((v) => v.id === voteId);
+    if (!vote || !this.client?.connected) return;
+    this.client.publish({ destination: "/app/votes/approve", body: JSON.stringify({ voteType: vote.type, targetHintType: vote.targetHintType }) });
+  }
+
+  // 스무고개 단서·오류 신고는 아직 서버에 없다. 서버 규격이 생기면 채운다.
   pickClue(): void {}
   report(): void {}
 
@@ -278,6 +314,12 @@ export class StompGameClient implements GameClient {
         return;
       case "STILL_CUT_REVEALED":
         this.onStillCutRevealed(event);
+        return;
+      case "VOTE_UPDATED":
+        this.onVoteUpdated(event);
+        return;
+      case "ROUND_SKIPPED":
+        this.onRoundSkipped(event);
         return;
     }
     // 게임 중에 들어오고 나가도 남은 참가자의 점수는 그대로 둔다.
@@ -386,6 +428,66 @@ export class StompGameClient implements GameClient {
     this.system(`정답은 ${answer}`);
   }
 
+  // 서버는 같은 라운드에 같은 대상의 투표를 하나만 연다. 그래서 종류와 대상으로 투표를 구분한다.
+  private onVoteUpdated(event: VoteUpdatedResponse): void {
+    const state = this.state;
+    const round = state?.round;
+    if (!state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    const id = `${event.voteType}:${event.targetHintType ?? ""}`;
+    const current = round.votes.find((v) => v.id === id);
+    const initiator = state.participants.find((p) => p.id === String(event.initiatorId));
+    const vote: Vote = {
+      id,
+      type: event.voteType,
+      targetHintType: event.targetHintType,
+      // 발의자가 나갔으면 처음 받았을 때의 이름을 그대로 쓴다.
+      initiatorNickname: current?.initiatorNickname ?? (initiator ? displayName(initiator) : "누군가"),
+      approvals: event.approverIds.map(String),
+    };
+    if (!current) this.system(`${vote.initiatorNickname}님이 '${voteLabel(vote)}' 투표를 열었어요`);
+    this.setState({
+      ...state,
+      round: { ...round, votes: current ? round.votes.map((v) => (v.id === id ? vote : v)) : [...round.votes, vote] },
+    });
+  }
+
+  private onRoundSkipped(event: RoundSkippedResponse): void {
+    const state = this.state;
+    if (!state) return;
+    const round = state.round;
+    const answer = event.subAnswer ? `${event.answer} (${event.subAnswer})` : event.answer;
+    const log: RoundLog = {
+      roundNo: event.roundNo,
+      answer,
+      solverId: null,
+      solverNickname: null,
+      solvedSeconds: null,
+      revealedHintCount: round ? round.hints.length + round.clues.length : 0,
+      status: "SKIPPED",
+    };
+    this.setState({
+      ...state,
+      rounds: [...state.rounds, log],
+      round: round && {
+        ...round,
+        status: "SKIPPED",
+        votes: [],
+        stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
+        result: {
+          answer: event.answer,
+          subAnswer: event.subAnswer ?? "",
+          detail: "",
+          solverId: null,
+          solverNickname: null,
+          solvedSeconds: null,
+          nextAt: Date.parse(event.nextRoundAt),
+        },
+      },
+    });
+    this.system("투표 통과 · 스킵");
+    this.system(`정답은 ${answer}`);
+  }
+
   private onStillCutRevealed(event: StillCutRevealedResponse): void {
     const round = this.state?.round;
     if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
@@ -467,6 +569,10 @@ function withScores(participants: Participant[], scores: ScoreResponse[], scorer
     const score = scores.find((s) => String(s.participantId) === p.id)?.score ?? p.score;
     return { ...p, score, scoredAt: p.id === scorerId ? Date.now() : p.scoredAt };
   });
+}
+
+function voteLabel(vote: Vote): string {
+  return vote.type === "SKIP" || !vote.targetHintType ? "스킵" : HINT_LABEL[vote.targetHintType];
 }
 
 function toParticipant(participant: ParticipantResponse): Participant {

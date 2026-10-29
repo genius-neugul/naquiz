@@ -3,7 +3,7 @@ import styles from "./ProgressBar.module.css";
 export interface ProgressBarProps {
   /** 0~1 */
   value: number;
-  /** 0~1. 기준선(예: 투표 통과선) 위치 */
+  /** 0~1. 기준선(예: 투표 통과선) 위치. 붉은 선(--bad)으로 표시한다 */
   marker?: number;
   thick?: boolean;
   tone?: "accent" | "ink";

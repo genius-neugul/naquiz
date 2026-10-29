@@ -63,4 +63,9 @@ public class Round {
         this.solverParticipantId = solverParticipantId;
         this.endedAt = now;
     }
+
+    void skip(LocalDateTime now) {
+        this.status = RoundStatus.SKIPPED;
+        this.endedAt = now;
+    }
 }
