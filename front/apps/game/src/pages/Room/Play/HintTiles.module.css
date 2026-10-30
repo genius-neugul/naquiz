@@ -12,6 +12,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
   min-height: 132px;
   background: var(--tile);
 }
@@ -44,10 +45,13 @@
   letter-spacing: -0.01em;
 }
 
+/* 정답 힌트는 띄어쓰기 없이 이어질 수 있어 글자 단위로 줄바꿈해 칸 안에 담는다 */
 .big {
-  font-size: 22px;
+  font-size: 18px;
   font-family: var(--mono);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .sub {
