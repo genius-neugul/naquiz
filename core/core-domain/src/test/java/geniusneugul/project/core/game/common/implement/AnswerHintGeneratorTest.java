@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class AnswerHintTest {
+class AnswerHintGeneratorTest {
 
     // 무작위 선택에서 항상 남은 후보 중 첫 번째를 고른다.
     private static final RandomGenerator FIRST = () -> 0L;
+
+    private final AnswerHintGenerator generator = new AnswerHintGenerator(FIRST);
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
@@ -23,7 +25,7 @@ class AnswerHintTest {
     @DisplayName("기본 힌트는 띄어쓰기를 빼고 한글·영문·숫자를 가리고 특수문자는 보여주며, 특수문자를 포함한 글자 수와 문자 종류 포함 여부를 붙인다.")
     void mask(String answer, String expected) {
         // when
-        String content = AnswerHint.mask(answer);
+        String content = generator.mask(answer);
 
         // then
         assertThat(content).isEqualTo(expected);
@@ -42,7 +44,7 @@ class AnswerHintTest {
     @DisplayName("1단계는 한글을 초성으로, 영문은 정답 전체의 영문 글자 수 ÷ 3(반올림)만큼 보여준다.")
     void revealPartial(String answer, String expected) {
         // when
-        String content = AnswerHint.revealPartial(answer, FIRST);
+        String content = generator.revealPartial(answer);
 
         // then
         assertThat(content).isEqualTo(expected);
@@ -53,7 +55,7 @@ class AnswerHintTest {
     @DisplayName("1단계에서 공개할 영문 글자 수는 영문 글자 수 ÷ 3을 반올림한다.")
     void partialRevealCount(int englishLength, int expected) {
         // when
-        int count = AnswerHint.partialRevealCount(englishLength);
+        int count = generator.partialRevealCount(englishLength);
 
         // then
         assertThat(count).isEqualTo(expected);
@@ -63,7 +65,7 @@ class AnswerHintTest {
     @DisplayName("2단계는 직전 공개 내용에서 원래 글자가 보이지 않는 자리 하나만 원래 글자로 바꾼다.")
     void revealRandomChar() {
         // when
-        Optional<String> content = AnswerHint.revealRandomChar("잘 지내자, 우리", "ㅈ ㅈㄴㅈ, ㅇㄹ", FIRST);
+        Optional<String> content = generator.revealRandomChar("잘 지내자, 우리", "ㅈ ㅈㄴㅈ, ㅇㄹ");
 
         // then
         assertThat(content).contains("잘 ㅈㄴㅈ, ㅇㄹ");
@@ -73,7 +75,7 @@ class AnswerHintTest {
     @DisplayName("원래 글자가 보이지 않는 자리가 1개만 남으면 2단계를 더 열지 않는다.")
     void revealRandomChar_lastHiddenChar() {
         // when
-        Optional<String> content = AnswerHint.revealRandomChar("기생충", "기생ㅊ", FIRST);
+        Optional<String> content = generator.revealRandomChar("기생충", "기생ㅊ");
 
         // then
         assertThat(content).isEmpty();
@@ -86,10 +88,10 @@ class AnswerHintTest {
         String answer = "잘 지내자, 우리";
 
         // when
-        AnswerHintContent base = AnswerHint.next(answer, null, FIRST).orElseThrow();
-        AnswerHintContent first = AnswerHint.next(answer, base, FIRST).orElseThrow();
-        AnswerHintContent second = AnswerHint.next(answer, first, FIRST).orElseThrow();
-        AnswerHintContent third = AnswerHint.next(answer, second, FIRST).orElseThrow();
+        AnswerHintContent base = generator.next(answer, null).orElseThrow();
+        AnswerHintContent first = generator.next(answer, base).orElseThrow();
+        AnswerHintContent second = generator.next(answer, first).orElseThrow();
+        AnswerHintContent third = generator.next(answer, second).orElseThrow();
 
         // then
         assertThat(base.type()).isEqualTo(HintType.ANSWER_MASK);
@@ -103,10 +105,10 @@ class AnswerHintTest {
     @DisplayName("1단계에서 정답 전체가 드러나면 1단계를 건너뛰고, 2단계도 열지 않는다.")
     void next_revealsWholeAnswer(String answer) {
         // given
-        AnswerHintContent base = AnswerHint.next(answer, null, FIRST).orElseThrow();
+        AnswerHintContent base = generator.next(answer, null).orElseThrow();
 
         // when
-        Optional<AnswerHintContent> next = AnswerHint.next(answer, base, FIRST);
+        Optional<AnswerHintContent> next = generator.next(answer, base);
 
         // then
         assertThat(next).isEmpty();
@@ -116,11 +118,11 @@ class AnswerHintTest {
     @DisplayName("1단계 뒤 가려진 자리가 1개만 남으면 2단계를 열지 않는다.")
     void next_lastHiddenCharAfterPartial() {
         // given
-        AnswerHintContent base = AnswerHint.next("OK", null, FIRST).orElseThrow();
-        AnswerHintContent partial = AnswerHint.next("OK", base, FIRST).orElseThrow();
+        AnswerHintContent base = generator.next("OK", null).orElseThrow();
+        AnswerHintContent partial = generator.next("OK", base).orElseThrow();
 
         // when
-        Optional<AnswerHintContent> next = AnswerHint.next("OK", partial, FIRST);
+        Optional<AnswerHintContent> next = generator.next("OK", partial);
 
         // then
         assertThat(partial).isEqualTo(new AnswerHintContent(HintType.ANSWER_PARTIAL, "O⚫"));

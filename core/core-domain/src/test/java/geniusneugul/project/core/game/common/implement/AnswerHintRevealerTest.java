@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class AnswerHintRevealerTest {
 
     private final AnswerHintRevealer revealer = new AnswerHintRevealer(
-            Clock.fixed(Instant.parse("2026-10-03T00:00:00Z"), ZoneId.of("Asia/Seoul")), () -> 0L);
+            Clock.fixed(Instant.parse("2026-10-03T00:00:00Z"), ZoneId.of("Asia/Seoul")), new AnswerHintGenerator(() -> 0L));
 
     @Test
     @DisplayName("더 열 정답 힌트 단계가 없으면 공개에 실패한다.")

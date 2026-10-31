@@ -8,11 +8,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.random.RandomGenerator;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
- * 정답 힌트 단계별 공개 내용을 만드는 순수 함수 모음. 규칙은 docs/DOMAIN.md 「정답 힌트 단계」를 따른다.
+ * 정답 힌트 단계별 공개 내용을 만든다. 규칙은 docs/DOMAIN.md 「정답 힌트 단계」를 따른다.
  */
-public final class AnswerHint {
+@Component
+@RequiredArgsConstructor
+public class AnswerHintGenerator {
 
     // 2단계에서 직전 공개 내용과 자리별로 비교하려면 마스킹 문자가 코드 포인트 하나여야 한다(⚫️처럼 이모지 선택자를 붙이지 않는다).
     private static final int MASK = 0x26AB;
@@ -25,8 +29,7 @@ public final class AnswerHint {
     private static final List<HintType> STAGES =
             List.of(HintType.ANSWER_MASK, HintType.ANSWER_PARTIAL, HintType.ANSWER_RANDOM_CHAR);
 
-    private AnswerHint() {
-    }
+    private final RandomGenerator random;
 
     /**
      * 다음에 열 정답 힌트 단계와 공개 내용. 단계 순서를 따르고, 정답이 전부 드러나는 단계는 건너뛴다.
@@ -34,7 +37,7 @@ public final class AnswerHint {
      * @param previous 이 라운드에서 마지막으로 공개된 정답 힌트. 아직 없으면 null
      * @return 더 열 단계가 없으면 빈 값
      */
-    public static Optional<AnswerHintContent> next(String answer, AnswerHintContent previous, RandomGenerator random) {
+    public Optional<AnswerHintContent> next(String answer, AnswerHintContent previous) {
         int start = 0;
         String revealBase = null;
         if (previous != null) {
@@ -51,8 +54,8 @@ public final class AnswerHint {
         for (HintType stage : STAGES.subList(start, STAGES.size())) {
             Optional<String> content = switch (stage) {
                 case ANSWER_MASK -> Optional.of(mask(answer));
-                case ANSWER_PARTIAL -> Optional.of(revealPartial(answer, random));
-                case ANSWER_RANDOM_CHAR -> revealBase == null ? Optional.empty() : revealRandomChar(answer, revealBase, random);
+                case ANSWER_PARTIAL -> Optional.of(revealPartial(answer));
+                case ANSWER_RANDOM_CHAR -> revealBase == null ? Optional.empty() : revealRandomChar(answer, revealBase);
                 default -> throw new IllegalStateException(ErrorCode.GAME_NOT_ANSWER_HINT_STAGE.getMessage() + " stage=" + stage);
             };
             if (content.isPresent() && !content.get().equals(answer)) {
@@ -66,7 +69,7 @@ public final class AnswerHint {
      * 기본 힌트(ANSWER_MASK). 띄어쓰기를 빼고 한글·영문·숫자는 가리고 특수문자는 보여준 뒤, 글자 수와 문자 종류 포함 여부를 붙인다.
      * 예: {@code ⚫⚫⚫⚫,⚫⚫ (7글자(특수문자 포함), 한글 O, 영어 X, 숫자 X, 특수문자 O)}
      */
-    static String mask(String answer) {
+    String mask(String answer) {
         List<AnswerCharKind> kinds = answer.codePoints().mapToObj(AnswerCharKind::of)
                 .filter(kind -> kind != AnswerCharKind.SPACE)
                 .toList();
@@ -85,7 +88,7 @@ public final class AnswerHint {
      * 1단계(ANSWER_PARTIAL). 띄어쓰기·숫자·특수문자를 보여주고, 한글은 초성을 보여준다.
      * 영문은 정답 전체의 영문 글자 중 일부를 무작위로 보여준다.
      */
-    static String revealPartial(String answer, RandomGenerator random) {
+    String revealPartial(String answer) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = Arrays.stream(answerChars)
                 .map(c -> switch (AnswerCharKind.of(c)) {
@@ -95,7 +98,7 @@ public final class AnswerHint {
                 })
                 .toArray();
         List<Integer> englishIndices = englishIndices(answerChars);
-        for (int index : pickIndices(englishIndices, partialRevealCount(englishIndices.size()), random)) {
+        for (int index : pickIndices(englishIndices, partialRevealCount(englishIndices.size()))) {
             revealed[index] = answerChars[index];
         }
         return fromCodePoints(revealed);
@@ -105,7 +108,7 @@ public final class AnswerHint {
      * 2단계(ANSWER_RANDOM_CHAR). 직전 공개 내용에서 원래 글자가 보이지 않는 자리 하나를 무작위로 원래 글자로 바꾼다.
      * 공개한 뒤에도 그런 자리가 하나 이상 남아야 하므로, 1개 이하만 남았으면 빈 값이다.
      */
-    static Optional<String> revealRandomChar(String answer, String previousContent, RandomGenerator random) {
+    Optional<String> revealRandomChar(String answer, String previousContent) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = previousContent.codePoints().toArray();
         if (answerChars.length != revealed.length) {
@@ -129,7 +132,7 @@ public final class AnswerHint {
     /**
      * 1단계에서 공개할 영문 글자 수. 정답 전체의 영문 글자 수(띄어쓰기·숫자·특수문자·한글 제외) ÷ 3, 반올림.
      */
-    static int partialRevealCount(int englishLength) {
+    int partialRevealCount(int englishLength) {
         return Math.round((float) englishLength / PARTIAL_REVEAL_DIVISOR);
     }
 
@@ -151,7 +154,7 @@ public final class AnswerHint {
         return indices;
     }
 
-    private static List<Integer> pickIndices(List<Integer> pool, int count, RandomGenerator random) {
+    private List<Integer> pickIndices(List<Integer> pool, int count) {
         List<Integer> rest = new ArrayList<>(pool);
         List<Integer> picked = new ArrayList<>();
         while (picked.size() < count && !rest.isEmpty()) {
