@@ -69,7 +69,7 @@ public class AnswerHintGenerator {
      * 기본 힌트(ANSWER_MASK). 띄어쓰기를 빼고 한글·영문·숫자는 가리고 특수문자는 보여준 뒤, 글자 수와 문자 종류 포함 여부를 붙인다.
      * 예: {@code ⚫⚫⚫⚫,⚫⚫ (7글자(특수문자 포함), 한글 O, 영어 X, 숫자 X, 특수문자 O)}
      */
-    String mask(String answer) {
+    private String mask(String answer) {
         List<AnswerCharKind> kinds = answer.codePoints().mapToObj(AnswerCharKind::of)
                 .filter(kind -> kind != AnswerCharKind.SPACE)
                 .toList();
@@ -88,7 +88,7 @@ public class AnswerHintGenerator {
      * 1단계(ANSWER_PARTIAL). 띄어쓰기·숫자·특수문자를 보여주고, 한글은 초성을 보여준다.
      * 영문은 정답 전체의 영문 글자 중 일부를 무작위로 보여준다.
      */
-    String revealPartial(String answer) {
+    private String revealPartial(String answer) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = Arrays.stream(answerChars)
                 .map(c -> switch (AnswerCharKind.of(c)) {
@@ -108,7 +108,7 @@ public class AnswerHintGenerator {
      * 2단계(ANSWER_RANDOM_CHAR). 직전 공개 내용에서 원래 글자가 보이지 않는 자리 하나를 무작위로 원래 글자로 바꾼다.
      * 공개한 뒤에도 그런 자리가 하나 이상 남아야 하므로, 1개 이하만 남았으면 빈 값이다.
      */
-    Optional<String> revealRandomChar(String answer, String previousContent) {
+    private Optional<String> revealRandomChar(String answer, String previousContent) {
         int[] answerChars = answer.codePoints().toArray();
         int[] revealed = previousContent.codePoints().toArray();
         if (answerChars.length != revealed.length) {
@@ -132,19 +132,19 @@ public class AnswerHintGenerator {
     /**
      * 1단계에서 공개할 영문 글자 수. 정답 전체의 영문 글자 수(띄어쓰기·숫자·특수문자·한글 제외) ÷ 3, 반올림.
      */
-    int partialRevealCount(int englishLength) {
+    private int partialRevealCount(int englishLength) {
         return Math.round((float) englishLength / PARTIAL_REVEAL_DIVISOR);
     }
 
-    private static String mark(List<AnswerCharKind> kinds, AnswerCharKind kind) {
+    private String mark(List<AnswerCharKind> kinds, AnswerCharKind kind) {
         return kinds.contains(kind) ? "O" : "X";
     }
 
-    private static int choseong(int syllable) {
+    private int choseong(int syllable) {
         return CHOSEONG.charAt((syllable - AnswerCharKind.HANGUL_FIRST) / SYLLABLES_PER_CHOSEONG);
     }
 
-    private static List<Integer> englishIndices(int[] chars) {
+    private List<Integer> englishIndices(int[] chars) {
         List<Integer> indices = new ArrayList<>();
         for (int i = 0; i < chars.length; i++) {
             if (AnswerCharKind.of(chars[i]) == AnswerCharKind.ENGLISH) {
@@ -163,7 +163,7 @@ public class AnswerHintGenerator {
         return picked;
     }
 
-    private static String fromCodePoints(int[] codePoints) {
+    private String fromCodePoints(int[] codePoints) {
         return Arrays.stream(codePoints)
                 .mapToObj(Character::toString)
                 .collect(Collectors.joining());
