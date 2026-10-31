@@ -35,16 +35,28 @@ class AnswerHintTest {
             "Cat|C⚫⚫",
             "Track 9|Tr⚫⚫⚫ 9",
             "Fantasy|Fa⚫⚫⚫⚫⚫",
-            "Oh My|Oh My",
+            "Oh My|O⚫ ⚫⚫",
+            "Bohemian Rhapsody|Bohem⚫⚫⚫ ⚫⚫⚫⚫⚫⚫⚫⚫",
             "나비 Butterfly|ㄴㅂ But⚫⚫⚫⚫⚫⚫"
     })
-    @DisplayName("1단계는 한글을 초성으로, 영문은 단어마다 글자 수 ÷ 3(반올림)만큼, 두 글자 이하 단어는 전부 보여준다.")
+    @DisplayName("1단계는 한글을 초성으로, 영문은 정답 전체의 영문 글자 수 ÷ 3(반올림)만큼 보여준다.")
     void revealPartial(String answer, String expected) {
         // when
         String content = AnswerHint.revealPartial(answer, FIRST);
 
         // then
         assertThat(content).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1, 0", "2, 1", "5, 2", "7, 2", "16, 5"})
+    @DisplayName("1단계에서 공개할 영문 글자 수는 영문 글자 수 ÷ 3을 반올림한다.")
+    void partialRevealCount(int englishLength, int expected) {
+        // when
+        int count = AnswerHint.partialRevealCount(englishLength);
+
+        // then
+        assertThat(count).isEqualTo(expected);
     }
 
     @Test
@@ -87,7 +99,7 @@ class AnswerHintTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"1987", "OK"})
+    @CsvSource({"1987"})
     @DisplayName("1단계에서 정답 전체가 드러나면 1단계를 건너뛰고, 2단계도 열지 않는다.")
     void next_revealsWholeAnswer(String answer) {
         // given
@@ -97,6 +109,21 @@ class AnswerHintTest {
         Optional<AnswerHintContent> next = AnswerHint.next(answer, base, FIRST);
 
         // then
+        assertThat(next).isEmpty();
+    }
+
+    @Test
+    @DisplayName("1단계 뒤 가려진 자리가 1개만 남으면 2단계를 열지 않는다.")
+    void next_lastHiddenCharAfterPartial() {
+        // given
+        AnswerHintContent base = AnswerHint.next("OK", null, FIRST).orElseThrow();
+        AnswerHintContent partial = AnswerHint.next("OK", base, FIRST).orElseThrow();
+
+        // when
+        Optional<AnswerHintContent> next = AnswerHint.next("OK", partial, FIRST);
+
+        // then
+        assertThat(partial).isEqualTo(new AnswerHintContent(HintType.ANSWER_PARTIAL, "O⚫"));
         assertThat(next).isEmpty();
     }
 }

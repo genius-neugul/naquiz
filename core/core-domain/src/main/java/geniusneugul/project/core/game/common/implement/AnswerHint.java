@@ -20,7 +20,6 @@ public final class AnswerHint {
     private static final String CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
     private static final int SYLLABLES_PER_CHOSEONG = 588;
     private static final int PARTIAL_REVEAL_DIVISOR = 3;
-    private static final int WHOLE_REVEAL_MAX_LENGTH = 2;
 
     // 세 게임이 같은 단계를 쓴다. 기본 힌트(ANSWER_MASK) → 1단계(ANSWER_PARTIAL) → 2단계~(ANSWER_RANDOM_CHAR)
     private static final List<HintType> STAGES =
@@ -83,7 +82,8 @@ public final class AnswerHint {
     }
 
     /**
-     * 1단계(ANSWER_PARTIAL). 띄어쓰기·숫자·특수문자를 보여주고, 한글은 초성을, 영문은 단어마다 일부 글자를 무작위로 보여준다.
+     * 1단계(ANSWER_PARTIAL). 띄어쓰기·숫자·특수문자를 보여주고, 한글은 초성을 보여준다.
+     * 영문은 정답 전체의 영문 글자 중 일부를 무작위로 보여준다.
      */
     static String revealPartial(String answer, RandomGenerator random) {
         int[] answerChars = answer.codePoints().toArray();
@@ -94,10 +94,9 @@ public final class AnswerHint {
                     default -> c;
                 })
                 .toArray();
-        for (EnglishWord word : englishWords(answerChars)) {
-            for (int index : pickIndices(word.indices(), partialRevealCount(word.length()), random)) {
-                revealed[index] = answerChars[index];
-            }
+        List<Integer> englishIndices = englishIndices(answerChars);
+        for (int index : pickIndices(englishIndices, partialRevealCount(englishIndices.size()), random)) {
+            revealed[index] = answerChars[index];
         }
         return fromCodePoints(revealed);
     }
@@ -128,13 +127,10 @@ public final class AnswerHint {
     }
 
     /**
-     * 영문 단어 하나에서 공개할 글자 수. 글자 수 ÷ 3 반올림이고, 두 글자 이하는 전부 공개한다.
+     * 1단계에서 공개할 영문 글자 수. 정답 전체의 영문 글자 수(띄어쓰기·숫자·특수문자·한글 제외) ÷ 3, 반올림.
      */
-    static int partialRevealCount(int wordLength) {
-        if (wordLength <= WHOLE_REVEAL_MAX_LENGTH) {
-            return wordLength;
-        }
-        return Math.round((float) wordLength / PARTIAL_REVEAL_DIVISOR);
+    static int partialRevealCount(int englishLength) {
+        return Math.round((float) englishLength / PARTIAL_REVEAL_DIVISOR);
     }
 
     private static String mark(List<AnswerCharKind> kinds, AnswerCharKind kind) {
@@ -145,21 +141,14 @@ public final class AnswerHint {
         return CHOSEONG.charAt((syllable - AnswerCharKind.HANGUL_FIRST) / SYLLABLES_PER_CHOSEONG);
     }
 
-    private static List<EnglishWord> englishWords(int[] chars) {
-        List<EnglishWord> words = new ArrayList<>();
-        List<Integer> current = new ArrayList<>();
+    private static List<Integer> englishIndices(int[] chars) {
+        List<Integer> indices = new ArrayList<>();
         for (int i = 0; i < chars.length; i++) {
             if (AnswerCharKind.of(chars[i]) == AnswerCharKind.ENGLISH) {
-                current.add(i);
-            } else if (!current.isEmpty()) {
-                words.add(new EnglishWord(current));
-                current = new ArrayList<>();
+                indices.add(i);
             }
         }
-        if (!current.isEmpty()) {
-            words.add(new EnglishWord(current));
-        }
-        return words;
+        return indices;
     }
 
     private static List<Integer> pickIndices(List<Integer> pool, int count, RandomGenerator random) {
@@ -175,15 +164,5 @@ public final class AnswerHint {
         return Arrays.stream(codePoints)
                 .mapToObj(Character::toString)
                 .collect(Collectors.joining());
-    }
-
-    /**
-     * 정답에서 영문 단어 하나가 차지하는 자리(코드 포인트 인덱스).
-     */
-    private record EnglishWord(List<Integer> indices) {
-
-        int length() {
-            return indices.size();
-        }
     }
 }

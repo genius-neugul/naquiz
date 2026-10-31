@@ -31,20 +31,19 @@ describe("정답 힌트 단계별 내용", () => {
     expect(revealPartial(answer, first)).toBe("ㅈ ㅈㄴㅈ, ㅇㄹ");
   });
 
-  it("1단계는 영문 단어마다 글자 수 ÷ 3(반올림)만큼 공개한다", () => {
+  it("1단계는 정답 전체의 영문 글자 수 ÷ 3(반올림)만큼 영문을 공개한다", () => {
     expect(revealPartial("Track 9", first)).toBe(`Tr${M}${M}${M} 9`);
     expect(revealPartial("나비 Butterfly", first)).toBe(`ㄴㅂ But${M.repeat(6)}`);
-  });
-
-  it("두 글자 이하 영문 단어는 한 번에 공개한다", () => {
-    expect(revealPartial("Oh My", first)).toBe("Oh My");
+    expect(revealPartial("Oh My", first)).toBe(`O${M} ${M}${M}`);
+    expect(revealPartial("Bohemian Rhapsody", first)).toBe(`Bohem${M.repeat(3)} ${M.repeat(8)}`);
   });
 
   it("공개 글자 수는 반올림한다", () => {
-    expect(partialRevealCount(3)).toBe(1);
+    expect(partialRevealCount(1)).toBe(0);
+    expect(partialRevealCount(2)).toBe(1);
     expect(partialRevealCount(5)).toBe(2);
     expect(partialRevealCount(7)).toBe(2);
-    expect(partialRevealCount(2)).toBe(2);
+    expect(partialRevealCount(16)).toBe(5);
   });
 
   it("2단계는 원래 글자가 보이지 않는 자리 하나만 공개한다", () => {
@@ -74,8 +73,15 @@ describe("다음 정답 힌트 단계", () => {
     expect(s3).toEqual({ type: "ANSWER_RANDOM_CHAR", content: "잘 지ㄴㅈ, ㅇㄹ" });
   });
 
-  it.each(["1987", "OK"])("1단계에서 정답 전체가 드러나면 기본 힌트만 있다 (%s)", (answer) => {
-    const base = open(answer, null);
-    expect(open(answer, base)).toBeNull();
+  it("1단계에서 정답 전체가 드러나면 기본 힌트만 있다", () => {
+    const base = open("1987", null);
+    expect(open("1987", base)).toBeNull();
+  });
+
+  it("1단계 뒤 가려진 자리가 1개만 남으면 2단계를 열지 않는다", () => {
+    const base = open("OK", null);
+    const s1 = open("OK", base);
+    expect(s1).toEqual({ type: "ANSWER_PARTIAL", content: `O${M}` });
+    expect(open("OK", s1)).toBeNull();
   });
 });

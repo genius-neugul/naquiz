@@ -60,15 +60,14 @@ export function maskAll(answer: string): string {
     .join("");
 }
 
-/** 영문 단어 하나에서 공개할 글자 수. 글자 수 ÷ 3 반올림, 두 글자 이하는 전부. */
-export function partialRevealCount(wordLength: number): number {
-  if (wordLength <= 2) return wordLength;
-  return Math.round(wordLength / 3);
+/** 1단계에서 공개할 영문 글자 수. 정답 전체의 영문 글자 수(띄어쓰기·숫자·특수문자·한글 제외) ÷ 3, 반올림. */
+export function partialRevealCount(englishLength: number): number {
+  return Math.round(englishLength / 3);
 }
 
 /**
  * 정답 힌트 1단계(ANSWER_PARTIAL).
- * 숫자·특수문자·띄어쓰기는 공개, 한글은 초성, 영문은 단어마다 일부 글자를 무작위로 공개한다.
+ * 숫자·특수문자·띄어쓰기는 공개, 한글은 초성, 영문은 정답 전체의 영문 글자 중 일부를 무작위로 공개한다.
  */
 export function revealPartial(answer: string, random: RandomSource = Math.random): string {
   const chars = [...answer];
@@ -78,10 +77,8 @@ export function revealPartial(answer: string, random: RandomSource = Math.random
     if (k === "en") return MASK;
     return c;
   });
-  for (const word of englishWords(chars)) {
-    const picked = pickIndices(word, partialRevealCount(word.length), random);
-    for (const i of picked) out[i] = chars[i]!;
-  }
+  const english = englishIndices(chars);
+  for (const i of pickIndices(english, partialRevealCount(english.length), random)) out[i] = chars[i]!;
   return out.join("");
 }
 
@@ -141,18 +138,8 @@ function hiddenIndices(answer: string[], revealed: string[]): number[] {
   return answer.flatMap((c, i) => (revealed[i] !== c ? [i] : []));
 }
 
-function englishWords(chars: string[]): number[][] {
-  const words: number[][] = [];
-  let cur: number[] = [];
-  chars.forEach((c, i) => {
-    if (kindOf(c) === "en") cur.push(i);
-    else if (cur.length) {
-      words.push(cur);
-      cur = [];
-    }
-  });
-  if (cur.length) words.push(cur);
-  return words;
+function englishIndices(chars: string[]): number[] {
+  return chars.flatMap((c, i) => (kindOf(c) === "en" ? [i] : []));
 }
 
 function pickIndices(pool: number[], count: number, random: RandomSource): number[] {
