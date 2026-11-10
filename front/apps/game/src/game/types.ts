@@ -1,4 +1,4 @@
-import type { AnswerHintType, ClueType, GameType, HintType, ReportType } from "@naquiz/shared";
+import type { AnswerHintPriority, ClueType, GameType, HintType, ReportType } from "@naquiz/shared";
 
 export type ParticipantRole = "HOST" | "GUEST";
 
@@ -32,6 +32,8 @@ export interface Vote {
 
 export interface RevealedHint {
   type: HintType;
+  /** 정답 힌트(ANSWER_HINT)일 때 공개한 우선순위 */
+  priority?: AnswerHintPriority;
   content: string;
 }
 
@@ -79,8 +81,8 @@ export interface Round {
   /** 정답 글자 수·문자 종류 요약 */
   answerMeta: string;
   hints: RevealedHint[];
-  /** 다음에 열 수 있는 정답 힌트 단계. 노래는 투표로, 영화 스무고개는 모든 단서가 열린 뒤 차례 참가자가 연다. 열 수 없으면 null */
-  nextAnswerHint: AnswerHintType | null;
+  /** 다음에 열 정답 힌트 우선순위. 노래·스틸컷은 투표로, 영화 스무고개는 모든 단서가 열린 뒤 차례 참가자가 연다. 열 수 없으면 null */
+  nextAnswerHint: AnswerHintPriority | null;
   clues: RevealedClue[];
   turn: Turn | null;
   stillCut: StillCutView | null;

@@ -1,4 +1,4 @@
-import { CLUES, HINT_LABEL, isAnswerHintType, type HintType } from "@naquiz/shared";
+import { ANSWER_HINT_PRIORITY_LABEL, CLUES, HINT_LABEL, type HintType } from "@naquiz/shared";
 import { Button, ProgressBar } from "@naquiz/ui";
 import type { ReactNode } from "react";
 import { useGameClient } from "../../../game/GameProvider";
@@ -47,23 +47,25 @@ export function HintTiles({ room, round }: { room: RoomState; round: Round }) {
 
 function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
   const client = useGameClient();
-  const latest = [...round.hints].reverse().find((h) => isAnswerHintType(h.type));
+  const latest = [...round.hints].reverse().find((h) => h.type === "ANSWER_HINT");
   const next = round.nextAnswerHint;
-  const label = latest ? HINT_LABEL[latest.type] : "정답 힌트";
+  const label = latest?.priority ? ANSWER_HINT_PRIORITY_LABEL[latest.priority] : HINT_LABEL.ANSWER_HINT;
   const inProgress = round.status === "IN_PROGRESS";
-  // 노래·스틸컷은 1단계부터 투표로, 영화 스무고개는 차례 참가자가 연다
+  // 기본 힌트 다음부터 노래·스틸컷은 투표로, 영화 스무고개는 차례 참가자가 연다
   const votable = room.gameType !== "MOVIE_TWENTY_QUESTIONS";
 
   let control: ReactNode = null;
   if (votable) {
-    control = <VoteControl room={room} round={round} target={next} buttonText={next ? `${HINT_LABEL[next]} 투표` : ""} />;
+    control = (
+      <VoteControl room={room} round={round} target={next ? "ANSWER_HINT" : null} buttonText={next ? `${ANSWER_HINT_PRIORITY_LABEL[next]} 투표` : ""} />
+    );
   } else if (inProgress && room.gameType === "MOVIE_TWENTY_QUESTIONS") {
-    if (round.clues.length < CLUES.length) control = <Wait text="모든 단서를 연 뒤 차례대로 1단계부터 열 수 있어요" />;
+    if (round.clues.length < CLUES.length) control = <Wait text="모든 단서를 연 뒤 차례대로 정답 힌트를 열 수 있어요" />;
     else if (next && round.turn?.participantId === room.meId)
       control = (
         <div className={styles.foot}>
           <Button size="sm" variant="primary" onClick={() => client.openAnswerHint()}>
-            {HINT_LABEL[next]} 열기
+            {ANSWER_HINT_PRIORITY_LABEL[next]} 열기
           </Button>
         </div>
       );
@@ -71,7 +73,7 @@ function AnswerHintTile({ room, round }: { room: RoomState; round: Round }) {
   }
 
   return (
-    <Tile label={label} wide vote={votable && next ? round.votes.find((v) => v.targetHintType === next) : undefined}>
+    <Tile label={label} wide vote={votable && next ? round.votes.find((v) => v.targetHintType === "ANSWER_HINT") : undefined}>
       {latest ? (
         <div className={styles.value}>
           <span className={`${styles.text} ${styles.big}`}>{latest.content}</span>

@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @Entity
 @Table(name = "game_round", uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "round_no"}))
@@ -52,10 +50,6 @@ public class Round {
 
     private LocalDateTime endedAt;
 
-    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("revealOrder")
-    private List<RevealedHint> revealedHints = new ArrayList<>();
-
     Round(Game game, int roundNo, Long questionId, LocalDateTime startedAt) {
         this.game = game;
         this.roundNo = roundNo;
@@ -68,17 +62,5 @@ public class Round {
         this.status = RoundStatus.SOLVED;
         this.solverParticipantId = solverParticipantId;
         this.endedAt = now;
-    }
-
-    public RevealedHint revealHint(HintType hintType, String revealedContent, LocalDateTime revealedAt) {
-        RevealedHint hint = RevealedHint.of(this, hintType, revealedContent, revealedHints.size() + 1, revealedAt);
-        revealedHints.add(hint);
-        return hint;
-    }
-
-    public Optional<RevealedHint> lastAnswerHint() {
-        return revealedHints.stream()
-                .filter(hint -> hint.getHintType().isAnswerHint())
-                .max(Comparator.comparingInt(RevealedHint::getRevealOrder));
     }
 }
