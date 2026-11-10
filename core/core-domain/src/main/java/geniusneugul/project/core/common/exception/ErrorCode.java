@@ -40,6 +40,8 @@ public enum ErrorCode {
     // game - 불변식 위반. 응답에는 쓰지 않고 IllegalStateException·IllegalArgumentException 메시지로만 쓴다(docs/EXCEPTION.md 「불변식 위반」)
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
     GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
+    GAME_ANSWER_HINT_REVEALER_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "한 정답 힌트 우선순위에 공개 클래스가 여러 개입니다."),
+    GAME_ANSWER_HINT_REVEALER_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "공개 클래스가 없는 정답 힌트 우선순위가 있습니다."),
 
     // question - 불변식 위반
     QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");

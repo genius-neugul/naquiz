@@ -9,6 +9,11 @@ public enum AnswerHintPriority {
     ANSWER_CHOSUNG,
     ANSWER_PARTIAL;
 
+    /** 가장 먼저 공개하는 우선순위(기본 힌트) */
+    public static AnswerHintPriority first() {
+        return values()[0];
+    }
+
     /** 다음 우선순위. 마지막(ANSWER_PARTIAL)은 반복해서 열 수 있으므로 자기 자신이다 */
     public AnswerHintPriority next() {
         AnswerHintPriority[] all = values();

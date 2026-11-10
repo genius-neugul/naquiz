@@ -20,28 +20,26 @@ public class AnswerHintCharacter {
     private CharacterState state;
     private String display;
 
-    /** 띄어쓰기·특수문자는 처음부터 보이고, 한글·영문·숫자는 가려진다. original은 코드 포인트 하나로 된 글자다 */
+    /** 모든 글자를 가린 채로 만든다. 기본 힌트에서 무엇을 보여줄지는 공개 우선순위가 정한다. original은 코드 포인트 하나로 된 글자다 */
     AnswerHintCharacter(String original) {
         this.original = original;
         this.kind = CharacterKind.of(original);
-        if (kind == CharacterKind.SPACE || kind == CharacterKind.SPECIAL_CHARACTER) {
-            reveal();
-        } else {
-            this.state = CharacterState.MASK;
-            this.display = MASK;
-        }
+        this.state = CharacterState.MASK;
+        this.display = MASK;
     }
 
     public boolean isRevealed() {
         return state == CharacterState.REVEALED;
     }
 
-    void showChosung() {
+    /** 한글을 초성으로 보여준다. 완전히 공개된 것은 아니다 */
+    public void showChosung() {
         this.state = CharacterState.CHOSUNG;
         this.display = String.valueOf(CHOSUNG.charAt((original.charAt(0) - CharacterKind.HANGUL_FIRST) / SYLLABLES_PER_CHOSUNG));
     }
 
-    void reveal() {
+    /** 원래 글자를 그대로 보여준다 */
+    public void reveal() {
         this.state = CharacterState.REVEALED;
         this.display = original;
     }
