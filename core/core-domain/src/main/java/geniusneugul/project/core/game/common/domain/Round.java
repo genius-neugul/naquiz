@@ -5,8 +5,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "game_round", uniqueConstraints = @UniqueConstraint(columnNames = {"game_id", "round_no"}))
@@ -34,16 +32,6 @@ public class Round {
 
     // 참가자는 저장하지 않으므로 FK 없이 ID만 남긴다.
     private Long solverParticipantId;
-
-    // 차례 정보는 영화 스무고개 진행 중에만 쓰고 통계에 필요 없어 저장하지 않는다.
-    @Transient
-    private List<Long> turnOrder = new ArrayList<>();
-
-    @Transient
-    private Integer currentTurnOrderIndex;
-
-    @Transient
-    private LocalDateTime turnDeadline;
 
     @Column(nullable = false)
     private LocalDateTime startedAt;

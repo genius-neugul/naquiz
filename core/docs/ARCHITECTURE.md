@@ -66,7 +66,7 @@ geniusneugul.project.core
     └── service
 ```
 
-**게임별 하위 패키지.** 게임 종류가 여럿인 `game` 도메인은 도메인 아래를 공통(`common`)과 게임별(`stillcut`, 이후 `song`, `twentyquestions`)로 한 번 더 나누고, 그 아래에 레이어를 둔다. 게임·라운드·정답 제출·카운트다운처럼 모든 게임이 쓰는 것은 `game/common`에, 한 게임에서만 쓰는 것은 그 게임 패키지에 둔다. 게임 패키지는 `game/common`을 참조할 수 있지만 `game/common`은 게임 패키지를 참조하지 않는다. 공통 흐름이 게임별 처리를 불러야 하면 `game/common`에 확장점 인터페이스(예: `RoundStartedHandler`)를 두고 게임 패키지가 구현한다.
+**게임별 하위 패키지.** 게임 종류가 여럿인 `game` 도메인은 도메인 아래를 공통(`common`)과 게임별(`stillcut`, `twentyquestions`, 이후 `song`)로 한 번 더 나누고, 그 아래에 레이어를 둔다. 게임·라운드·정답 제출·카운트다운처럼 모든 게임이 쓰는 것은 `game/common`에, 한 게임에서만 쓰는 것은 그 게임 패키지에 둔다. 게임 패키지는 `game/common`을 참조할 수 있지만 `game/common`은 게임 패키지를 참조하지 않는다. 공통 흐름이 게임별 처리를 불러야 하면 `game/common`에 확장점 인터페이스(예: `RoundStartedHandler`)를 두고 게임 패키지가 구현한다.
 
 ```java
 // core-domain                          // game-api
