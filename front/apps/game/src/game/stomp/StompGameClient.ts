@@ -1,5 +1,5 @@
 import { Client, type IMessage } from "@stomp/stompjs";
-import { TARGET_SCORE_MAX, TARGET_SCORE_MIN, type GameType } from "@naquiz/shared";
+import { CLUES, TARGET_SCORE_MAX, TARGET_SCORE_MIN, type ClueType, type GameType } from "@naquiz/shared";
 import type { GameClient } from "../GameClient";
 import { displayName } from "../selectors";
 import type { ChatMessage, Participant, ParticipantRole, RoomState, RoomStatus, Round, RoundLog } from "../types";
@@ -29,7 +29,10 @@ type RoomEvent =
   | RoundStartedResponse
   | RoundSolvedResponse
   | GameFinishedResponse
-  | StillCutRevealedResponse;
+  | StillCutRevealedResponse
+  | TurnStartedResponse
+  | ClueSelectedResponse
+  | ClueRevealedResponse;
 
 interface ScoreResponse {
   participantId: number;
@@ -77,6 +80,39 @@ interface StillCutRevealedResponse {
   imageUrl: string;
   revealedAt: string;
   nextAt: string | null;
+}
+
+/** 영화 스무고개 차례. deadline까지 고르지 않으면 서버가 남은 단서 중 하나를 무작위로 고른다(CLUE_SELECTED, timedOut) */
+interface TurnStartedResponse {
+  type: "TURN_STARTED";
+  gameId: number;
+  roundNo: number;
+  participantId: number;
+  deadline: string;
+}
+
+/** 영화 스무고개 단서 선택. 내용은 revealAt에 CLUE_REVEALED로 온다. timedOut이면 시간이 지나 서버가 무작위로 골랐다 */
+interface ClueSelectedResponse {
+  type: "CLUE_SELECTED";
+  gameId: number;
+  roundNo: number;
+  clueType: ClueType;
+  participantId: number;
+  timedOut: boolean;
+  revealAt: string;
+}
+
+/** 영화 스무고개 단서 공개. order가 total이면 모든 단서가 열렸다 */
+interface ClueRevealedResponse {
+  type: "CLUE_REVEALED";
+  gameId: number;
+  roundNo: number;
+  clueType: ClueType;
+  content: string;
+  revealedById: number;
+  order: number;
+  total: number;
+  revealedAt: string;
 }
 
 interface GameFinishedResponse {
@@ -180,10 +216,15 @@ export class StompGameClient implements GameClient {
     this.setState({ ...this.state, result: null });
   }
 
-  // 투표·스무고개 단서·오류 신고는 아직 서버에 없다. 서버 규격이 생기면 채운다.
+  // 차례인지는 서버가 판정한다. 차례가 아니면 에러 큐로 알려준다.
+  pickClue(clueType: ClueType): void {
+    if (!this.state?.round || !this.client?.connected) return;
+    this.client.publish({ destination: "/app/games/clues/reveal", body: JSON.stringify({ clueType }) });
+  }
+
+  // 투표·오류 신고는 아직 서버에 없다. 서버 규격이 생기면 채운다.
   openVote(): void {}
   approveVote(): void {}
-  pickClue(): void {}
   report(): void {}
 
   // 방 만들기·참가하기 공통: 보낸 뒤 /user/queue/room 응답(또는 에러 큐)을 기다린다.
@@ -279,6 +320,15 @@ export class StompGameClient implements GameClient {
       case "STILL_CUT_REVEALED":
         this.onStillCutRevealed(event);
         return;
+      case "TURN_STARTED":
+        this.onTurnStarted(event);
+        return;
+      case "CLUE_SELECTED":
+        this.onClueSelected(event);
+        return;
+      case "CLUE_REVEALED":
+        this.onClueRevealed(event);
+        return;
     }
     // 게임 중에 들어오고 나가도 남은 참가자의 점수는 그대로 둔다.
     const participants = event.participants.map(toParticipant).map((p) => {
@@ -335,6 +385,7 @@ export class StompGameClient implements GameClient {
       nextAnswerHint: null,
       clues: [],
       turn: null,
+      selectedClue: null,
       stillCut: null,
       audioSeconds: null,
       votes: [],
@@ -370,6 +421,8 @@ export class StompGameClient implements GameClient {
         ...round,
         status: "SOLVED",
         votes: [],
+        turn: null,
+        selectedClue: null,
         stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
         result: {
           answer: event.answer,
@@ -402,6 +455,42 @@ export class StompGameClient implements GameClient {
         },
       },
     });
+  }
+
+  private onTurnStarted(event: TurnStartedResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    this.setState({
+      ...this.state,
+      round: { ...round, turn: { participantId: String(event.participantId), deadline: Date.parse(event.deadline) } },
+    });
+  }
+
+  private onClueRevealed(event: ClueRevealedResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    const name = this.nameOf(event.revealedById);
+    const clues = [...round.clues, { type: event.clueType, content: event.content, revealedBy: name }];
+    const allRevealed = event.order >= event.total;
+    // 다음 차례는 TURN_STARTED로 따로 온다. 그 전까지는 아무도 고를 수 없다.
+    this.setState({ ...this.state, round: { ...round, clues, turn: null, selectedClue: null } });
+    this.system(`${name}님이 '${clueLabel(event.clueType)}' 단서를 열었어요`);
+    if (allRevealed) this.system("모든 단서가 열렸어요");
+  }
+
+  private onClueSelected(event: ClueSelectedResponse): void {
+    const round = this.state?.round;
+    if (!this.state || !round || round.roundNo !== event.roundNo || round.status !== "IN_PROGRESS") return;
+    const selectedClue = { type: event.clueType, participantId: String(event.participantId), revealAt: Date.parse(event.revealAt) };
+    this.setState({ ...this.state, round: { ...round, turn: null, selectedClue } });
+    const name = this.nameOf(event.participantId);
+    const label = clueLabel(event.clueType);
+    this.system(event.timedOut ? `${name}님이 10초 안에 고르지 않아 '${label}' 단서를 무작위로 골랐어요` : `${name}님이 '${label}' 단서를 골랐어요`);
+  }
+
+  private nameOf(participantId: number): string {
+    const participant = this.state?.participants.find((p) => p.id === String(participantId));
+    return participant ? displayName(participant) : "나간 참가자";
   }
 
   private onGameFinished(event: GameFinishedResponse): void {
@@ -459,6 +548,10 @@ export class StompGameClient implements GameClient {
   private guestName(nickname: string): string {
     return nickname.trim() || `손님${Math.floor(10 + Math.random() * 90)}`;
   }
+}
+
+function clueLabel(clueType: ClueType): string {
+  return CLUES.find(([type]) => type === clueType)?.[1] ?? clueType;
 }
 
 /** 서버가 보낸 점수로 바꾼다. 점수를 얻은 정답자는 강조 시각을 남긴다 */

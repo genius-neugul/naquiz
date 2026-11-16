@@ -1,4 +1,5 @@
 import {
+  CLUE_REVEAL_SECONDS,
   CLUES,
   GAME_LABEL,
   HINT_LABEL,
@@ -268,6 +269,7 @@ export class MockGameClient implements GameClient {
       nextAnswerHint: game === "SONG" ? "ANSWER_MASK" : null,
       clues: [],
       turn: null,
+      selectedClue: null,
       stillCut: game === "MOVIE_STILL_CUT" ? { index: 0, total: stillTotal, imageUrl: null, shownAt: now, nextAt: now + STILL_CUT_SECONDS * 1000 } : null,
       audioSeconds: this.item.kind === "song" ? this.item.song.audioSeconds : null,
       votes: [],
@@ -314,6 +316,7 @@ export class MockGameClient implements GameClient {
         status,
         votes: [],
         turn: null,
+        selectedClue: null,
         nextAnswerHint: null,
         stillCut: round.stillCut ? { ...round.stillCut, nextAt: null } : null,
         result: { answer, subAnswer, detail, solverId: solver?.id ?? null, solverNickname: (solver ? displayName(solver) : null), solvedSeconds: seconds, nextAt },
@@ -391,10 +394,10 @@ export class MockGameClient implements GameClient {
 
     this.later(this.roundTimers, TURN_SECONDS * 1000, () => {
       if (this.turnIndex !== turnNo || this.state?.round?.turn?.participantId !== participantId) return;
-      const name = this.nickname(participantId);
-      this.system(`${name}님이 10초 안에 고르지 않아 차례가 넘어갔어요`);
-      this.turnIndex++;
-      this.startTurn();
+      // 시간 안에 고르지 않으면 남은 단서 중 하나를 대신 고른다. 공개는 직접 고를 때와 같다.
+      const opened = this.state.round.clues.map((c) => c.type);
+      const left = CLUES.filter(([k]) => !opened.includes(k));
+      if (left.length) this.revealClue(participantId, pick(left)[0], true);
     });
 
     if (participantId !== ME && Math.random() < 0.85) {
@@ -407,11 +410,29 @@ export class MockGameClient implements GameClient {
     }
   }
 
-  private revealClue(participantId: string, clueType: ClueType): void {
+  private revealClue(participantId: string, clueType: ClueType, timedOut = false): void {
     const round = this.state?.round;
     const it = this.item;
     if (!round || round.status !== "IN_PROGRESS" || !it || it.kind !== "movie") return;
     if (round.turn?.participantId !== participantId || round.clues.some((c) => c.type === clueType)) return;
+    const name = this.nickname(participantId);
+    const label = CLUES.find(([k]) => k === clueType)?.[1] ?? clueType;
+    // 고른 칸만 먼저 보여주고, 공개 전까지는 차례를 비워 아무도 고르지 못하게 한다.
+    const revealAt = Date.now() + CLUE_REVEAL_SECONDS * 1000;
+    this.setRound({ ...round, turn: null, selectedClue: { type: clueType, participantId, revealAt } });
+    this.system(timedOut ? `${name}님이 10초 안에 고르지 않아 '${label}' 단서를 무작위로 골랐어요` : `${name}님이 '${label}' 단서를 골랐어요`);
+    const roundNo = round.roundNo;
+    this.later(this.roundTimers, CLUE_REVEAL_SECONDS * 1000, () => {
+      const current = this.state?.round;
+      if (!current || current.roundNo !== roundNo || current.status !== "IN_PROGRESS") return;
+      this.openSelectedClue(participantId, clueType);
+    });
+  }
+
+  private openSelectedClue(participantId: string, clueType: ClueType): void {
+    const round = this.state?.round;
+    const it = this.item;
+    if (!round || !it || it.kind !== "movie") return;
     const raw = it.movie.clues[clueType];
     const content = clueType === "SYNOPSIS" ? maskTitleInSynopsis(raw, it.movie.answer, it.movie.subAnswer) : raw;
     const name = this.nickname(participantId);
@@ -419,11 +440,11 @@ export class MockGameClient implements GameClient {
     const label = CLUES.find(([k]) => k === clueType)?.[1] ?? clueType;
     this.system(`${name}님이 '${label}' 단서를 열었어요`);
     if (clues.length >= CLUES.length) {
-      this.setRound({ ...round, clues, turn: null, nextAnswerHint: "ANSWER_LENGTH" });
+      this.setRound({ ...round, clues, turn: null, selectedClue: null, nextAnswerHint: "ANSWER_LENGTH" });
       this.system("모든 단서가 열렸어요 · 이제 정답 힌트 투표를 할 수 있어요");
       return;
     }
-    this.setRound({ ...round, clues });
+    this.setRound({ ...round, clues, selectedClue: null });
     this.turnIndex++;
     this.startTurn();
   }

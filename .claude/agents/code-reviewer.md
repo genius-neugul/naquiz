@@ -21,7 +21,7 @@ memory: project
 - **참가자 변화**: 퇴장한 참가자의 투표 찬성·차례(Turn) 처리, 방장 퇴장 시 처리.
 - **유비쿼터스 언어**: 코드명이 DOMAIN.md와 같은가(Room, Participant, Round, Solver, Question 등). User/Lobby/Quiz 같은 금지 표현을 쓰지 않았는가 — Warning 으로 보고.
 - **Spring 컨벤션** (`core/docs/`): 레이어 의존 방향을 어기지 않는가(service의 Repository 직접 주입, 레이어 건너뛰기, presentation의 domain 참조, 다른 도메인을 implement 외 경로로 참조, 도메인 간 순환 참조). 도메인 모델이 응답 DTO·이벤트 페이로드로 새어 나가지 않는가. 비즈니스 실패를 공통 `ErrorCode` enum + `BusinessException`으로 던지는가(도메인별 ErrorCode 타입 금지). Entity에 setter가 없는가. STOMP 경로 예외를 `@MessageExceptionHandler`로 처리하는가. 로그에 `[클래스.메서드]` prefix가 있고 레벨이 맞으며 채팅·정답 제출 원문을 남기지 않는가. 현재 시각을 `Clock` 빈에서 읽는가.
-- **테스트** (`core/docs/TEST.md`): 단순 CRUD·위임·Spring Data 메서드·getter·프레임워크 동작을 테스트하거나 같은 규칙을 여러 계층에서 반복하면 🟡 Warning(삭제 제안). 게임 규칙·실패 케이스 누락은 💡. 통합 테스트가 `support/`의 공통 상위 클래스를 상속하지 않거나, `support/`에 TEST.md 목록 밖의 상위 클래스가 생겼거나, `@DataJpaTest`를 쓰거나, 타이머 테스트가 실제 시간을 기다리거나, 클래스별 `@TestPropertySource`·`@ActiveProfiles`·`@Import`로 context를 가르면서 이유 주석이 없으면 🟡.
+- **테스트** (`core/docs/TEST.md`): 단순 CRUD·위임·Spring Data 메서드·getter·프레임워크 동작을 테스트하거나 같은 규칙을 여러 계층에서 반복하면 🟡 Warning(삭제 제안). 게임 규칙·실패 케이스 누락은 💡. 통합 테스트가 `support/`의 공통 상위 클래스를 상속하지 않거나, `support/`에 TEST.md 목록 밖의 상위 클래스가 생겼거나, `@DataJpaTest`를 쓰거나, 타이머 테스트가 실제 시간을 기다리거나, 클래스별 `@TestPropertySource`·`@ActiveProfiles`·`@Import`로 context를 가르면서 이유 주석이 없으면 🟡. 테스트가 private이 아닌(package-private·`protected`·`public`) 메서드·필드·상수를 부르는데 main 코드에서는 그 클래스 밖에서 쓰지 않으면(테스트 때문에 연 것) 🟡(private으로 되돌리고 공개 메서드로 검증하도록 제안, `core/docs/CODE_STYLE.md` 「메서드 작성 규칙」).
 - **일반**: 예외 삼킴, N+1 쿼리, 트랜잭션 경계, 입력 검증(채팅 길이, 초대 코드 추측 가능성), API 키가 코드에 들어가지 않는가.
 - **문서에 없는 규칙을 코드에서 새로 정했는가** → 반드시 보고(CLAUDE.md: 임의로 정하지 말고 먼저 물어본다).
 

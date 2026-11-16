@@ -35,13 +35,19 @@ public enum ErrorCode {
     GAME_ALREADY_PLAYING(HttpStatus.CONFLICT, "이미 게임이 진행 중입니다."),
     GAME_INVALID_TARGET_SCORE(HttpStatus.BAD_REQUEST, "목표 점수는 1~50점입니다."),
     GAME_QUESTION_NOT_FOUND(HttpStatus.CONFLICT, "출제할 문제가 없습니다."),
+    GAME_INVALID_CLUE_TYPE(HttpStatus.BAD_REQUEST, "단서 종류가 올바르지 않습니다."),
+    GAME_NOT_YOUR_TURN(HttpStatus.FORBIDDEN, "단서를 열 차례가 아닙니다."),
+    GAME_CLUE_ALREADY_REVEALED(HttpStatus.CONFLICT, "이미 열린 단서입니다."),
 
     // game - 불변식 위반
     GAME_ROUND_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "라운드가 없습니다."),
     GAME_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "게임이 없습니다."),
 
     // question - 불변식 위반
-    QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다.");
+    QUESTION_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "문제가 없습니다."),
+
+    // movie - 불변식 위반
+    MOVIE_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR, "영화가 없습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -57,10 +57,6 @@ public class Game {
     @OrderBy("roundNo, revealOrder")
     private List<RevealedHint> revealedHints = new ArrayList<>();
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("roundNo, revealOrder")
-    private List<RevealedClue> revealedClues = new ArrayList<>();
-
     private Game(Long roomId, GameType gameType, int targetScore, LocalDateTime startedAt) {
         this.roomId = roomId;
         this.gameType = gameType;

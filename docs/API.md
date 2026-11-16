@@ -92,6 +92,7 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | SEND | `/app/rooms/leave` | 없음 | 방을 나간다. 들어간 방이 없으면 무시한다 |
 | SEND | `/app/rooms/chat` | `{ "text": "안녕하세요" }` | 들어가 있는 방에 채팅을 보낸다. 앞뒤 공백을 빼고 1~100자. 라운드 진행 중이면 정답 제출을 겸한다(「게임」) |
 | SEND | `/app/games/start` | `{ "gameType": "MOVIE_STILL_CUT", "targetScore": 5 }` | 방장이 게임을 시작한다. `gameType`은 `SONG`, `MOVIE_TWENTY_QUESTIONS`, `MOVIE_STILL_CUT`, `targetScore`는 1~50. 혼자 있어도 시작할 수 있다 |
+| SEND | `/app/games/clues/reveal` | `{ "clueType": "DIRECTOR" }` | 영화 스무고개에서 차례 참가자가 단서 하나를 고른다. 3초 뒤 공개된다. `clueType`은 `AUDIENCE`, `RELEASE_DATE`, `DIRECTOR`, `CAST`, `SYNOPSIS`, `GENRE`, `NATION`, `RATING` |
 | SUBSCRIBE | `/user/queue/room` | 방 상태 | 방 만들기·참가하기 응답. 보낸 연결에만 온다 |
 | SUBSCRIBE | `/topic/rooms/{roomId}` | 방 이벤트 | 방에 있는 모든 참가자에게 온다. 채팅도 이 토픽으로 온다(보낸 사람 포함) |
 | SUBSCRIBE | `/user/queue/errors` | 에러 응답 | 메시지 처리 실패. 보낸 연결에만 온다 |
@@ -125,6 +126,9 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `ROUND_SOLVED` | 정답자가 확정됐다 | 아래 「게임」 |
 | `GAME_FINISHED` | 승자가 목표 점수에 도달해 게임이 끝났다 | 아래 「게임」 |
 | `STILL_CUT_REVEALED` | 스틸컷 게임에서 다음 스틸컷을 보여준다 | 아래 「스틸컷 영화 맞추기」 |
+| `TURN_STARTED` | 영화 스무고개에서 새 차례가 시작됐다 | 아래 「영화 스무고개」 |
+| `CLUE_SELECTED` | 영화 스무고개에서 차례 참가자가 단서를 골랐다(내용은 잠시 뒤 공개) | 아래 「영화 스무고개」 |
+| `CLUE_REVEALED` | 영화 스무고개에서 고른 단서를 공개했다 | 아래 「영화 스무고개」 |
 
 **채팅**
 
@@ -171,6 +175,26 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 - `nextAt`은 다음 스틸컷이 오는 시각이다. 마지막 스틸컷이면 `null`이다.
 - 정답자가 나오면(`ROUND_SOLVED`) 그 라운드의 스틸컷은 더 오지 않는다.
 
+**영화 스무고개**
+
+```json
+{ "type": "TURN_STARTED", "gameId": 1, "roundNo": 1, "participantId": 2,
+  "deadline": "2026-10-31T21:00:10" }
+{ "type": "CLUE_SELECTED", "gameId": 1, "roundNo": 1, "clueType": "DIRECTOR", "participantId": 2,
+  "timedOut": false, "revealAt": "2026-10-31T21:00:07" }
+{ "type": "CLUE_REVEALED", "gameId": 1, "roundNo": 1, "clueType": "DIRECTOR", "content": "봉준호",
+  "revealedById": 2, "order": 1, "total": 8, "revealedAt": "2026-10-31T21:00:07" }
+```
+
+- 영화 스무고개(`MOVIE_TWENTY_QUESTIONS`) 라운드가 열리면 `ROUND_STARTED` 바로 뒤에 첫 `TURN_STARTED`가 온다. 차례 순서는 라운드마다 서버가 무작위로 정한다.
+- 차례 참가자만 `/app/games/clues/reveal`로 단서를 고를 수 있다. 고르면 바로 `CLUE_SELECTED`(내용 없음)가 모두에게 오고, `revealAt`(3초 뒤)에 `CLUE_REVEALED`가 온 다음 다음 차례 `TURN_STARTED`가 온다. 마지막 단서(`order`가 `total`)를 열면 차례는 더 오지 않는다.
+- 고른 뒤 공개 전까지는 아무도 고를 수 없고(`GAME_NOT_YOUR_TURN`), 차례 마감(10초)도 일어나지 않는다. 고른 참가자가 나가도 공개한다.
+- 공개 전에 정답자가 나오면(`ROUND_SOLVED`) 그 단서는 공개하지 않는다(`CLUE_REVEALED`가 오지 않는다).
+- `deadline`(차례 시작 10초 뒤)까지 고르지 않으면 서버가 아직 열리지 않은 단서 중 하나를 무작위로 고른다. 이때 `CLUE_SELECTED`의 `timedOut`이 `true`이고 `participantId`는 그 차례 참가자다. 그 뒤는 직접 고를 때와 같다(`revealAt`에 `CLUE_REVEALED`, 다음 `TURN_STARTED`).
+- 차례 참가자가 나가면 바로 다음 차례 `TURN_STARTED`가 온다. 나간 참가자의 차례는 건너뛴다.
+- 단서 공개 내용: 관객 수는 1만 명 이상이면 `약 1,031만 명`(만 명 단위 반올림), 미만이면 `9,999명`, 없으면 `집계 X`. 개봉일은 `YYYY-MM-DD`, 감독·장르·제작 나라는 `, `로 잇고, 출연자는 앞 5명이다. 시놉시스는 정답·보조 정답을 `○○○`로 가리고, 없으면 `정보 없음`이다.
+- 정답자가 나오면(`ROUND_SOLVED`) 그 라운드의 차례는 더 오지 않는다. 라운드가 끝난 뒤나 스무고개가 아닌 게임에서 보낸 단서 열기는 무시한다.
+
 **에러**
 
 본문은 HTTP 에러 응답과 같은 형식(`code`, `message`, 검증 실패면 `errors`)이다. 방·채팅·게임 관련 코드:
@@ -188,6 +212,9 @@ API는 `core/docs/ARCHITECTURE.md`의 레이어 규칙을 따른다. 요청/응�
 | `GAME_INVALID_TYPE` | 게임 종류 코드가 올바르지 않다 |
 | `GAME_NOT_HOST` | 방장이 아닌 참가자가 게임을 시작한다 |
 | `GAME_ALREADY_PLAYING` | 이미 게임이 진행 중인 방에서 게임을 시작한다 |
+| `GAME_INVALID_CLUE_TYPE` | 단서 종류 코드가 올바르지 않다 |
+| `GAME_NOT_YOUR_TURN` | 차례가 아닌 참가자가 단서를 고른다(고른 단서가 공개되기 전 포함) |
+| `GAME_CLUE_ALREADY_REVEALED` | 그 라운드에서 이미 열린 단서를 다시 고른다 |
 | `GAME_QUESTION_NOT_FOUND` | 그 게임 종류로 출제할 수 있는(승인되고 활성인) 문제가 없다 |
 
 ---

@@ -2,6 +2,7 @@ package geniusneugul.project.core.room.implement;
 
 import geniusneugul.project.core.common.infra.event.EventPublisher;
 import geniusneugul.project.core.room.domain.Room;
+import geniusneugul.project.core.room.domain.event.ParticipantLeftEvent;
 import geniusneugul.project.core.room.domain.event.RoomClosedEvent;
 import geniusneugul.project.core.room.infra.RoomRepository;
 import java.time.Clock;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 참가자를 방에서 내보낸다. 방장이 나가 닫힌 방은 저장소에서 지워 초대 코드를 다시 쓸 수 있게 하고,
- * 진행 중이던 게임을 끝내도록 방 종료 이벤트를 발행한다.
+ * 진행 중이던 게임을 끝내도록 방 종료 이벤트를 발행한다. 게스트가 나가면 참가자 퇴장 이벤트를 발행한다(스무고개 차례 넘기기 등).
  */
 @Component
 @RequiredArgsConstructor
@@ -28,9 +29,17 @@ public class RoomLeaver {
         Optional<RoomLeave> leave = roomRepository.findByParticipantToken(participantToken)
                 .flatMap(room -> roomLock.withLock(room.getId(), () -> leaveInLock(room, participantToken)));
         // 리스너가 DB에 쓰므로 방 락을 놓은 뒤 발행한다.
-        leave.filter(RoomLeave::roomClosed)
-                .ifPresent(closed -> eventPublisher.publish(new RoomClosedEvent(closed.roomId(), LocalDateTime.now(clock))));
+        leave.ifPresent(this::publish);
         return leave;
+    }
+
+    private void publish(RoomLeave leave) {
+        LocalDateTime now = LocalDateTime.now(clock);
+        if (leave.roomClosed()) {
+            eventPublisher.publish(new RoomClosedEvent(leave.roomId(), now));
+            return;
+        }
+        eventPublisher.publish(new ParticipantLeftEvent(leave.roomId(), leave.participant().getId(), now));
     }
 
     // 조회와 락 사이에 다른 스레드가 먼저 내보냈을 수 있으므로 Room.leave가 락 안에서 다시 확인한다.

@@ -47,6 +47,14 @@ export interface Turn {
   deadline: number;
 }
 
+/** 스무고개에서 골랐지만 아직 공개하지 않은 단서 */
+export interface SelectedClue {
+  type: ClueType;
+  participantId: string;
+  /** 공개 시각(ms) */
+  revealAt: number;
+}
+
 export interface StillCutView {
   /** 0부터 */
   index: number;
@@ -83,6 +91,7 @@ export interface Round {
   nextAnswerHint: HintType | null;
   clues: RevealedClue[];
   turn: Turn | null;
+  selectedClue: SelectedClue | null;
   stillCut: StillCutView | null;
   /** 노래 음원 재생 시간(초) */
   audioSeconds: number | null;

@@ -30,6 +30,8 @@ export const TARGET_SCORE_MIN = 1;
 export const TARGET_SCORE_MAX = 50;
 /** 스무고개 차례 제한 시간. 지나면 패스. */
 export const TURN_SECONDS = 10;
+/** 스무고개에서 고른 단서를 모두에게 표시한 뒤 공개하기까지. */
+export const CLUE_REVEAL_SECONDS = 3;
 /** 스틸컷 교체 간격. */
 export const STILL_CUT_SECONDS = 10;
 

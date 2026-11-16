@@ -8,6 +8,8 @@ export function useNow(active: boolean, intervalMs: number | "frame" = 250): num
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!active) return;
+    // 멈춰 있던 동안 시각이 갱신되지 않았으므로 켜지자마자 한 번 맞춘다. 다음 interval까지 오래된 시각이 보이지 않게 한다.
+    setNow(Date.now());
     if (intervalMs === "frame") {
       let frame = requestAnimationFrame(function tick() {
         setNow(Date.now());

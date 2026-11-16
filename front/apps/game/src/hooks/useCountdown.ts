@@ -17,7 +17,9 @@ export interface CountdownState {
 export function useCountdown(deadline: number | null, durationMs: number, smooth = false): CountdownState {
   const now = useNow(deadline !== null, smooth ? "frame" : 250);
   if (deadline === null) return { secondsLeft: 0, progress: 1, running: false };
-  const leftMs = Math.max(0, deadline - now);
+  // 카운트다운이 막 켜진 첫 렌더는 useNow가 멈춰 있던 동안의 오래된 시각이라 남은 시간이 실제보다 길게 나온다.
+  // 서버와 시계가 어긋나도 마찬가지이므로 전체 시간(durationMs)을 넘지 않게 한다.
+  const leftMs = Math.min(durationMs, Math.max(0, deadline - now));
   return {
     secondsLeft: Math.ceil(leftMs / 1000),
     progress: Math.min(1, Math.max(0, 1 - leftMs / durationMs)),
