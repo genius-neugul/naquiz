@@ -1,136 +1,150 @@
-/** 마스킹 문자. 공백은 가리지 않는다. */
+import type { AnswerHintPriority } from "./types";
+
+/** 가린 글자. 서버와 같다. */
 export const MASK = "⚫";
 
-const CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
-const HANGUL_BASE = 0xac00;
-const HANGUL_LAST = 0xd7a3;
-const SYLLABLES_PER_CHOSEONG = 588;
+const CHOSUNG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+const HANGUL_FIRST = "가";
+const HANGUL_LAST = "힣";
+/** 초성 하나에 딸린 완성형 음절 수(중성 21 × 종성 28) */
+const SYLLABLES_PER_CHOSUNG = 588;
+const PARTIAL_REVEAL_DIVISOR = 3;
 
-type CharKind = "space" | "ko" | "en" | "num" | "sym";
+/** 정답 힌트 공개 우선순위. 앞에 있는 것이 먼저 공개된다. 마지막(ANSWER_PARTIAL)은 반복해서 연다 */
+export const ANSWER_HINT_PRIORITIES: readonly AnswerHintPriority[] = ["ANSWER_MASK", "ANSWER_NUMBER", "ANSWER_CHOSUNG", "ANSWER_PARTIAL"];
 
-function kindOf(c: string): CharKind {
-  if (/\s/.test(c)) return "space";
-  const code = c.charCodeAt(0);
-  if (code >= HANGUL_BASE && code <= HANGUL_LAST) return "ko";
-  if (/[a-zA-Z]/.test(c)) return "en";
-  if (/[0-9]/.test(c)) return "num";
-  return "sym";
+/** 글자 종류. 한글은 완성형 음절(가~힣)만 해당하고, 자모만 있는 글자는 특수문자로 본다 */
+export type CharacterKind = "HANGUL" | "ALPHABET" | "SPACE" | "NUMBER" | "SPECIAL_CHARACTER";
+/** 글자가 화면에 보이는 상태. 원래 글자가 보일 때(REVEALED)만 완전히 공개된 것이다 */
+export type CharacterState = "MASK" | "CHOSUNG" | "REVEALED";
+
+export interface AnswerHintCharacter {
+  /** 원래 글자 (코드 포인트 하나) */
+  original: string;
+  /** 화면에 보이는 값. ⚫, 초성, 원래 글자 중 하나 */
+  display: string;
+  kind: CharacterKind;
+  state: CharacterState;
 }
 
-function choseong(c: string): string {
-  return CHOSEONG[Math.floor((c.charCodeAt(0) - HANGUL_BASE) / SYLLABLES_PER_CHOSEONG)]!;
+/** 한 라운드의 정답 힌트 공개 상태. 갱신할 때마다 새 객체를 만든다 */
+export interface AnswerHintString {
+  characters: readonly AnswerHintCharacter[];
+  /** 마지막으로 공개한 우선순위 */
+  current: AnswerHintPriority;
 }
 
 /** 0 이상 1 미만 난수. 테스트에서 고정값을 넣을 수 있게 주입받는다. */
 export type RandomSource = () => number;
 
-/** 한글·영문·숫자 글자 수. 공백과 특수문자는 세지 않는다. */
-export function letterCount(answer: string): number {
-  return [...answer].filter((c) => {
-    const k = kindOf(c);
-    return k === "ko" || k === "en" || k === "num";
-  }).length;
+export function kindOf(c: string): CharacterKind {
+  if (/\s/.test(c)) return "SPACE";
+  if (c >= HANGUL_FIRST && c <= HANGUL_LAST) return "HANGUL";
+  if ((c >= "a" && c <= "z") || (c >= "A" && c <= "Z")) return "ALPHABET";
+  if (c >= "0" && c <= "9") return "NUMBER";
+  return "SPECIAL_CHARACTER";
 }
 
-/** 글자 수와 한글·영어·숫자·특수문자 포함 여부. 예: `6글자 · 한글 O · 영어 X · 숫자 X · 특수문자 O` */
+function chosung(c: string): string {
+  return CHOSUNG[Math.floor((c.codePointAt(0)! - HANGUL_FIRST.codePointAt(0)!) / SYLLABLES_PER_CHOSUNG)]!;
+}
+
+const revealed = (ch: AnswerHintCharacter): AnswerHintCharacter => ({ ...ch, state: "REVEALED", display: ch.original });
+const shownAsChosung = (ch: AnswerHintCharacter): AnswerHintCharacter => ({ ...ch, state: "CHOSUNG", display: chosung(ch.original) });
+
+/** 정답을 글자 단위로 잘라 기본 힌트(ANSWER_MASK) 상태로 만든다. 띄어쓰기·특수문자는 처음부터 보인다 */
+export function createAnswerHintString(answer: string): AnswerHintString {
+  const characters = [...answer].map((original): AnswerHintCharacter => {
+    const kind = kindOf(original);
+    const base: AnswerHintCharacter = { original, display: MASK, kind, state: "MASK" };
+    return kind === "SPACE" || kind === "SPECIAL_CHARACTER" ? revealed(base) : base;
+  });
+  return { characters, current: "ANSWER_MASK" };
+}
+
+/** 완전히 공개되지 않은 글자. 초성만 보이는 한글도 포함한다 */
+export function unrevealedCharacters(hint: AnswerHintString): AnswerHintCharacter[] {
+  return hint.characters.filter((ch) => ch.state !== "REVEALED");
+}
+
+/** 화면에 보이는 정답 힌트 */
+export function displayAnswerHint(hint: AnswerHintString): string {
+  return hint.characters.map((ch) => ch.display).join("");
+}
+
+function nextOf(priority: AnswerHintPriority): AnswerHintPriority {
+  const i = ANSWER_HINT_PRIORITIES.indexOf(priority);
+  return ANSWER_HINT_PRIORITIES[Math.min(i + 1, ANSWER_HINT_PRIORITIES.length - 1)]!;
+}
+
+function hasMasked(hint: AnswerHintString, kind: CharacterKind): boolean {
+  return hint.characters.some((ch) => ch.kind === kind && ch.state === "MASK");
+}
+
+function canReveal(hint: AnswerHintString, priority: AnswerHintPriority): boolean {
+  switch (priority) {
+    case "ANSWER_MASK":
+      return false;
+    case "ANSWER_NUMBER":
+      return hasMasked(hint, "NUMBER");
+    case "ANSWER_CHOSUNG":
+      return hasMasked(hint, "HANGUL");
+    case "ANSWER_PARTIAL":
+      return unrevealedCharacters(hint).length > 0;
+  }
+}
+
+/** 지금 우선순위 다음으로 열 수 있는 첫 우선순위. 앞선 우선순위는 보지 않고, 열 수 없는 우선순위는 건너뛴다. 없으면 null */
+export function nextAnswerHintPriority(hint: AnswerHintString): AnswerHintPriority | null {
+  let candidate = nextOf(hint.current);
+  while (!canReveal(hint, candidate)) {
+    if (nextOf(candidate) === candidate) return null;
+    candidate = nextOf(candidate);
+  }
+  return candidate;
+}
+
+/** 다음 우선순위의 정답 힌트를 공개한 새 상태. 더 열 우선순위가 없으면 null */
+export function revealNextAnswerHint(hint: AnswerHintString, random: RandomSource = Math.random): AnswerHintString | null {
+  const priority = nextAnswerHintPriority(hint);
+  if (!priority) return null;
+  let characters = [...hint.characters];
+  switch (priority) {
+    case "ANSWER_NUMBER":
+      characters = characters.map((ch) => (ch.kind === "NUMBER" && ch.state === "MASK" ? revealed(ch) : ch));
+      break;
+    case "ANSWER_CHOSUNG":
+      characters = characters.map((ch) => (ch.kind === "HANGUL" && ch.state === "MASK" ? shownAsChosung(ch) : ch));
+      break;
+    case "ANSWER_PARTIAL":
+      characters = revealPartial(characters, random);
+      break;
+    case "ANSWER_MASK":
+      break;
+  }
+  return { characters, current: priority };
+}
+
+/** 완전히 공개되지 않은 글자 수 ÷ 3(반올림)개를 무작위로 공개한다. 1개만 남았으면 그 1개를 공개한다 */
+function revealPartial(characters: AnswerHintCharacter[], random: RandomSource): AnswerHintCharacter[] {
+  const rest = characters.flatMap((ch, i) => (ch.state !== "REVEALED" ? [i] : []));
+  const count = Math.max(1, Math.round(rest.length / PARTIAL_REVEAL_DIVISOR));
+  const out = [...characters];
+  for (let n = 0; n < count; n++) {
+    const [i] = rest.splice(Math.floor(random() * rest.length), 1);
+    out[i!] = revealed(out[i!]!);
+  }
+  return out;
+}
+
+/** 띄어쓰기를 뺀 글자 수. 특수문자도 센다. */
+export function letterCount(answer: string): number {
+  return [...answer].filter((c) => kindOf(c) !== "SPACE").length;
+}
+
+/** 글자 수와 한글·영어·숫자·특수문자 포함 여부. 예: `7글자(특수문자 포함) · 한글 O · 영어 X · 숫자 X · 특수문자 O` */
 export function answerMeta(answer: string): string {
   const kinds = [...answer].map(kindOf);
-  const has = (k: CharKind) => (kinds.includes(k) ? "O" : "X");
-  return `${letterCount(answer)}글자 · 한글 ${has("ko")} · 영어 ${has("en")} · 숫자 ${has("num")} · 특수문자 ${has("sym")}`;
-}
-
-/** 노래 정답 힌트 1단계(ANSWER_MASK), 영화 정답 힌트 1단계(ANSWER_LENGTH). 공백만 남기고 모두 가린다. */
-export function maskAll(answer: string): string {
-  return [...answer].map((c) => (kindOf(c) === "space" ? c : MASK)).join("");
-}
-
-/** 노래 정답 힌트 2단계(ANSWER_SYMBOL). 숫자·특수문자를 한글·영문보다 먼저 공개한다. */
-export function revealSymbols(answer: string): string {
-  return [...answer]
-    .map((c) => {
-      const k = kindOf(c);
-      return k === "space" || k === "num" || k === "sym" ? c : MASK;
-    })
-    .join("");
-}
-
-/** 영문 단어 하나에서 공개할 글자 수. 글자 수 ÷ 3 반올림, 두 글자 이하는 전부. */
-export function partialRevealCount(wordLength: number): number {
-  if (wordLength <= 2) return wordLength;
-  return Math.round(wordLength / 3);
-}
-
-/**
- * 노래 정답 힌트 3단계(ANSWER_PARTIAL).
- * 숫자·특수문자는 공개, 한글은 초성, 영문은 단어마다 일부 글자를 무작위로 공개한다.
- */
-export function revealPartial(answer: string, random: RandomSource = Math.random): string {
-  const chars = [...answer];
-  const out = chars.map((c) => {
-    const k = kindOf(c);
-    if (k === "space" || k === "num" || k === "sym") return c;
-    if (k === "ko") return choseong(c);
-    return MASK;
-  });
-  for (const word of englishWords(chars)) {
-    const picked = pickIndices(word, partialRevealCount(word.length), random);
-    for (const i of picked) out[i] = chars[i]!;
-  }
-  return out.join("");
-}
-
-/** 영화 정답 힌트 2단계(ANSWER_INITIAL), 스틸컷 정답 힌트. 한글은 초성, 나머지는 가린다. */
-export function revealInitials(answer: string): string {
-  return [...answer]
-    .map((c) => {
-      const k = kindOf(c);
-      if (k === "space") return c;
-      if (k === "ko") return choseong(c);
-      return MASK;
-    })
-    .join("");
-}
-
-/**
- * 영화 정답 힌트 3단계~(ANSWER_RANDOM_CHAR).
- * 초성 공개 상태에서 아직 공개하지 않은 글자 하나를 무작위로 더 고른다. 모두 공개했으면 null.
- */
-export function pickRandomCharIndex(answer: string, revealed: readonly number[], random: RandomSource = Math.random): number | null {
-  const candidates = [...answer]
-    .map((c, i) => ({ c, i }))
-    .filter(({ c, i }) => kindOf(c) !== "space" && !revealed.includes(i))
-    .map(({ i }) => i);
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(random() * candidates.length)]!;
-}
-
-/** 초성 공개 상태에 지정한 글자들을 원래 글자로 바꿔 보여준다. */
-export function revealInitialsWith(answer: string, revealed: readonly number[]): string {
-  const chars = [...answer];
-  const base = [...revealInitials(answer)];
-  for (const i of revealed) if (chars[i] !== undefined) base[i] = chars[i]!;
-  return base.join("");
-}
-
-function englishWords(chars: string[]): number[][] {
-  const words: number[][] = [];
-  let cur: number[] = [];
-  chars.forEach((c, i) => {
-    if (kindOf(c) === "en") cur.push(i);
-    else if (cur.length) {
-      words.push(cur);
-      cur = [];
-    }
-  });
-  if (cur.length) words.push(cur);
-  return words;
-}
-
-function pickIndices(pool: number[], count: number, random: RandomSource): number[] {
-  const rest = [...pool];
-  const picked: number[] = [];
-  while (picked.length < count && rest.length) {
-    picked.push(rest.splice(Math.floor(random() * rest.length), 1)[0]!);
-  }
-  return picked;
+  const has = (k: CharacterKind) => (kinds.includes(k) ? "O" : "X");
+  return `${letterCount(answer)}글자(특수문자 포함) · 한글 ${has("HANGUL")} · 영어 ${has("ALPHABET")} · 숫자 ${has("NUMBER")} · 특수문자 ${has("SPECIAL_CHARACTER")}`;
 }
